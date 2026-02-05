@@ -22,20 +22,22 @@ public class ude {
     // System.out.println(val);
     // if(!val){
     //     System.out.print("got an remainder");
-    System.out.println("the answer is :");
-    addition();
-    int j = 4;
-    int f=6;
-    System.out.println("C:"+addition(j,f));
+    // System.out.println("the answer is :");
+    // addition();
+    // int j = 4;
+    // int f=6;
+    // System.out.println("C:"+addition(j,f));
+    // }
+    // public static void addition(){
+    //     int a=5;
+    //     int b=6;
+    //     System.out.println(a+b);
+    // }
+    // static int addition (int c,int d){
+    //     return c+d;
+    // }
+
     }
-    public static void addition(){
-        int a=5;
-        int b=6;
-        System.out.println(a+b);
-    }
-    static int addition (int c,int d){
-        return c+d;
-    }
-    }
+}
     
     
