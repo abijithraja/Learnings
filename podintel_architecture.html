@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PodIntel: Clean Value Matrix</title>
+    <style>
+        body { 
+            background-color: #000000; /* Pure black for starfield blending */
+            color: #ececec; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+
+        .matrix-container {
+            width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .matrix-header {
+            text-align: center;
+            margin-bottom: 10px;
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        .matrix-header h2 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .matrix-header p {
+            color: #888;
+            margin: 8px 0 0 0;
+            font-family: ui-monospace, monospace;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .column {
+            background-color: #0d0d0d;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        /* Column 1: Traditional */
+        .col-traditional {
+            animation: slideUp 0.8s ease-out 1s forwards;
+        }
+
+        .col-traditional .col-header {
+            color: #888;
+            border-bottom: 1px solid #222;
+        }
+
+        .col-traditional .feature-card {
+            background-color: #141414;
+            border: 1px solid #222;
+            color: #888;
+        }
+
+        /* Column 2: PodIntel */
+        .col-podintel {
+            border-color: #10b981; /* Flat green border */
+            box-shadow: 0 10px 40px rgba(16, 185, 129, 0.05);
+            animation: slideUp 0.8s ease-out 3s forwards;
+        }
+
+        .col-podintel .col-header {
+            color: #10b981;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .col-podintel .feature-card {
+            background-color: #062b1a; /* Very dark green tint */
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #ececec;
+        }
+
+        .col-header {
+            padding-bottom: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .feature-card {
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .feature-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-desc {
+            font-size: 13px;
+            line-height: 1.5;
+            opacity: 0.8;
+        }
+
+        .icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+        }
+
+        .icon svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .icon-warning { color: #888; }
+        .icon-check { color: #10b981; }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #10b981;
+            display: inline-block;
+        }
+
+        @keyframes fadeIn { to { opacity: 1; } }
+        @keyframes slideUp { 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="matrix-container">
+        <div class="matrix-header">
+            <h2>The Observability Paradigm</h2>
+            <p>Shifting from passive metrics to active resolution</p>
+        </div>
+
+        <div class="grid">
+            <div class="column col-traditional">
+                <div class="col-header">
+                    <span>Traditional Monitoring</span>
+                    <span class="icon icon-warning" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 3l9 16H3l9-16z" />
+                            <path d="M12 9v4" />
+                            <path d="M12 17h.01" />
+                        </svg>
+                    </span>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-title">Isolated Metrics</div>
+                    <div class="feature-desc">Engineers must manually cross-reference CPU, Memory, and I/O dashboards to guess the root cause.</div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-title">Reactive Alerts</div>
+                    <div class="feature-desc">Alerts trigger only after thresholds are breached and end-users are already experiencing downtime.</div>
+                </div>
+            </div>
+
+            <div class="column col-podintel">
+                <div class="col-header">
+                    <span>PodIntel Architecture</span>
+                    <span class="icon icon-check" aria-hidden="true">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M5 13l4 4L19 7" />
+                        </svg>
+                    </span>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-title">
+                        <span class="dot"></span> Causal Dependency Map
+                    </div>
+                    <div class="feature-desc">Mathematically links root-cause failures to downstream victims using NetworkX and Granger Causality.</div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-title">
+                        <span class="dot"></span> Predictive NLP Resolution
+                    </div>
+                    <div class="feature-desc">Air-gapped LLM provides plain-English remediation instructions before cascade thresholds are breached.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
