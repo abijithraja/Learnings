@@ -209,9 +209,7 @@
                     // Fast forward if we hit an HTML tag to prevent breaking the code
                     if(responseString.charAt(i) === '<') isTag = true;
                     if(responseString.charAt(i) === '>') isTag = false;
-                    
                     i++;
-                    
                     // Variable typing speed (fast for tags, natural for text)
                     let speed = isTag ? 0 : Math.floor(Math.random() * 25) + 5;
                     setTimeout(typeWriter, speed);
