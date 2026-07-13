@@ -1,13 +1,17 @@
 public class ude2 {
     public static void main(String args[]){
-        int n = 25 ;
-        for (int i =0 ; i<n ; i++){
-            System.out.println("The number is :"+i);
-            if (i==6){
-                System.out.println("Hello");
-                continue;
-            }
+        addition();
+        int result = sub();
+        System.out.println(result);
         }
-        
+    public static void addition(){
+        int a = 10;
+        int b = 20;
+        System.out.println(a+b);
     }
-}
+    public static int sub(){
+        int a = 50;
+        int b = 40;
+        return a-b;
+    }
+    }
