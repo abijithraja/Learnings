@@ -7,7 +7,6 @@ public class methodoverloading{
     public static int calc(String playername , int score){
         System.out.println(" Player "  + playername + " score " + score);
         return score;
-
     }
         public static int calc(int score){
         System.out.println(" Player is unknown " + " score " + score);
