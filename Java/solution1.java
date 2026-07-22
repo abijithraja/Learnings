@@ -1,5 +1,4 @@
 public class solution1 {
-    
     public static void main(String[] args) {
         char finalDiff = diff("abcd", "abcdh"); 
         System.out.print(finalDiff); 
@@ -13,5 +12,11 @@ public class solution1 {
             result ^= c;
         }
         return result;
+ 
+ 
+ 
+ 
+ 
+ 
     }
 }
