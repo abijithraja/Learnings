@@ -16,6 +16,7 @@ class prob{
             }
         }
         System.out.println("max value is: "+max);
+        
         System.out.println("second max value is: "+secondmax);
         sc.close();
     }
