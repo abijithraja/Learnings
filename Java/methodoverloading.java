@@ -12,8 +12,7 @@ public class methodoverloading{
         System.out.println(" Player is unknown " + " score " + score);
         return score;
     }
-    public static int calc(){
+    public static void calc(){
         System.out.println(" Playername is unknown " );
-        return 0;
     }
 }
