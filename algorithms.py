@@ -5,6 +5,7 @@ Part 2: Binary Search (Iterative & Recursive)
 Part 3: Sieve of Eratosthenes & Prime Verification
 Part 4: Quicksort & Merge Sort Implementations
 Part 5: Two Sum & Three Sum Problems
+Part 6: Longest Common Subsequence (LCS Dynamic Programming)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple
@@ -158,6 +159,34 @@ def three_sum(nums: List[int]) -> List[List[int]]:
     return triplets
 
 
+def longest_common_subsequence(text1: str, text2: str) -> str:
+    """Find the longest common subsequence string using dynamic programming."""
+    m, n = len(text1), len(text2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if text1[i - 1] == text2[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1] + 1
+            else:
+                dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
+
+    # Reconstruct the LCS string
+    lcs_chars = []
+    i, j = m, n
+    while i > 0 and j > 0:
+        if text1[i - 1] == text2[j - 1]:
+            lcs_chars.append(text1[i - 1])
+            i -= 1
+            j -= 1
+        elif dp[i - 1][j] >= dp[i][j - 1]:
+            i -= 1
+        else:
+            j -= 1
+
+    return "".join(reversed(lcs_chars))
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -185,3 +214,7 @@ if __name__ == "__main__":
     print("Two sum target 9:", two_sum(nums_for_two_sum, 9))
     nums_for_three_sum = [-1, 0, 1, 2, -1, -4]
     print("Three sum triplets:", three_sum(nums_for_three_sum))
+
+    print("\n=== Iteration 6: Longest Common Subsequence ===")
+    s1, s2 = "abcde", "ace"
+    print(f"LCS of '{s1}' and '{s2}':", longest_common_subsequence(s1, s2))
