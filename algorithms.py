@@ -4,9 +4,10 @@ Part 1: Fibonacci Numbers with Memoization
 Part 2: Binary Search (Iterative & Recursive)
 Part 3: Sieve of Eratosthenes & Prime Verification
 Part 4: Quicksort & Merge Sort Implementations
+Part 5: Two Sum & Three Sum Problems
 """
 
-from typing import Generator, Dict, List, Optional
+from typing import Generator, Dict, List, Optional, Tuple
 import math
 
 
@@ -121,6 +122,42 @@ def mergesort(arr: List[int]) -> List[int]:
     return sorted_arr
 
 
+def two_sum(nums: List[int], target: int) -> Optional[Tuple[int, int]]:
+    """Find two indices whose values add up to target using hash map."""
+    seen: Dict[int, int] = {}
+    for i, num in enumerate(nums):
+        complement = target - num
+        if complement in seen:
+            return (seen[complement], i)
+        seen[num] = i
+    return None
+
+
+def three_sum(nums: List[int]) -> List[List[int]]:
+    """Find all unique triplets [a, b, c] such that a + b + c = 0."""
+    nums = sorted(nums)
+    triplets = []
+    for i in range(len(nums) - 2):
+        if i > 0 and nums[i] == nums[i - 1]:
+            continue
+        left, right = i + 1, len(nums) - 1
+        while left < right:
+            total = nums[i] + nums[left] + nums[right]
+            if total == 0:
+                triplets.append([nums[i], nums[left], nums[right]])
+                while left < right and nums[left] == nums[left + 1]:
+                    left += 1
+                while left < right and nums[right] == nums[right - 1]:
+                    right -= 1
+                left += 1
+                right -= 1
+            elif total < 0:
+                left += 1
+            else:
+                right -= 1
+    return triplets
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -142,3 +179,9 @@ if __name__ == "__main__":
     print("Unsorted:", unsorted)
     print("Quicksort result:", quicksort(unsorted))
     print("Mergesort result:", mergesort(unsorted))
+
+    print("\n=== Iteration 5: Two Sum & Three Sum ===")
+    nums_for_two_sum = [2, 7, 11, 15]
+    print("Two sum target 9:", two_sum(nums_for_two_sum, 9))
+    nums_for_three_sum = [-1, 0, 1, 2, -1, -4]
+    print("Three sum triplets:", three_sum(nums_for_three_sum))
