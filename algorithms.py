@@ -10,9 +10,11 @@ Part 7: LRU (Least Recently Used) Cache Implementation
 Part 8: Dijkstra's Shortest Path Algorithm on Weighted Graphs
 Part 9: Kadane's Algorithm (Maximum Subarray Sum)
 Part 10: 0/1 Knapsack Problem (Dynamic Programming)
+Part 11: BFS & DFS Graph Traversals
 """
 
-from typing import Generator, Dict, List, Optional, Tuple, Any
+from typing import Generator, Dict, List, Optional, Tuple, Any, Set
+from collections import deque
 import math
 import heapq
 
@@ -311,6 +313,36 @@ def knapsack_01(weights: List[int], values: List[int], capacity: int) -> int:
     return dp[n][capacity]
 
 
+def bfs_traversal(graph: Dict[str, List[str]], start_node: str) -> List[str]:
+    """Perform Breadth-First Search on an unweighted graph."""
+    visited: Set[str] = set()
+    queue = deque([start_node])
+    order = []
+
+    while queue:
+        vertex = queue.popleft()
+        if vertex not in visited:
+            visited.add(vertex)
+            order.append(vertex)
+            for neighbor in graph.get(vertex, []):
+                if neighbor not in visited:
+                    queue.append(neighbor)
+    return order
+
+
+def dfs_traversal(graph: Dict[str, List[str]], start_node: str, visited: Optional[Set[str]] = None) -> List[str]:
+    """Perform Depth-First Search on an unweighted graph."""
+    if visited is None:
+        visited = set()
+    order = []
+    visited.add(start_node)
+    order.append(start_node)
+    for neighbor in graph.get(start_node, []):
+        if neighbor not in visited:
+            order.extend(dfs_traversal(graph, neighbor, visited))
+    return order
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -371,3 +403,15 @@ if __name__ == "__main__":
     print("\n=== Iteration 10: 0/1 Knapsack ===")
     wts, vals, cap = [2, 3, 4, 5], [3, 4, 5, 6], 5
     print("Max knapsack value (capacity 5):", knapsack_01(wts, vals, cap))
+
+    print("\n=== Iteration 11: Graph BFS & DFS ===")
+    sample_adj = {
+        'A': ['B', 'C'],
+        'B': ['A', 'D', 'E'],
+        'C': ['A', 'F'],
+        'D': ['B'],
+        'E': ['B', 'F'],
+        'F': ['C', 'E']
+    }
+    print("BFS from A:", bfs_traversal(sample_adj, 'A'))
+    print("DFS from A:", dfs_traversal(sample_adj, 'A'))
