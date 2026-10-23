@@ -9,6 +9,7 @@ Part 6: Longest Common Subsequence (LCS Dynamic Programming)
 Part 7: LRU (Least Recently Used) Cache Implementation
 Part 8: Dijkstra's Shortest Path Algorithm on Weighted Graphs
 Part 9: Kadane's Algorithm (Maximum Subarray Sum)
+Part 10: 0/1 Knapsack Problem (Dynamic Programming)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any
@@ -293,6 +294,23 @@ def max_subarray_sum(nums: List[int]) -> int:
     return max_so_far
 
 
+def knapsack_01(weights: List[int], values: List[int], capacity: int) -> int:
+    """Solve 0/1 Knapsack problem using dynamic programming."""
+    n = len(weights)
+    dp = [[0] * (capacity + 1) for _ in range(n + 1)]
+
+    for i in range(1, n + 1):
+        w = weights[i - 1]
+        v = values[i - 1]
+        for c in range(1, capacity + 1):
+            if w <= c:
+                dp[i][c] = max(dp[i - 1][c], dp[i - 1][c - w] + v)
+            else:
+                dp[i][c] = dp[i - 1][c]
+
+    return dp[n][capacity]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -349,3 +367,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 9: Kadane's Algorithm ===")
     sample_sub = [-2, 1, -3, 4, -1, 2, 1, -5, 4]
     print("Max subarray sum for", sample_sub, "->", max_subarray_sum(sample_sub))
+
+    print("\n=== Iteration 10: 0/1 Knapsack ===")
+    wts, vals, cap = [2, 3, 4, 5], [3, 4, 5, 6], 5
+    print("Max knapsack value (capacity 5):", knapsack_01(wts, vals, cap))
