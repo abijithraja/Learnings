@@ -11,6 +11,7 @@ Part 8: Dijkstra's Shortest Path Algorithm on Weighted Graphs
 Part 9: Kadane's Algorithm (Maximum Subarray Sum)
 Part 10: 0/1 Knapsack Problem (Dynamic Programming)
 Part 11: BFS & DFS Graph Traversals
+Part 12: Topological Sort (Kahn's Algorithm)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -343,6 +344,29 @@ def dfs_traversal(graph: Dict[str, List[str]], start_node: str, visited: Optiona
     return order
 
 
+def topological_sort(nodes: List[str], edges: List[Tuple[str, str]]) -> Optional[List[str]]:
+    """Perform Kahn's algorithm for topological sorting on a DAG."""
+    in_degree = {u: 0 for u in nodes}
+    adj: Dict[str, List[str]] = {u: [] for u in nodes}
+
+    for u, v in edges:
+        adj[u].append(v)
+        in_degree[v] = in_degree.get(v, 0) + 1
+
+    zero_in = deque([u for u in nodes if in_degree[u] == 0])
+    result = []
+
+    while zero_in:
+        curr = zero_in.popleft()
+        result.append(curr)
+        for nxt in adj[curr]:
+            in_degree[nxt] -= 1
+            if in_degree[nxt] == 0:
+                zero_in.append(nxt)
+
+    return result if len(result) == len(nodes) else None
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -415,3 +439,8 @@ if __name__ == "__main__":
     }
     print("BFS from A:", bfs_traversal(sample_adj, 'A'))
     print("DFS from A:", dfs_traversal(sample_adj, 'A'))
+
+    print("\n=== Iteration 12: Topological Sort ===")
+    dag_nodes = ["build", "test", "package", "deploy", "monitor"]
+    dag_edges = [("build", "test"), ("test", "package"), ("package", "deploy"), ("deploy", "monitor")]
+    print("Topological build order:", topological_sort(dag_nodes, dag_edges))
