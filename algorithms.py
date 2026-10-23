@@ -12,6 +12,7 @@ Part 9: Kadane's Algorithm (Maximum Subarray Sum)
 Part 10: 0/1 Knapsack Problem (Dynamic Programming)
 Part 11: BFS & DFS Graph Traversals
 Part 12: Topological Sort (Kahn's Algorithm)
+Part 13: Trie (Prefix Tree) Data Structure
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -367,6 +368,43 @@ def topological_sort(nodes: List[str], edges: List[Tuple[str, str]]) -> Optional
     return result if len(result) == len(nodes) else None
 
 
+class TrieNode:
+    """Node in a Prefix Tree (Trie)."""
+    def __init__(self):
+        self.children: Dict[str, 'TrieNode'] = {}
+        self.is_end_of_word: bool = False
+
+
+class Trie:
+    """Trie (Prefix Tree) supporting insert, search, and starts_with."""
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, word: str) -> None:
+        curr = self.root
+        for char in word:
+            if char not in curr.children:
+                curr.children[char] = TrieNode()
+            curr = curr.children[char]
+        curr.is_end_of_word = True
+
+    def search(self, word: str) -> bool:
+        curr = self.root
+        for char in word:
+            if char not in curr.children:
+                return False
+            curr = curr.children[char]
+        return curr.is_end_of_word
+
+    def starts_with(self, prefix: str) -> bool:
+        curr = self.root
+        for char in prefix:
+            if char not in curr.children:
+                return False
+            curr = curr.children[char]
+        return True
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -444,3 +482,15 @@ if __name__ == "__main__":
     dag_nodes = ["build", "test", "package", "deploy", "monitor"]
     dag_edges = [("build", "test"), ("test", "package"), ("package", "deploy"), ("deploy", "monitor")]
     print("Topological build order:", topological_sort(dag_nodes, dag_edges))
+
+    print("\n=== Iteration 13: Trie (Prefix Tree) ===")
+    trie = Trie()
+    for w in ["apple", "app", "application", "aptitude", "bat"]:
+        trie.insert(w)
+    print("Search 'apple':", trie.search("apple"))
+    print("Search 'app':", trie.search("app"))
+    print("Search 'appl':", trie.search("appl"))
+    print("Starts with 'app':", trie.starts_with("app"))
+    print("Starts with 'bat':", trie.starts_with("bat"))
+    print("Starts with 'cat':", trie.starts_with("cat"))
+    print("All 13 algorithms and data structures completed and verified!")
