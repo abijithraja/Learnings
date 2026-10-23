@@ -2,9 +2,11 @@
 Algorithms & Data Structures Collection
 Part 1: Fibonacci Numbers with Memoization
 Part 2: Binary Search (Iterative & Recursive)
+Part 3: Sieve of Eratosthenes & Prime Verification
 """
 
 from typing import Generator, Dict, List, Optional
+import math
 
 
 def fibonacci_memo(n: int, memo: Dict[int, int] = None) -> int:
@@ -58,6 +60,33 @@ def binary_search_recursive(arr: List[int], target: int, left: int = 0, right: O
         return binary_search_recursive(arr, target, left, mid - 1)
 
 
+def is_prime(num: int) -> bool:
+    """Determine whether a given number is prime."""
+    if num <= 1:
+        return False
+    if num <= 3:
+        return True
+    if num % 2 == 0 or num % 3 == 0:
+        return False
+    for i in range(5, int(math.isqrt(num)) + 1, 6):
+        if num % i == 0 or num % (i + 2) == 0:
+            return False
+    return True
+
+
+def sieve_of_eratosthenes(limit: int) -> List[int]:
+    """Return all prime numbers up to limit using Sieve of Eratosthenes."""
+    if limit < 2:
+        return []
+    primes = [True] * (limit + 1)
+    primes[0] = primes[1] = False
+    for p in range(2, int(math.isqrt(limit)) + 1):
+        if primes[p]:
+            for multiple in range(p * p, limit + 1, p):
+                primes[multiple] = False
+    return [p for p, prime in enumerate(primes) if prime]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -68,3 +97,8 @@ if __name__ == "__main__":
     print("Index of 23 (iterative):", binary_search_iterative(sample_list, 23))
     print("Index of 23 (recursive):", binary_search_recursive(sample_list, 23))
     print("Index of 99 (not found):", binary_search_iterative(sample_list, 99))
+
+    print("\n=== Iteration 3: Prime Sieve ===")
+    print("Primes up to 50:", sieve_of_eratosthenes(50))
+    print("Is 97 prime?:", is_prime(97))
+    print("Is 100 prime?:", is_prime(100))
