@@ -3,6 +3,7 @@ Algorithms & Data Structures Collection
 Part 1: Fibonacci Numbers with Memoization
 Part 2: Binary Search (Iterative & Recursive)
 Part 3: Sieve of Eratosthenes & Prime Verification
+Part 4: Quicksort & Merge Sort Implementations
 """
 
 from typing import Generator, Dict, List, Optional
@@ -87,6 +88,39 @@ def sieve_of_eratosthenes(limit: int) -> List[int]:
     return [p for p, prime in enumerate(primes) if prime]
 
 
+def quicksort(arr: List[int]) -> List[int]:
+    """Sort list using Quicksort algorithm."""
+    if len(arr) <= 1:
+        return arr
+    pivot = arr[len(arr) // 2]
+    left = [x for x in arr if x < pivot]
+    middle = [x for x in arr if x == pivot]
+    right = [x for x in arr if x > pivot]
+    return quicksort(left) + middle + quicksort(right)
+
+
+def mergesort(arr: List[int]) -> List[int]:
+    """Sort list using Merge Sort algorithm."""
+    if len(arr) <= 1:
+        return arr
+    mid = len(arr) // 2
+    left = mergesort(arr[:mid])
+    right = mergesort(arr[mid:])
+
+    sorted_arr = []
+    i = j = 0
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:
+            sorted_arr.append(left[i])
+            i += 1
+        else:
+            sorted_arr.append(right[j])
+            j += 1
+    sorted_arr.extend(left[i:])
+    sorted_arr.extend(right[j:])
+    return sorted_arr
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -102,3 +136,9 @@ if __name__ == "__main__":
     print("Primes up to 50:", sieve_of_eratosthenes(50))
     print("Is 97 prime?:", is_prime(97))
     print("Is 100 prime?:", is_prime(100))
+
+    print("\n=== Iteration 4: Sorting ===")
+    unsorted = [64, 34, 25, 12, 22, 11, 90, 5]
+    print("Unsorted:", unsorted)
+    print("Quicksort result:", quicksort(unsorted))
+    print("Mergesort result:", mergesort(unsorted))
