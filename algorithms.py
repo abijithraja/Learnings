@@ -7,10 +7,12 @@ Part 4: Quicksort & Merge Sort Implementations
 Part 5: Two Sum & Three Sum Problems
 Part 6: Longest Common Subsequence (LCS Dynamic Programming)
 Part 7: LRU (Least Recently Used) Cache Implementation
+Part 8: Dijkstra's Shortest Path Algorithm on Weighted Graphs
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any
 import math
+import heapq
 
 
 def fibonacci_memo(n: int, memo: Dict[int, int] = None) -> int:
@@ -253,6 +255,32 @@ class LRUCache:
             self._move_to_head(node)
 
 
+def dijkstra(graph: Dict[str, Dict[str, int]], start_node: str) -> Tuple[Dict[str, float], Dict[str, Optional[str]]]:
+    """
+    Compute shortest distances and predecessors from start_node using Dijkstra's algorithm.
+    Graph format: {'A': {'B': 4, 'C': 2}, ...}
+    """
+    distances: Dict[str, float] = {node: float('inf') for node in graph}
+    predecessors: Dict[str, Optional[str]] = {node: None for node in graph}
+    distances[start_node] = 0
+    pq = [(0, start_node)]
+
+    while pq:
+        current_distance, current_node = heapq.heappop(pq)
+
+        if current_distance > distances[current_node]:
+            continue
+
+        for neighbor, weight in graph[current_node].items():
+            distance = current_distance + weight
+            if distance < distances[neighbor]:
+                distances[neighbor] = distance
+                predecessors[neighbor] = current_node
+                heapq.heappush(pq, (distance, neighbor))
+
+    return distances, predecessors
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -293,3 +321,16 @@ if __name__ == "__main__":
     lru.put(3, "Data 3")  # evicts key 2
     print("Get key 2 (evicted):", lru.get(2))
     print("Get key 3:", lru.get(3))
+
+    print("\n=== Iteration 8: Dijkstra's Shortest Path ===")
+    weighted_graph = {
+        'A': {'B': 4, 'C': 2},
+        'B': {'A': 4, 'C': 1, 'D': 5},
+        'C': {'A': 2, 'B': 1, 'D': 8, 'E': 10},
+        'D': {'B': 5, 'C': 8, 'E': 2, 'Z': 6},
+        'E': {'C': 10, 'D': 2, 'Z': 3},
+        'Z': {'D': 6, 'E': 3}
+    }
+    dist, prev = dijkstra(weighted_graph, 'A')
+    print("Shortest distances from Node A:", dist)
+    print("All 8 algorithms successfully loaded and demonstrated!")
