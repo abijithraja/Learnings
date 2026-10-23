@@ -8,6 +8,7 @@ Part 5: Two Sum & Three Sum Problems
 Part 6: Longest Common Subsequence (LCS Dynamic Programming)
 Part 7: LRU (Least Recently Used) Cache Implementation
 Part 8: Dijkstra's Shortest Path Algorithm on Weighted Graphs
+Part 9: Kadane's Algorithm (Maximum Subarray Sum)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any
@@ -281,6 +282,17 @@ def dijkstra(graph: Dict[str, Dict[str, int]], start_node: str) -> Tuple[Dict[st
     return distances, predecessors
 
 
+def max_subarray_sum(nums: List[int]) -> int:
+    """Find the maximum subarray sum using Kadane's algorithm."""
+    if not nums:
+        return 0
+    max_so_far = current_max = nums[0]
+    for x in nums[1:]:
+        current_max = max(x, current_max + x)
+        max_so_far = max(max_so_far, current_max)
+    return max_so_far
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -333,4 +345,7 @@ if __name__ == "__main__":
     }
     dist, prev = dijkstra(weighted_graph, 'A')
     print("Shortest distances from Node A:", dist)
-    print("All 8 algorithms successfully loaded and demonstrated!")
+
+    print("\n=== Iteration 9: Kadane's Algorithm ===")
+    sample_sub = [-2, 1, -3, 4, -1, 2, 1, -5, 4]
+    print("Max subarray sum for", sample_sub, "->", max_subarray_sum(sample_sub))
