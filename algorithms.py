@@ -6,9 +6,10 @@ Part 3: Sieve of Eratosthenes & Prime Verification
 Part 4: Quicksort & Merge Sort Implementations
 Part 5: Two Sum & Three Sum Problems
 Part 6: Longest Common Subsequence (LCS Dynamic Programming)
+Part 7: LRU (Least Recently Used) Cache Implementation
 """
 
-from typing import Generator, Dict, List, Optional, Tuple
+from typing import Generator, Dict, List, Optional, Tuple, Any
 import math
 
 
@@ -187,6 +188,71 @@ def longest_common_subsequence(text1: str, text2: str) -> str:
     return "".join(reversed(lcs_chars))
 
 
+class DLinkedNode:
+    """Node for doubly linked list in LRU Cache."""
+    def __init__(self, key: int = 0, value: Any = 0):
+        self.key = key
+        self.value = value
+        self.prev: Optional['DLinkedNode'] = None
+        self.next: Optional['DLinkedNode'] = None
+
+
+class LRUCache:
+    """Least Recently Used (LRU) Cache with O(1) get and put operations."""
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+        self.cache: Dict[int, DLinkedNode] = {}
+        self.head = DLinkedNode()
+        self.tail = DLinkedNode()
+        self.head.next = self.tail
+        self.tail.prev = self.head
+
+    def _add_node(self, node: DLinkedNode):
+        """Always add the new node right after head."""
+        node.prev = self.head
+        node.next = self.head.next
+        self.head.next.prev = node
+        self.head.next = node
+
+    def _remove_node(self, node: DLinkedNode):
+        """Remove an existing node from the linked list."""
+        prev_node = node.prev
+        next_node = node.next
+        prev_node.next = next_node
+        next_node.prev = prev_node
+
+    def _move_to_head(self, node: DLinkedNode):
+        """Move certain node in between to the head."""
+        self._remove_node(node)
+        self._add_node(node)
+
+    def _pop_tail(self) -> DLinkedNode:
+        """Pop the current tail node (least recently used)."""
+        res = self.tail.prev
+        self._remove_node(res)
+        return res
+
+    def get(self, key: int) -> Any:
+        node = self.cache.get(key)
+        if not node:
+            return -1
+        self._move_to_head(node)
+        return node.value
+
+    def put(self, key: int, value: Any) -> None:
+        node = self.cache.get(key)
+        if not node:
+            new_node = DLinkedNode(key, value)
+            self.cache[key] = new_node
+            self._add_node(new_node)
+            if len(self.cache) > self.capacity:
+                tail = self._pop_tail()
+                del self.cache[tail.key]
+        else:
+            node.value = value
+            self._move_to_head(node)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -218,3 +284,12 @@ if __name__ == "__main__":
     print("\n=== Iteration 6: Longest Common Subsequence ===")
     s1, s2 = "abcde", "ace"
     print(f"LCS of '{s1}' and '{s2}':", longest_common_subsequence(s1, s2))
+
+    print("\n=== Iteration 7: LRU Cache ===")
+    lru = LRUCache(2)
+    lru.put(1, "Data 1")
+    lru.put(2, "Data 2")
+    print("Get key 1:", lru.get(1))
+    lru.put(3, "Data 3")  # evicts key 2
+    print("Get key 2 (evicted):", lru.get(2))
+    print("Get key 3:", lru.get(3))
