@@ -23,6 +23,7 @@ Part 20: Next Greater Element (Monotonic Stack)
 Part 21: Sliding Window Maximum (Monotonic Deque)
 Part 22: Binary Indexed Tree / Fenwick Tree
 Part 23: Segment Tree for Range Minimum Queries
+Part 24: A* Search Pathfinding Algorithm
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -639,6 +640,44 @@ class SegmentTreeRMQ:
         )
 
 
+def a_star_search(
+    start: Tuple[int, int],
+    goal: Tuple[int, int],
+    grid: List[List[int]]
+) -> Optional[List[Tuple[int, int]]]:
+    """A* Pathfinding algorithm on a 2D grid where 0 = walkable, 1 = obstacle."""
+    rows, cols = len(grid), len(grid[0])
+
+    def heuristic(a: Tuple[int, int], b: Tuple[int, int]) -> int:
+        return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+    open_set: List[Tuple[int, Tuple[int, int]]] = [(0, start)]
+    came_from: Dict[Tuple[int, int], Tuple[int, int]] = {}
+    g_score: Dict[Tuple[int, int], float] = {start: 0}
+
+    while open_set:
+        _, current = heapq.heappop(open_set)
+        if current == goal:
+            path = [current]
+            while current in came_from:
+                current = came_from[current]
+                path.append(current)
+            return path[::-1]
+
+        r, c = current
+        for dr, dc in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 0:
+                tentative_g = g_score[current] + 1
+                neighbor = (nr, nc)
+                if tentative_g < g_score.get(neighbor, float('inf')):
+                    came_from[neighbor] = current
+                    g_score[neighbor] = tentative_g
+                    f_score = tentative_g + heuristic(neighbor, goal)
+                    heapq.heappush(open_set, (f_score, neighbor))
+    return None
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -786,3 +825,13 @@ if __name__ == "__main__":
     print(f"Segment tree data: {seg_data}")
     print("Min in range [1, 4]:", st.query(1, 4))
     print("Min in range [0, 6]:", st.query(0, 6))
+
+    print("\n=== Iteration 24: A* Search Algorithm ===")
+    maze = [
+        [0, 0, 0, 0],
+        [1, 1, 0, 1],
+        [0, 0, 0, 0],
+        [0, 1, 1, 0]
+    ]
+    a_star_path = a_star_search((0, 0), (3, 3), maze)
+    print("A* path found:", a_star_path)
