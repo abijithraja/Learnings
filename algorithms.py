@@ -14,6 +14,7 @@ Part 11: BFS & DFS Graph Traversals
 Part 12: Topological Sort (Kahn's Algorithm)
 Part 13: Trie (Prefix Tree) Data Structure
 Part 14: Union-Find (Disjoint Set Union with Path Compression & Rank)
+Part 15: Minimum Spanning Tree (Kruskal's Algorithm)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -433,6 +434,21 @@ class DisjointSetUnion:
         return False
 
 
+def kruskal_mst(num_vertices: int, edges: List[Tuple[int, int, int]]) -> Tuple[int, List[Tuple[int, int, int]]]:
+    """Compute Minimum Spanning Tree weight and edges using Kruskal's algorithm with DSU."""
+    edges = sorted(edges, key=lambda item: item[0])
+    dsu = DisjointSetUnion(num_vertices)
+    mst = []
+    total_weight = 0
+    for weight, u, v in edges:
+        if dsu.union(u, v):
+            total_weight += weight
+            mst.append((u, v, weight))
+            if len(mst) == num_vertices - 1:
+                break
+    return total_weight, mst
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -529,3 +545,8 @@ if __name__ == "__main__":
     dsu.union(4, 2)
     print("Find(0) == Find(4):", dsu.find(0) == dsu.find(4))
     print("Find(0) == Find(1):", dsu.find(0) == dsu.find(1))
+
+    print("\n=== Iteration 15: Kruskal's MST ===")
+    sample_edges = [(10, 0, 1), (6, 0, 2), (5, 0, 3), (15, 1, 3), (4, 2, 3)]
+    mst_wt, mst_edges = kruskal_mst(4, sample_edges)
+    print(f"MST Weight: {mst_wt}, Edges: {mst_edges}")
