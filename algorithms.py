@@ -22,6 +22,7 @@ Part 19: Rabin-Karp Rolling Hash String Search
 Part 20: Next Greater Element (Monotonic Stack)
 Part 21: Sliding Window Maximum (Monotonic Deque)
 Part 22: Binary Indexed Tree / Fenwick Tree
+Part 23: Segment Tree for Range Minimum Queries
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -605,6 +606,39 @@ class FenwickTree:
         return self.query(right) - self.query(left - 1)
 
 
+class SegmentTreeRMQ:
+    """Segment Tree for Range Minimum Queries with O(log n) update and query."""
+    def __init__(self, data: List[int]):
+        self.n = len(data)
+        self.tree = [float('inf')] * (4 * self.n)
+        if self.n > 0:
+            self._build(data, 0, 0, self.n - 1)
+
+    def _build(self, data: List[int], node: int, start: int, end: int) -> None:
+        if start == end:
+            self.tree[node] = data[start]
+            return
+        mid = (start + end) // 2
+        left_child, right_child = 2 * node + 1, 2 * node + 2
+        self._build(data, left_child, start, mid)
+        self._build(data, right_child, mid + 1, end)
+        self.tree[node] = min(self.tree[left_child], self.tree[right_child])
+
+    def query(self, left: int, right: int) -> float:
+        return self._query(0, 0, self.n - 1, left, right)
+
+    def _query(self, node: int, start: int, end: int, left: int, right: int) -> float:
+        if right < start or end < left:
+            return float('inf')
+        if left <= start and end <= right:
+            return self.tree[node]
+        mid = (start + end) // 2
+        return min(
+            self._query(2 * node + 1, start, mid, left, right),
+            self._query(2 * node + 2, mid + 1, end, left, right)
+        )
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -745,3 +779,10 @@ if __name__ == "__main__":
         bit.update(idx, val)
     print("Prefix sum up to 4:", bit.query(4))
     print("Range sum [2, 5]:", bit.range_query(2, 5))
+
+    print("\n=== Iteration 23: Segment Tree RMQ ===")
+    seg_data = [5, 2, 8, 3, 9, 1, 6]
+    st = SegmentTreeRMQ(seg_data)
+    print(f"Segment tree data: {seg_data}")
+    print("Min in range [1, 4]:", st.query(1, 4))
+    print("Min in range [0, 6]:", st.query(0, 6))
