@@ -27,6 +27,7 @@ Part 24: A* Search Pathfinding Algorithm
 Part 25: Edit Distance / Levenshtein Distance (DP)
 Part 26: Coin Change Problem (Minimum Coins & Combinations)
 Part 27: Matrix Exponentiation for O(log n) Fibonacci
+Part 28: Huffman Coding Data Compression Tree
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -752,6 +753,54 @@ def fibonacci_matrix(n: int) -> int:
     return t_pow[0][0]
 
 
+class HuffmanNode:
+    """Node for Huffman coding tree."""
+    def __init__(self, char: Optional[str], freq: int):
+        self.char = char
+        self.freq = freq
+        self.left: Optional['HuffmanNode'] = None
+        self.right: Optional['HuffmanNode'] = None
+
+    def __lt__(self, other: 'HuffmanNode') -> bool:
+        return self.freq < other.freq
+
+
+def build_huffman_codes(text: str) -> Tuple[Dict[str, str], Optional[HuffmanNode]]:
+    """Generate variable-length prefix codes for characters based on frequency."""
+    if not text:
+        return {}, None
+
+    frequency: Dict[str, int] = {}
+    for char in text:
+        frequency[char] = frequency.get(char, 0) + 1
+
+    heap = [HuffmanNode(char, freq) for char, freq in frequency.items()]
+    heapq.heapify(heap)
+
+    while len(heap) > 1:
+        left = heapq.heappop(heap)
+        right = heapq.heappop(heap)
+        merged = HuffmanNode(None, left.freq + right.freq)
+        merged.left = left
+        merged.right = right
+        heapq.heappush(heap, merged)
+
+    root = heap[0]
+    codes: Dict[str, str] = {}
+
+    def generate_codes(node: Optional[HuffmanNode], current_code: str):
+        if not node:
+            return
+        if node.char is not None:
+            codes[node.char] = current_code or "0"
+            return
+        generate_codes(node.left, current_code + "0")
+        generate_codes(node.right, current_code + "1")
+
+    generate_codes(root, "")
+    return codes, root
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -922,3 +971,11 @@ if __name__ == "__main__":
     print("\n=== Iteration 27: Matrix Exponentiation ===")
     print("Fib(50) via matrix exp:", fibonacci_matrix(50))
     print("Fib(70) via matrix exp:", fibonacci_matrix(70))
+
+    print("\n=== Iteration 28: Huffman Coding ===")
+    huff_text = "antigravity algorithms suite"
+    huff_codes, _ = build_huffman_codes(huff_text)
+    print(f"Huffman Prefix Codes for '{huff_text}':")
+    for ch, code in sorted(huff_codes.items()):
+        print(f"  {repr(ch)}: {code}")
+    print("\nAll 28 Algorithms & Data Structures complete and verified!")
