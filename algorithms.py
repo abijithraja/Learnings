@@ -20,6 +20,7 @@ Part 17: Floyd-Warshall All-Pairs Shortest Path
 Part 18: Knuth-Morris-Pratt (KMP) Pattern Searching
 Part 19: Rabin-Karp Rolling Hash String Search
 Part 20: Next Greater Element (Monotonic Stack)
+Part 21: Sliding Window Maximum (Monotonic Deque)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -563,6 +564,24 @@ def next_greater_elements(nums: List[int]) -> List[int]:
     return res
 
 
+def max_sliding_window(nums: List[int], k: int) -> List[int]:
+    """Compute maximum elements in each sliding window of size k using monotonic deque."""
+    if not nums or k <= 0:
+        return []
+    result = []
+    dq: deque = deque()
+
+    for i in range(len(nums)):
+        while dq and dq[0] < i - k + 1:
+            dq.popleft()
+        while dq and nums[dq[-1]] < nums[i]:
+            dq.pop()
+        dq.append(i)
+        if i >= k - 1:
+            result.append(nums[dq[0]])
+    return result
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -692,3 +711,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 20: Monotonic Stack (NGE) ===")
     sample_nge = [4, 5, 2, 25, 7, 8]
     print(f"Next Greater Elements for {sample_nge} -> {next_greater_elements(sample_nge)}")
+
+    print("\n=== Iteration 21: Sliding Window Maximum ===")
+    sw_nums, sw_k = [1, 3, -1, -3, 5, 3, 6, 7], 3
+    print(f"Sliding window max for {sw_nums} (k={sw_k}): {max_sliding_window(sw_nums, sw_k)}")
