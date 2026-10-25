@@ -19,6 +19,7 @@ Part 16: Bellman-Ford Shortest Path Algorithm
 Part 17: Floyd-Warshall All-Pairs Shortest Path
 Part 18: Knuth-Morris-Pratt (KMP) Pattern Searching
 Part 19: Rabin-Karp Rolling Hash String Search
+Part 20: Next Greater Element (Monotonic Stack)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -549,6 +550,19 @@ def rabin_karp_search(text: str, pattern: str, prime: int = 101) -> List[int]:
     return result
 
 
+def next_greater_elements(nums: List[int]) -> List[int]:
+    """Find the next greater element for each number using a monotonic stack."""
+    res = [-1] * len(nums)
+    stack: List[int] = []
+
+    for i in range(len(nums)):
+        while stack and nums[stack[-1]] < nums[i]:
+            prev_idx = stack.pop()
+            res[prev_idx] = nums[i]
+        stack.append(i)
+    return res
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -674,3 +688,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 19: Rabin-Karp Search ===")
     rk_text, rk_pat = "GEEKS FOR GEEKS", "GEEK"
     print(f"Rabin-Karp matches for '{rk_pat}': {rabin_karp_search(rk_text, rk_pat)}")
+
+    print("\n=== Iteration 20: Monotonic Stack (NGE) ===")
+    sample_nge = [4, 5, 2, 25, 7, 8]
+    print(f"Next Greater Elements for {sample_nge} -> {next_greater_elements(sample_nge)}")
