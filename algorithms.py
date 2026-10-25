@@ -26,6 +26,7 @@ Part 23: Segment Tree for Range Minimum Queries
 Part 24: A* Search Pathfinding Algorithm
 Part 25: Edit Distance / Levenshtein Distance (DP)
 Part 26: Coin Change Problem (Minimum Coins & Combinations)
+Part 27: Matrix Exponentiation for O(log n) Fibonacci
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -723,6 +724,34 @@ def coin_change_combinations(coins: List[int], amount: int) -> int:
     return dp[amount]
 
 
+def fibonacci_matrix(n: int) -> int:
+    """Calculate the n-th Fibonacci number in O(log n) time using 2x2 matrix exponentiation."""
+    if n <= 0:
+        return 0
+    if n == 1:
+        return 1
+
+    def multiply_2x2(m1: Tuple[Tuple[int, int], Tuple[int, int]], m2: Tuple[Tuple[int, int], Tuple[int, int]]):
+        return (
+            (m1[0][0] * m2[0][0] + m1[0][1] * m2[1][0], m1[0][0] * m2[0][1] + m1[0][1] * m2[1][1]),
+            (m1[1][0] * m2[0][0] + m1[1][1] * m2[1][0], m1[1][0] * m2[0][1] + m1[1][1] * m2[1][1])
+        )
+
+    def power_2x2(mat, p):
+        res = ((1, 0), (0, 1))
+        base = mat
+        while p > 0:
+            if p % 2 == 1:
+                res = multiply_2x2(res, base)
+            base = multiply_2x2(base, base)
+            p //= 2
+        return res
+
+    t = ((1, 1), (1, 0))
+    t_pow = power_2x2(t, n - 1)
+    return t_pow[0][0]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -889,3 +918,7 @@ if __name__ == "__main__":
     demo_coins = [1, 2, 5]
     print(f"Fewest coins for amount 11 with {demo_coins}:", coin_change_min(demo_coins, 11))
     print(f"Ways to make amount 5 with {demo_coins}:", coin_change_combinations(demo_coins, 5))
+
+    print("\n=== Iteration 27: Matrix Exponentiation ===")
+    print("Fib(50) via matrix exp:", fibonacci_matrix(50))
+    print("Fib(70) via matrix exp:", fibonacci_matrix(70))
