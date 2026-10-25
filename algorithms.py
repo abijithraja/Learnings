@@ -24,6 +24,7 @@ Part 21: Sliding Window Maximum (Monotonic Deque)
 Part 22: Binary Indexed Tree / Fenwick Tree
 Part 23: Segment Tree for Range Minimum Queries
 Part 24: A* Search Pathfinding Algorithm
+Part 25: Edit Distance / Levenshtein Distance (DP)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -678,6 +679,29 @@ def a_star_search(
     return None
 
 
+def min_edit_distance(word1: str, word2: str) -> int:
+    """Compute the minimum edit distance (Levenshtein) using dynamic programming."""
+    m, n = len(word1), len(word2)
+    dp = [[0] * (n + 1) for _ in range(m + 1)]
+
+    for i in range(m + 1):
+        dp[i][0] = i
+    for j in range(n + 1):
+        dp[0][j] = j
+
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if word1[i - 1] == word2[j - 1]:
+                dp[i][j] = dp[i - 1][j - 1]
+            else:
+                dp[i][j] = 1 + min(
+                    dp[i - 1][j],
+                    dp[i][j - 1],
+                    dp[i - 1][j - 1]
+                )
+    return dp[m][n]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -835,3 +859,7 @@ if __name__ == "__main__":
     ]
     a_star_path = a_star_search((0, 0), (3, 3), maze)
     print("A* path found:", a_star_path)
+
+    print("\n=== Iteration 25: Edit Distance ===")
+    w1, w2 = "horse", "ros"
+    print(f"Edit distance between '{w1}' and '{w2}':", min_edit_distance(w1, w2))
