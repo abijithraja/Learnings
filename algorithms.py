@@ -18,6 +18,7 @@ Part 15: Minimum Spanning Tree (Kruskal's Algorithm)
 Part 16: Bellman-Ford Shortest Path Algorithm
 Part 17: Floyd-Warshall All-Pairs Shortest Path
 Part 18: Knuth-Morris-Pratt (KMP) Pattern Searching
+Part 19: Rabin-Karp Rolling Hash String Search
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -521,6 +522,33 @@ def kmp_search(text: str, pattern: str) -> List[int]:
     return matches
 
 
+def rabin_karp_search(text: str, pattern: str, prime: int = 101) -> List[int]:
+    """Search for pattern matches using Rabin-Karp rolling hash algorithm."""
+    d = 256
+    m, n = len(pattern), len(text)
+    if m == 0 or m > n:
+        return []
+
+    p_hash = 0
+    t_hash = 0
+    h = pow(d, m - 1, prime)
+    result = []
+
+    for i in range(m):
+        p_hash = (d * p_hash + ord(pattern[i])) % prime
+        t_hash = (d * t_hash + ord(text[i])) % prime
+
+    for s in range(n - m + 1):
+        if p_hash == t_hash:
+            if text[s:s + m] == pattern:
+                result.append(s)
+        if s < n - m:
+            t_hash = (d * (t_hash - ord(text[s]) * h) + ord(text[s + m])) % prime
+            if t_hash < 0:
+                t_hash += prime
+    return result
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -642,3 +670,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 18: KMP Pattern Search ===")
     txt, pat = "ABABDABACDABABCABAB", "ABABCABAB"
     print(f"KMP matches for '{pat}' in text: {kmp_search(txt, pat)}")
+
+    print("\n=== Iteration 19: Rabin-Karp Search ===")
+    rk_text, rk_pat = "GEEKS FOR GEEKS", "GEEK"
+    print(f"Rabin-Karp matches for '{rk_pat}': {rabin_karp_search(rk_text, rk_pat)}")
