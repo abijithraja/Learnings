@@ -13,6 +13,7 @@ Part 10: 0/1 Knapsack Problem (Dynamic Programming)
 Part 11: BFS & DFS Graph Traversals
 Part 12: Topological Sort (Kahn's Algorithm)
 Part 13: Trie (Prefix Tree) Data Structure
+Part 14: Union-Find (Disjoint Set Union with Path Compression & Rank)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -405,6 +406,33 @@ class Trie:
         return True
 
 
+class DisjointSetUnion:
+    """Disjoint Set Union (DSU) / Union-Find with path compression and rank optimization."""
+    def __init__(self, size: int):
+        self.parent = list(range(size))
+        self.rank = [0] * size
+
+    def find(self, i: int) -> int:
+        if self.parent[i] == i:
+            return i
+        self.parent[i] = self.find(self.parent[i])
+        return self.parent[i]
+
+    def union(self, i: int, j: int) -> bool:
+        root_i = self.find(i)
+        root_j = self.find(j)
+        if root_i != root_j:
+            if self.rank[root_i] < self.rank[root_j]:
+                self.parent[root_i] = root_j
+            elif self.rank[root_i] > self.rank[root_j]:
+                self.parent[root_j] = root_i
+            else:
+                self.parent[root_j] = root_i
+                self.rank[root_i] += 1
+            return True
+        return False
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -494,3 +522,10 @@ if __name__ == "__main__":
     print("Starts with 'bat':", trie.starts_with("bat"))
     print("Starts with 'cat':", trie.starts_with("cat"))
     print("All 13 algorithms and data structures completed and verified!")
+
+    print("\n=== Iteration 14: Union-Find (DSU) ===")
+    dsu = DisjointSetUnion(5)
+    dsu.union(0, 2)
+    dsu.union(4, 2)
+    print("Find(0) == Find(4):", dsu.find(0) == dsu.find(4))
+    print("Find(0) == Find(1):", dsu.find(0) == dsu.find(1))
