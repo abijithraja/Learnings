@@ -21,6 +21,7 @@ Part 18: Knuth-Morris-Pratt (KMP) Pattern Searching
 Part 19: Rabin-Karp Rolling Hash String Search
 Part 20: Next Greater Element (Monotonic Stack)
 Part 21: Sliding Window Maximum (Monotonic Deque)
+Part 22: Binary Indexed Tree / Fenwick Tree
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -582,6 +583,28 @@ def max_sliding_window(nums: List[int], k: int) -> List[int]:
     return result
 
 
+class FenwickTree:
+    """Binary Indexed Tree (Fenwick Tree) for efficient point updates and prefix sum queries."""
+    def __init__(self, size: int):
+        self.size = size
+        self.tree = [0] * (size + 1)
+
+    def update(self, index: int, delta: int) -> None:
+        while index <= self.size:
+            self.tree[index] += delta
+            index += index & (-index)
+
+    def query(self, index: int) -> int:
+        total = 0
+        while index > 0:
+            total += self.tree[index]
+            index -= index & (-index)
+        return total
+
+    def range_query(self, left: int, right: int) -> int:
+        return self.query(right) - self.query(left - 1)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -715,3 +738,10 @@ if __name__ == "__main__":
     print("\n=== Iteration 21: Sliding Window Maximum ===")
     sw_nums, sw_k = [1, 3, -1, -3, 5, 3, 6, 7], 3
     print(f"Sliding window max for {sw_nums} (k={sw_k}): {max_sliding_window(sw_nums, sw_k)}")
+
+    print("\n=== Iteration 22: Fenwick Tree ===")
+    bit = FenwickTree(6)
+    for idx, val in enumerate([3, 2, -1, 6, 5, 4], start=1):
+        bit.update(idx, val)
+    print("Prefix sum up to 4:", bit.query(4))
+    print("Range sum [2, 5]:", bit.range_query(2, 5))
