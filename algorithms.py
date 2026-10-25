@@ -25,6 +25,7 @@ Part 22: Binary Indexed Tree / Fenwick Tree
 Part 23: Segment Tree for Range Minimum Queries
 Part 24: A* Search Pathfinding Algorithm
 Part 25: Edit Distance / Levenshtein Distance (DP)
+Part 26: Coin Change Problem (Minimum Coins & Combinations)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -702,6 +703,26 @@ def min_edit_distance(word1: str, word2: str) -> int:
     return dp[m][n]
 
 
+def coin_change_min(coins: List[int], amount: int) -> int:
+    """Return the fewest number of coins needed to make up amount, or -1 if impossible."""
+    dp = [float('inf')] * (amount + 1)
+    dp[0] = 0
+    for coin in coins:
+        for x in range(coin, amount + 1):
+            dp[x] = min(dp[x], dp[x - coin] + 1)
+    return dp[amount] if dp[amount] != float('inf') else -1
+
+
+def coin_change_combinations(coins: List[int], amount: int) -> int:
+    """Return the number of combinations that make up amount."""
+    dp = [0] * (amount + 1)
+    dp[0] = 1
+    for coin in coins:
+        for x in range(coin, amount + 1):
+            dp[x] += dp[x - coin]
+    return dp[amount]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -863,3 +884,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 25: Edit Distance ===")
     w1, w2 = "horse", "ros"
     print(f"Edit distance between '{w1}' and '{w2}':", min_edit_distance(w1, w2))
+
+    print("\n=== Iteration 26: Coin Change ===")
+    demo_coins = [1, 2, 5]
+    print(f"Fewest coins for amount 11 with {demo_coins}:", coin_change_min(demo_coins, 11))
+    print(f"Ways to make amount 5 with {demo_coins}:", coin_change_combinations(demo_coins, 5))
