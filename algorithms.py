@@ -15,6 +15,7 @@ Part 12: Topological Sort (Kahn's Algorithm)
 Part 13: Trie (Prefix Tree) Data Structure
 Part 14: Union-Find (Disjoint Set Union with Path Compression & Rank)
 Part 15: Minimum Spanning Tree (Kruskal's Algorithm)
+Part 16: Bellman-Ford Shortest Path Algorithm
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -449,6 +450,23 @@ def kruskal_mst(num_vertices: int, edges: List[Tuple[int, int, int]]) -> Tuple[i
     return total_weight, mst
 
 
+def bellman_ford(vertices: List[str], edges: List[Tuple[str, str, int]], source: str) -> Optional[Dict[str, float]]:
+    """Compute shortest distances from source; returns None if negative-weight cycle exists."""
+    dist = {v: float('inf') for v in vertices}
+    dist[source] = 0
+
+    for _ in range(len(vertices) - 1):
+        for u, v, w in edges:
+            if dist[u] != float('inf') and dist[u] + w < dist[v]:
+                dist[v] = dist[u] + w
+
+    for u, v, w in edges:
+        if dist[u] != float('inf') and dist[u] + w < dist[v]:
+            return None
+
+    return dist
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -550,3 +568,8 @@ if __name__ == "__main__":
     sample_edges = [(10, 0, 1), (6, 0, 2), (5, 0, 3), (15, 1, 3), (4, 2, 3)]
     mst_wt, mst_edges = kruskal_mst(4, sample_edges)
     print(f"MST Weight: {mst_wt}, Edges: {mst_edges}")
+
+    print("\n=== Iteration 16: Bellman-Ford ===")
+    bf_vertices = ["S", "A", "B", "C", "D", "E"]
+    bf_edges = [("S", "A", 10), ("S", "E", 8), ("A", "C", 2), ("B", "A", 1), ("C", "B", -2), ("D", "C", -1), ("D", "A", -4), ("E", "D", 1)]
+    print("Bellman-Ford from S:", bellman_ford(bf_vertices, bf_edges, "S"))
