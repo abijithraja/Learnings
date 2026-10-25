@@ -16,6 +16,7 @@ Part 13: Trie (Prefix Tree) Data Structure
 Part 14: Union-Find (Disjoint Set Union with Path Compression & Rank)
 Part 15: Minimum Spanning Tree (Kruskal's Algorithm)
 Part 16: Bellman-Ford Shortest Path Algorithm
+Part 17: Floyd-Warshall All-Pairs Shortest Path
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -467,6 +468,22 @@ def bellman_ford(vertices: List[str], edges: List[Tuple[str, str, int]], source:
     return dist
 
 
+def floyd_warshall(vertices: List[str], graph: Dict[str, Dict[str, float]]) -> Dict[str, Dict[str, float]]:
+    """Compute all-pairs shortest paths using Floyd-Warshall dynamic programming algorithm."""
+    dist = {u: {v: float('inf') for v in vertices} for u in vertices}
+    for u in vertices:
+        dist[u][u] = 0
+        for v, weight in graph.get(u, {}).items():
+            dist[u][v] = weight
+
+    for k in vertices:
+        for i in vertices:
+            for j in vertices:
+                if dist[i][k] + dist[k][j] < dist[i][j]:
+                    dist[i][j] = dist[i][k] + dist[k][j]
+    return dist
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -573,3 +590,14 @@ if __name__ == "__main__":
     bf_vertices = ["S", "A", "B", "C", "D", "E"]
     bf_edges = [("S", "A", 10), ("S", "E", 8), ("A", "C", 2), ("B", "A", 1), ("C", "B", -2), ("D", "C", -1), ("D", "A", -4), ("E", "D", 1)]
     print("Bellman-Ford from S:", bellman_ford(bf_vertices, bf_edges, "S"))
+
+    print("\n=== Iteration 17: Floyd-Warshall ===")
+    fw_nodes = ["1", "2", "3", "4"]
+    fw_matrix = {
+        "1": {"3": -2},
+        "2": {"1": 4, "3": 3},
+        "3": {"4": 2},
+        "4": {"2": -1}
+    }
+    fw_res = floyd_warshall(fw_nodes, fw_matrix)
+    print("Distance from 2 to 4:", fw_res["2"]["4"])
