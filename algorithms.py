@@ -17,6 +17,7 @@ Part 14: Union-Find (Disjoint Set Union with Path Compression & Rank)
 Part 15: Minimum Spanning Tree (Kruskal's Algorithm)
 Part 16: Bellman-Ford Shortest Path Algorithm
 Part 17: Floyd-Warshall All-Pairs Shortest Path
+Part 18: Knuth-Morris-Pratt (KMP) Pattern Searching
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -484,6 +485,42 @@ def floyd_warshall(vertices: List[str], graph: Dict[str, Dict[str, float]]) -> D
     return dist
 
 
+def kmp_search(text: str, pattern: str) -> List[int]:
+    """Find all starting indices of pattern occurrences in text using KMP algorithm."""
+    if not pattern:
+        return []
+
+    lps = [0] * len(pattern)
+    length = 0
+    i = 1
+    while i < len(pattern):
+        if pattern[i] == pattern[length]:
+            length += 1
+            lps[i] = length
+            i += 1
+        elif length != 0:
+            length = lps[length - 1]
+        else:
+            lps[i] = 0
+            i += 1
+
+    matches = []
+    i = j = 0
+    while i < len(text):
+        if pattern[j] == text[i]:
+            i += 1
+            j += 1
+        if j == len(pattern):
+            matches.append(i - j)
+            j = lps[j - 1]
+        elif i < len(text) and pattern[j] != text[i]:
+            if j != 0:
+                j = lps[j - 1]
+            else:
+                i += 1
+    return matches
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -601,3 +638,7 @@ if __name__ == "__main__":
     }
     fw_res = floyd_warshall(fw_nodes, fw_matrix)
     print("Distance from 2 to 4:", fw_res["2"]["4"])
+
+    print("\n=== Iteration 18: KMP Pattern Search ===")
+    txt, pat = "ABABDABACDABABCABAB", "ABABCABAB"
+    print(f"KMP matches for '{pat}' in text: {kmp_search(txt, pat)}")
