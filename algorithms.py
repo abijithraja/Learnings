@@ -30,6 +30,7 @@ Part 27: Matrix Exponentiation for O(log n) Fibonacci
 Part 28: Huffman Coding Data Compression Tree
 Part 29: Tarjan's Strongly Connected Components (SCC)
 Part 30: Kosaraju's Strongly Connected Components
+Part 31: Edmonds-Karp Maximum Flow (Ford-Fulkerson BFS)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -884,6 +885,46 @@ def kosaraju_scc(n: int, adj: Dict[int, List[int]]) -> List[List[int]]:
     return sccs
 
 
+def edmonds_karp_max_flow(capacity: List[List[int]], source: int, sink: int) -> int:
+    """Compute maximum network flow using Edmonds-Karp BFS implementation of Ford-Fulkerson."""
+    n = len(capacity)
+    residual = [row[:] for row in capacity]
+    max_flow = 0
+
+    while True:
+        parent = [-1] * n
+        parent[source] = source
+        queue = deque([source])
+
+        while queue and parent[sink] == -1:
+            curr = queue.popleft()
+            for nxt in range(n):
+                if parent[nxt] == -1 and residual[curr][nxt] > 0:
+                    parent[nxt] = curr
+                    queue.append(nxt)
+
+        if parent[sink] == -1:
+            break
+
+        path_flow = float("inf")
+        curr = sink
+        while curr != source:
+            prev = parent[curr]
+            path_flow = min(path_flow, residual[prev][curr])
+            curr = prev
+
+        curr = sink
+        while curr != source:
+            prev = parent[curr]
+            residual[prev][curr] -= int(path_flow)
+            residual[curr][prev] += int(path_flow)
+            curr = prev
+
+        max_flow += int(path_flow)
+
+    return max_flow
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1067,3 +1108,13 @@ if __name__ == "__main__":
     print("\n=== Iteration 30: Kosaraju's Strongly Connected Components ===")
     kosa_adj = {0: [2, 3], 1: [0], 2: [1], 3: [4], 4: []}
     print("Kosaraju SCCs:", kosaraju_scc(5, kosa_adj))
+    print("\n=== Iteration 31: Edmonds-Karp Maximum Flow ===")
+    cap_mat = [
+        [0, 16, 13, 0, 0, 0],
+        [0, 0, 10, 12, 0, 0],
+        [0, 4, 0, 0, 14, 0],
+        [0, 0, 9, 0, 0, 20],
+        [0, 0, 0, 7, 0, 4],
+        [0, 0, 0, 0, 0, 0]
+    ]
+    print("Edmonds-Karp Max Flow from 0 to 5:", edmonds_karp_max_flow(cap_mat, 0, 5))
