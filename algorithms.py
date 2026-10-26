@@ -48,6 +48,7 @@ Part 45: Fast Fourier Transform (FFT) Polynomial Multiplication
 Part 46: Miller-Rabin Primality Test
 Part 47: Pollard's Rho Integer Factorization
 Part 48: Extended Euclidean Algorithm and Modular Inverse
+Part 49: Chinese Remainder Theorem (CRT) Solver
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1476,6 +1477,23 @@ def modular_inverse(a: int, m: int) -> Optional[int]:
     return (x % m + m) % m
 
 
+def chinese_remainder_theorem(remainders: List[int], moduli: List[int]) -> int:
+    """Solve system of simultaneous congruences: x = remainders[i] (mod moduli[i]) using CRT."""
+    prod = 1
+    for m in moduli:
+        prod *= m
+
+    total = 0
+    for r_i, m_i in zip(remainders, moduli):
+        m_partial = prod // m_i
+        inv = modular_inverse(m_partial, m_i)
+        if inv is None:
+            raise ValueError("Moduli must be pairwise coprime")
+        total += r_i * m_partial * inv
+
+    return total % prod
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1755,3 +1773,7 @@ if __name__ == "__main__":
     gcd_val, x_val, y_val = extended_euclidean(30, 20)
     print(f"GCD(30, 20) = {gcd_val}, coefficients: 30*({x_val}) + 20*({y_val})")
     print("Modular inverse of 3 mod 11:", modular_inverse(3, 11))
+    print("\n=== Iteration 49: Chinese Remainder Theorem ===")
+    rem = [2, 3, 2]
+    mods = [3, 5, 7]
+    print(f"CRT solution for x = {rem} mod {mods}:", chinese_remainder_theorem(rem, mods))
