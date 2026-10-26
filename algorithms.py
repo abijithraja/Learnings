@@ -35,6 +35,7 @@ Part 32: Dinic's Algorithm for Maximum Flow
 Part 33: Prim's Algorithm for Minimum Spanning Tree
 Part 34: Manacher's Algorithm for Longest Palindromic Substring
 Part 35: Z-Algorithm for Linear Time Pattern Matching
+Part 36: Boyer-Moore String Search
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1060,6 +1061,32 @@ def z_algorithm_search(text: str, pattern: str) -> List[int]:
     return matches
 
 
+def boyer_moore_search(text: str, pattern: str) -> List[int]:
+    """Find all pattern occurrences using Boyer-Moore string search with bad character heuristic."""
+    n = len(text)
+    m = len(pattern)
+    if m == 0 or m > n:
+        return []
+
+    bad_char: Dict[str, int] = {}
+    for i in range(m):
+        bad_char[pattern[i]] = i
+
+    matches: List[int] = []
+    shift = 0
+    while shift <= n - m:
+        j = m - 1
+        while j >= 0 and pattern[j] == text[shift + j]:
+            j -= 1
+        if j < 0:
+            matches.append(shift)
+            shift += (m - bad_char.get(text[shift + m], -1)) if shift + m < n else 1
+        else:
+            bc_index = bad_char.get(text[shift + j], -1)
+            shift += max(1, j - bc_index)
+    return matches
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1284,3 +1311,6 @@ if __name__ == "__main__":
     print("\n=== Iteration 35: Z-Algorithm Search ===")
     z_txt, z_pat = "baabaaahbaabaa", "aaba"
     print(f"Z-Algorithm occurrences of '{z_pat}':", z_algorithm_search(z_txt, z_pat))
+    print("\n=== Iteration 36: Boyer-Moore Search ===")
+    bm_txt, bm_pat = "AABAACAADAABAABA", "AABA"
+    print(f"Boyer-Moore matches for '{bm_pat}':", boyer_moore_search(bm_txt, bm_pat))
