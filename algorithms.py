@@ -40,6 +40,7 @@ Part 37: Lowest Common Ancestor (LCA) with Binary Lifting
 Part 38: Euler Tour Technique for Tree Subtree Queries
 Part 39: Graham Scan 2D Convex Hull
 Part 40: Quickhull 2D Convex Hull
+Part 41: Closest Pair of Points in 2D (O(n log n))
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1214,6 +1215,50 @@ def quickhull(points: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
     return hull
 
 
+def closest_pair_of_points(points: List[Tuple[float, float]]) -> Tuple[float, Tuple[Tuple[float, float], Tuple[float, float]]]:
+    """Find the closest pair of points in 2D space in O(n log n) divide-and-conquer time."""
+    def dist(p1, p2):
+        return math.hypot(p1[0] - p2[0], p1[1] - p2[1])
+
+    def rec_closest(px, py):
+        n = len(px)
+        if n <= 3:
+            min_d = float('inf')
+            pair = (px[0], px[1])
+            for i in range(n):
+                for j in range(i + 1, n):
+                    d = dist(px[i], px[j])
+                    if d < min_d:
+                        min_d = d
+                        pair = (px[i], px[j])
+            return min_d, pair
+
+        mid = n // 2
+        mid_point = px[mid]
+        left_x = px[:mid]
+        right_x = px[mid:]
+        left_set = set(left_x)
+        left_y = [p for p in py if p in left_set]
+        right_y = [p for p in py if p not in left_set]
+
+        d1, pair1 = rec_closest(left_x, left_y)
+        d2, pair2 = rec_closest(right_x, right_y)
+        d, best_pair = (d1, pair1) if d1 < d2 else (d2, pair2)
+
+        strip = [p for p in py if abs(p[0] - mid_point[0]) < d]
+        for i in range(len(strip)):
+            for j in range(i + 1, min(i + 8, len(strip))):
+                curr_d = dist(strip[i], strip[j])
+                if curr_d < d:
+                    d = curr_d
+                    best_pair = (strip[i], strip[j])
+        return d, best_pair
+
+    px = sorted(points, key=lambda p: (p[0], p[1]))
+    py = sorted(points, key=lambda p: (p[1], p[0]))
+    return rec_closest(px, py)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1459,3 +1504,7 @@ if __name__ == "__main__":
     qh_pts = [(0.0, 3.0), (1.0, 1.0), (2.0, 2.0), (4.0, 4.0), (0.0, 0.0), (1.0, 2.0), (3.0, 1.0), (3.0, 3.0)]
     qh_hull = quickhull(qh_pts)
     print("Quickhull vertices count:", len(qh_hull))
+    print("\n=== Iteration 41: Closest Pair of Points ===")
+    cloud_pts = [(2.0, 3.0), (12.0, 30.0), (40.0, 50.0), (5.0, 1.0), (12.0, 10.0), (3.0, 4.0)]
+    min_dist, closest_pts = closest_pair_of_points(cloud_pts)
+    print(f"Closest distance: {min_dist:.4f} between {closest_pts}")
