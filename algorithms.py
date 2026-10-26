@@ -49,6 +49,7 @@ Part 46: Miller-Rabin Primality Test
 Part 47: Pollard's Rho Integer Factorization
 Part 48: Extended Euclidean Algorithm and Modular Inverse
 Part 49: Chinese Remainder Theorem (CRT) Solver
+Part 50: Suffix Array & Kasai's LCP Construction
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1494,6 +1495,34 @@ def chinese_remainder_theorem(remainders: List[int], moduli: List[int]) -> int:
     return total % prod
 
 
+def build_suffix_array(s: str) -> List[int]:
+    """Construct Suffix Array for string s."""
+    suffixes = sorted([(s[i:], i) for i in range(len(s))])
+    return [idx for _, idx in suffixes]
+
+
+def kasai_lcp(s: str, sa: List[int]) -> List[int]:
+    """Compute Longest Common Prefix (LCP) array from string and its suffix array in O(n)."""
+    n = len(s)
+    rank = [0] * n
+    for i, suffix_idx in enumerate(sa):
+        rank[suffix_idx] = i
+
+    lcp = [0] * n
+    k = 0
+    for i in range(n):
+        if rank[i] == n - 1:
+            k = 0
+            continue
+        j = sa[rank[i] + 1]
+        while i + k < n and j + k < n and s[i + k] == s[j + k]:
+            k += 1
+        lcp[rank[i]] = k
+        if k > 0:
+            k -= 1
+    return lcp
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1777,3 +1806,9 @@ if __name__ == "__main__":
     rem = [2, 3, 2]
     mods = [3, 5, 7]
     print(f"CRT solution for x = {rem} mod {mods}:", chinese_remainder_theorem(rem, mods))
+    print("\n=== Iteration 50: Suffix Array and Kasai LCP ===")
+    banana = "banana"
+    sa = build_suffix_array(banana)
+    lcp = kasai_lcp(banana, sa)
+    print(f"Suffix Array for '{banana}':", sa)
+    print("Kasai LCP array:", lcp)
