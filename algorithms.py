@@ -51,6 +51,7 @@ Part 48: Extended Euclidean Algorithm and Modular Inverse
 Part 49: Chinese Remainder Theorem (CRT) Solver
 Part 50: Suffix Array & Kasai's LCP Construction
 Part 51: Aho-Corasick Multi-Pattern String Matching
+Part 52: Minimax Algorithm with Alpha-Beta Pruning
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1572,6 +1573,45 @@ class AhoCorasick:
         return results
 
 
+def minimax_alpha_beta(
+    depth: int,
+    is_maximizing: bool,
+    state: Any,
+    alpha: float,
+    beta: float,
+    eval_fn: Any,
+    get_children_fn: Any
+) -> Tuple[float, Any]:
+    """Minimax adversarial game tree decision rule with alpha-beta pruning."""
+    children = get_children_fn(state)
+    if depth == 0 or not children:
+        return eval_fn(state), state
+
+    best_move = None
+    if is_maximizing:
+        max_eval = -float('inf')
+        for child in children:
+            eval_val, _ = minimax_alpha_beta(depth - 1, False, child, alpha, beta, eval_fn, get_children_fn)
+            if eval_val > max_eval:
+                max_eval = eval_val
+                best_move = child
+            alpha = max(alpha, eval_val)
+            if beta <= alpha:
+                break
+        return max_eval, best_move
+    else:
+        min_eval = float('inf')
+        for child in children:
+            eval_val, _ = minimax_alpha_beta(depth - 1, True, child, alpha, beta, eval_fn, get_children_fn)
+            if eval_val < min_eval:
+                min_eval = eval_val
+                best_move = child
+            beta = min(beta, eval_val)
+            if beta <= alpha:
+                break
+        return min_eval, best_move
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1867,3 +1907,8 @@ if __name__ == "__main__":
         ac.insert(w)
     ac.build()
     print("Aho-Corasick search in 'ushers':", ac.search("ushers"))
+    print("\n=== Iteration 52: Minimax with Alpha-Beta Pruning ===")
+    def nim_eval(st): return 1.0 if st == 0 else 0.0
+    def nim_children(st): return [st - 1, st - 2] if st >= 2 else ([st - 1] if st == 1 else [])
+    val, move = minimax_alpha_beta(4, True, 5, -float('inf'), float('inf'), nim_eval, nim_children)
+    print(f"Optimal move from state 5: {move} with eval {val}")
