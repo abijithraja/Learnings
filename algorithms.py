@@ -36,6 +36,7 @@ Part 33: Prim's Algorithm for Minimum Spanning Tree
 Part 34: Manacher's Algorithm for Longest Palindromic Substring
 Part 35: Z-Algorithm for Linear Time Pattern Matching
 Part 36: Boyer-Moore String Search
+Part 37: Lowest Common Ancestor (LCA) with Binary Lifting
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1087,6 +1088,42 @@ def boyer_moore_search(text: str, pattern: str) -> List[int]:
     return matches
 
 
+class BinaryLiftingLCA:
+    """Lowest Common Ancestor queries on trees in O(log N) via binary lifting."""
+    def __init__(self, n: int, adj: Dict[int, List[int]], root: int = 0):
+        self.n = n
+        self.adj = adj
+        self.root = root
+        self.log = max(1, math.ceil(math.log2(n + 1))) + 1
+        self.depth = [0] * n
+        self.up = [[0] * self.log for _ in range(n)]
+        self._dfs(root, root)
+
+    def _dfs(self, node: int, parent: int):
+        self.up[node][0] = parent
+        for j in range(1, self.log):
+            self.up[node][j] = self.up[self.up[node][j - 1]][j - 1]
+        for neighbor in self.adj.get(node, []):
+            if neighbor != parent:
+                self.depth[neighbor] = self.depth[node] + 1
+                self._dfs(neighbor, node)
+
+    def query_lca(self, u: int, v: int) -> int:
+        if self.depth[u] < self.depth[v]:
+            u, v = v, u
+        diff = self.depth[u] - self.depth[v]
+        for j in range(self.log):
+            if (diff >> j) & 1:
+                u = self.up[u][j]
+        if u == v:
+            return u
+        for j in reversed(range(self.log)):
+            if self.up[u][j] != self.up[v][j]:
+                u = self.up[u][j]
+                v = self.up[v][j]
+        return self.up[u][0]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1314,3 +1351,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 36: Boyer-Moore Search ===")
     bm_txt, bm_pat = "AABAACAADAABAABA", "AABA"
     print(f"Boyer-Moore matches for '{bm_pat}':", boyer_moore_search(bm_txt, bm_pat))
+    print("\n=== Iteration 37: Binary Lifting LCA ===")
+    lca_adj = {0: [1, 2], 1: [0, 3, 4], 2: [0, 5], 3: [1], 4: [1], 5: [2]}
+    lca_solver = BinaryLiftingLCA(6, lca_adj, root=0)
+    print("LCA(3, 4):", lca_solver.query_lca(3, 4))
+    print("LCA(3, 5):", lca_solver.query_lca(3, 5))
