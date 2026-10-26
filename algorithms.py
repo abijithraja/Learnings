@@ -38,6 +38,7 @@ Part 35: Z-Algorithm for Linear Time Pattern Matching
 Part 36: Boyer-Moore String Search
 Part 37: Lowest Common Ancestor (LCA) with Binary Lifting
 Part 38: Euler Tour Technique for Tree Subtree Queries
+Part 39: Graham Scan 2D Convex Hull
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1151,6 +1152,30 @@ class EulerTourTree:
         return self.tin[u], self.tout[u] - 1
 
 
+def graham_scan_convex_hull(points: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+    """Compute the 2D Convex Hull in counter-clockwise order using Graham Scan."""
+    pts = sorted(list(set(points)))
+    if len(pts) <= 2:
+        return pts
+
+    def cross_product(o: Tuple[float, float], a: Tuple[float, float], b: Tuple[float, float]) -> float:
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    lower: List[Tuple[float, float]] = []
+    for p in pts:
+        while len(lower) >= 2 and cross_product(lower[-2], lower[-1], p) <= 0:
+            lower.pop()
+        lower.append(p)
+
+    upper: List[Tuple[float, float]] = []
+    for p in reversed(pts):
+        while len(upper) >= 2 and cross_product(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+
+    return lower[:-1] + upper[:-1]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1389,3 +1414,6 @@ if __name__ == "__main__":
     print("Subtree 1 range in Euler tour:", ett.subtree_range(1))
     print("Is 1 ancestor of 3?:", ett.is_ancestor(1, 3))
     print("Is 2 ancestor of 3?:", ett.is_ancestor(2, 3))
+    print("\n=== Iteration 39: Graham Scan Convex Hull ===")
+    gs_pts = [(0.0, 3.0), (1.0, 1.0), (2.0, 2.0), (4.0, 4.0), (0.0, 0.0), (1.0, 2.0), (3.0, 1.0), (3.0, 3.0)]
+    print("Convex Hull points:", graham_scan_convex_hull(gs_pts))
