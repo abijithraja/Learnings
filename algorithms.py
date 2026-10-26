@@ -55,6 +55,7 @@ Part 52: Minimax Algorithm with Alpha-Beta Pruning
 Part 53: Held-Karp Travelling Salesperson Problem (Bitmask DP)
 Part 54: Bloom Filter Probabilistic Data Structure
 Part 55: Count-Min Sketch Frequency Estimator
+Part 56: Skip List Probabilistic Ordered Structure
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1692,6 +1693,56 @@ class CountMinSketch:
         return min(self.table[i][self._hash(item, i)] for i in range(self.depth))
 
 
+class SkipListNode:
+    def __init__(self, val: int, level: int):
+        self.val = val
+        self.forward: List[Optional['SkipListNode']] = [None] * (level + 1)
+
+
+class SkipList:
+    """Probabilistic alternative to balanced trees with O(log N) search and insert."""
+    def __init__(self, max_level: int = 16, p: float = 0.5):
+        self.max_level = max_level
+        self.p = p
+        self.header = SkipListNode(-1, max_level)
+        self.level = 0
+        import random
+        self.rng = random.Random(1337)
+
+    def _random_level(self) -> int:
+        lvl = 0
+        while self.rng.random() < self.p and lvl < self.max_level:
+            lvl += 1
+        return lvl
+
+    def search(self, target: int) -> bool:
+        curr = self.header
+        for i in reversed(range(self.level + 1)):
+            while curr.forward[i] and curr.forward[i].val < target:
+                curr = curr.forward[i]
+        curr = curr.forward[0]
+        return curr is not None and curr.val == target
+
+    def insert(self, num: int):
+        update = [None] * (self.max_level + 1)
+        curr = self.header
+        for i in reversed(range(self.level + 1)):
+            while curr.forward[i] and curr.forward[i].val < num:
+                curr = curr.forward[i]
+            update[i] = curr
+
+        lvl = self._random_level()
+        if lvl > self.level:
+            for i in range(self.level + 1, lvl + 1):
+                update[i] = self.header
+            self.level = lvl
+
+        new_node = SkipListNode(num, lvl)
+        for i in range(lvl + 1):
+            new_node.forward[i] = update[i].forward[i]
+            update[i].forward[i] = new_node
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2015,3 +2066,9 @@ if __name__ == "__main__":
         cms.add("banana")
     print("Estimated 'apple' frequency:", cms.estimate("apple"))
     print("Estimated 'banana' frequency:", cms.estimate("banana"))
+    print("\n=== Iteration 56: Skip List ===")
+    sl = SkipList()
+    for num in [3, 6, 7, 9, 12, 19, 17, 26, 21, 25]:
+        sl.insert(num)
+    print("Search 19 in SkipList:", sl.search(19))
+    print("Search 100 in SkipList:", sl.search(100))
