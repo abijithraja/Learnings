@@ -47,6 +47,7 @@ Part 44: Hopcroft-Karp Maximum Bipartite Matching
 Part 45: Fast Fourier Transform (FFT) Polynomial Multiplication
 Part 46: Miller-Rabin Primality Test
 Part 47: Pollard's Rho Integer Factorization
+Part 48: Extended Euclidean Algorithm and Modular Inverse
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1457,6 +1458,24 @@ def pollards_rho(n: int) -> int:
     return d
 
 
+def extended_euclidean(a: int, b: int) -> Tuple[int, int, int]:
+    """Compute (gcd, x, y) such that a*x + b*y = gcd(a, b)."""
+    if b == 0:
+        return a, 1, 0
+    gcd, x1, y1 = extended_euclidean(b, a % b)
+    x = y1
+    y = x1 - (a // b) * y1
+    return gcd, x, y
+
+
+def modular_inverse(a: int, m: int) -> Optional[int]:
+    """Compute modular multiplicative inverse of a modulo m."""
+    gcd, x, _ = extended_euclidean(a, m)
+    if gcd != 1:
+        return None
+    return (x % m + m) % m
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1732,3 +1751,7 @@ if __name__ == "__main__":
     comp_num = 8051
     factor = pollards_rho(comp_num)
     print(f"Non-trivial factor of {comp_num}: {factor} (co-factor: {comp_num // factor})")
+    print("\n=== Iteration 48: Extended Euclidean Algorithm ===")
+    gcd_val, x_val, y_val = extended_euclidean(30, 20)
+    print(f"GCD(30, 20) = {gcd_val}, coefficients: 30*({x_val}) + 20*({y_val})")
+    print("Modular inverse of 3 mod 11:", modular_inverse(3, 11))
