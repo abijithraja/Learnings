@@ -46,6 +46,7 @@ Part 43: Longest Increasing Subsequence (LIS) in O(n log n)
 Part 44: Hopcroft-Karp Maximum Bipartite Matching
 Part 45: Fast Fourier Transform (FFT) Polynomial Multiplication
 Part 46: Miller-Rabin Primality Test
+Part 47: Pollard's Rho Integer Factorization
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1431,6 +1432,31 @@ def miller_rabin_primality(n: int) -> bool:
     return True
 
 
+def pollards_rho(n: int) -> int:
+    """Find a non-trivial factor of composite n using Pollard's Rho cycle-finding algorithm."""
+    if n % 2 == 0:
+        return 2
+    if n % 3 == 0:
+        return 3
+
+    x = 2
+    y = 2
+    c = 1
+    d = 1
+    f = lambda val: (pow(val, 2, n) + c) % n
+
+    while d == 1:
+        x = f(x)
+        y = f(f(y))
+        d = math.gcd(abs(x - y), n)
+        if d == n:
+            c += 1
+            x = 2
+            y = 2
+            d = 1
+    return d
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1702,3 +1728,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 46: Miller-Rabin Primality ===")
     print("Is 1,000,000,007 prime?:", miller_rabin_primality(1000000007))
     print("Is 1,000,000,009 prime?:", miller_rabin_primality(1000000009))
+    print("\n=== Iteration 47: Pollard's Rho Factorization ===")
+    comp_num = 8051
+    factor = pollards_rho(comp_num)
+    print(f"Non-trivial factor of {comp_num}: {factor} (co-factor: {comp_num // factor})")
