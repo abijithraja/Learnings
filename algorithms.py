@@ -32,6 +32,7 @@ Part 29: Tarjan's Strongly Connected Components (SCC)
 Part 30: Kosaraju's Strongly Connected Components
 Part 31: Edmonds-Karp Maximum Flow (Ford-Fulkerson BFS)
 Part 32: Dinic's Algorithm for Maximum Flow
+Part 33: Prim's Algorithm for Minimum Spanning Tree
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -976,6 +977,29 @@ class DinicMaxFlow:
         return flow
 
 
+def prim_mst(n: int, adj: Dict[int, List[Tuple[int, int]]], start: int = 0) -> Tuple[int, List[Tuple[int, int, int]]]:
+    """Compute Minimum Spanning Tree using Prim's algorithm with a binary min-heap."""
+    visited = [False] * n
+    min_heap: List[Tuple[int, int, int]] = [(0, start, -1)]
+    total_weight = 0
+    mst_edges: List[Tuple[int, int, int]] = []
+
+    while min_heap and len(mst_edges) < n:
+        weight, u, parent = heapq.heappop(min_heap)
+        if visited[u]:
+            continue
+        visited[u] = True
+        total_weight += weight
+        if parent != -1:
+            mst_edges.append((parent, u, weight))
+
+        for v, w in adj.get(u, []):
+            if not visited[v]:
+                heapq.heappush(min_heap, (w, v, u))
+
+    return total_weight, mst_edges
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1180,3 +1204,17 @@ if __name__ == "__main__":
     dinic.add_edge(3, 5, 10)
     dinic.add_edge(4, 5, 10)
     print("Dinic Max Flow from 0 to 5:", dinic.compute_max_flow(0, 5))
+    print("\n=== Iteration 33: Prim's Algorithm ===")
+    prim_adj = {
+        0: [(1, 4), (7, 8)],
+        1: [(0, 4), (2, 8), (7, 11)],
+        2: [(1, 8), (3, 7), (8, 2), (5, 4)],
+        3: [(2, 7), (4, 9), (5, 14)],
+        4: [(3, 9), (5, 10)],
+        5: [(4, 10), (3, 14), (2, 4), (6, 2)],
+        6: [(5, 2), (8, 6), (7, 1)],
+        7: [(0, 8), (1, 11), (6, 1), (8, 7)],
+        8: [(2, 2), (6, 6), (7, 7)]
+    }
+    prim_wt, prim_edges = prim_mst(9, prim_adj)
+    print(f"Prim MST Weight: {prim_wt}, Edge Count: {len(prim_edges)}")
