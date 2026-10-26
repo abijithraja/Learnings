@@ -50,6 +50,7 @@ Part 47: Pollard's Rho Integer Factorization
 Part 48: Extended Euclidean Algorithm and Modular Inverse
 Part 49: Chinese Remainder Theorem (CRT) Solver
 Part 50: Suffix Array & Kasai's LCP Construction
+Part 51: Aho-Corasick Multi-Pattern String Matching
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1523,6 +1524,54 @@ def kasai_lcp(s: str, sa: List[int]) -> List[int]:
     return lcp
 
 
+class AhoCorasickNode:
+    def __init__(self):
+        self.children: Dict[str, 'AhoCorasickNode'] = {}
+        self.fail: Optional['AhoCorasickNode'] = None
+        self.output: List[str] = []
+
+
+class AhoCorasick:
+    """Multi-pattern string matching automaton with linear time matching across all patterns."""
+    def __init__(self):
+        self.root = AhoCorasickNode()
+
+    def insert(self, word: str):
+        curr = self.root
+        for ch in word:
+            if ch not in curr.children:
+                curr.children[ch] = AhoCorasickNode()
+            curr = curr.children[ch]
+        curr.output.append(word)
+
+    def build(self):
+        q = deque()
+        for ch, child in self.root.children.items():
+            child.fail = self.root
+            q.append(child)
+
+        while q:
+            curr = q.popleft()
+            for ch, child in curr.children.items():
+                fail_node = curr.fail
+                while fail_node and ch not in fail_node.children:
+                    fail_node = fail_node.fail
+                child.fail = fail_node.children[ch] if fail_node else self.root
+                child.output.extend(child.fail.output)
+                q.append(child)
+
+    def search(self, text: str) -> List[Tuple[int, str]]:
+        results: List[Tuple[int, str]] = []
+        curr: Optional[AhoCorasickNode] = self.root
+        for i, ch in enumerate(text):
+            while curr and ch not in curr.children:
+                curr = curr.fail
+            curr = curr.children[ch] if curr else self.root
+            for match in curr.output:
+                results.append((i - len(match) + 1, match))
+        return results
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1812,3 +1861,9 @@ if __name__ == "__main__":
     lcp = kasai_lcp(banana, sa)
     print(f"Suffix Array for '{banana}':", sa)
     print("Kasai LCP array:", lcp)
+    print("\n=== Iteration 51: Aho-Corasick Multi-Pattern Automaton ===")
+    ac = AhoCorasick()
+    for w in ["he", "she", "his", "hers"]:
+        ac.insert(w)
+    ac.build()
+    print("Aho-Corasick search in 'ushers':", ac.search("ushers"))
