@@ -34,6 +34,7 @@ Part 31: Edmonds-Karp Maximum Flow (Ford-Fulkerson BFS)
 Part 32: Dinic's Algorithm for Maximum Flow
 Part 33: Prim's Algorithm for Minimum Spanning Tree
 Part 34: Manacher's Algorithm for Longest Palindromic Substring
+Part 35: Z-Algorithm for Linear Time Pattern Matching
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1034,6 +1035,31 @@ def longest_palindromic_substring_manacher(s: str) -> str:
     return s[start:start + max_len]
 
 
+def z_algorithm_search(text: str, pattern: str) -> List[int]:
+    """Find all occurrences of pattern in text in linear time using the Z-Algorithm."""
+    if not pattern or not text or len(pattern) > len(text):
+        return []
+    concat = pattern + "$" + text
+    n = len(concat)
+    z = [0] * n
+    l, r = 0, 0
+    for i in range(1, n):
+        if i <= r:
+            z[i] = min(r - i + 1, z[i - l])
+        while i + z[i] < n and concat[z[i]] == concat[i + z[i]]:
+            z[i] += 1
+        if i + z[i] - 1 > r:
+            l = i
+            r = i + z[i] - 1
+
+    m = len(pattern)
+    matches = []
+    for i in range(m + 1, n):
+        if z[i] == m:
+            matches.append(i - (m + 1))
+    return matches
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1255,3 +1281,6 @@ if __name__ == "__main__":
     print("\n=== Iteration 34: Manacher's Palindrome Search ===")
     sample_pal = "forgeeksskeegfor"
     print(f"Longest palindromic substring in '{sample_pal}':", longest_palindromic_substring_manacher(sample_pal))
+    print("\n=== Iteration 35: Z-Algorithm Search ===")
+    z_txt, z_pat = "baabaaahbaabaa", "aaba"
+    print(f"Z-Algorithm occurrences of '{z_pat}':", z_algorithm_search(z_txt, z_pat))
