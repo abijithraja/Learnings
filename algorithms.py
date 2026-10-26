@@ -28,6 +28,7 @@ Part 25: Edit Distance / Levenshtein Distance (DP)
 Part 26: Coin Change Problem (Minimum Coins & Combinations)
 Part 27: Matrix Exponentiation for O(log n) Fibonacci
 Part 28: Huffman Coding Data Compression Tree
+Part 29: Tarjan's Strongly Connected Components (SCC)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -801,6 +802,47 @@ def build_huffman_codes(text: str) -> Tuple[Dict[str, str], Optional[HuffmanNode
     return codes, root
 
 
+def tarjan_scc(graph: Dict[int, List[int]]) -> List[List[int]]:
+    """Find all strongly connected components in a directed graph using Tarjan's algorithm."""
+    index = 0
+    indices: Dict[int, int] = {}
+    lowlink: Dict[int, int] = {}
+    on_stack: Set[int] = set()
+    stack: List[int] = []
+    sccs: List[List[int]] = []
+
+    def strongconnect(node: int):
+        nonlocal index
+        indices[node] = index
+        lowlink[node] = index
+        index += 1
+        stack.append(node)
+        on_stack.add(node)
+
+        for neighbor in graph.get(node, []):
+            if neighbor not in indices:
+                strongconnect(neighbor)
+                lowlink[node] = min(lowlink[node], lowlink[neighbor])
+            elif neighbor in on_stack:
+                lowlink[node] = min(lowlink[node], indices[neighbor])
+
+        if lowlink[node] == indices[node]:
+            scc = []
+            while True:
+                w = stack.pop()
+                on_stack.remove(w)
+                scc.append(w)
+                if w == node:
+                    break
+            sccs.append(scc)
+
+    for vertex in list(graph.keys()):
+        if vertex not in indices:
+            strongconnect(vertex)
+
+    return sccs
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -978,4 +1020,6 @@ if __name__ == "__main__":
     print(f"Huffman Prefix Codes for '{huff_text}':")
     for ch, code in sorted(huff_codes.items()):
         print(f"  {repr(ch)}: {code}")
-    print("\nAll 28 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 29: Tarjan's Strongly Connected Components ===")
+    tarjan_g = {0: [1], 1: [2], 2: [0, 3], 3: [4], 4: [5, 7], 5: [6], 6: [4], 7: []}
+    print("Tarjan SCCs:", tarjan_scc(tarjan_g))
