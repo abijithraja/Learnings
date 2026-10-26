@@ -33,6 +33,7 @@ Part 30: Kosaraju's Strongly Connected Components
 Part 31: Edmonds-Karp Maximum Flow (Ford-Fulkerson BFS)
 Part 32: Dinic's Algorithm for Maximum Flow
 Part 33: Prim's Algorithm for Minimum Spanning Tree
+Part 34: Manacher's Algorithm for Longest Palindromic Substring
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1000,6 +1001,39 @@ def prim_mst(n: int, adj: Dict[int, List[Tuple[int, int]]], start: int = 0) -> T
     return total_weight, mst_edges
 
 
+def longest_palindromic_substring_manacher(s: str) -> str:
+    """Find the longest palindromic substring in O(n) time using Manacher's Algorithm."""
+    if not s:
+        return ""
+    transformed = "#" + "#".join(s) + "#"
+    n = len(transformed)
+    p = [0] * n
+    center = 0
+    right = 0
+
+    for i in range(n):
+        mirror = 2 * center - i
+        if i < right:
+            p[i] = min(right - i, p[mirror])
+
+        while i - (p[i] + 1) >= 0 and i + (p[i] + 1) < n and transformed[i - (p[i] + 1)] == transformed[i + (p[i] + 1)]:
+            p[i] += 1
+
+        if i + p[i] > right:
+            center = i
+            right = i + p[i]
+
+    max_len = 0
+    center_idx = 0
+    for i in range(n):
+        if p[i] > max_len:
+            max_len = p[i]
+            center_idx = i
+
+    start = (center_idx - max_len) // 2
+    return s[start:start + max_len]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1218,3 +1252,6 @@ if __name__ == "__main__":
     }
     prim_wt, prim_edges = prim_mst(9, prim_adj)
     print(f"Prim MST Weight: {prim_wt}, Edge Count: {len(prim_edges)}")
+    print("\n=== Iteration 34: Manacher's Palindrome Search ===")
+    sample_pal = "forgeeksskeegfor"
+    print(f"Longest palindromic substring in '{sample_pal}':", longest_palindromic_substring_manacher(sample_pal))
