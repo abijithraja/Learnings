@@ -54,6 +54,7 @@ Part 51: Aho-Corasick Multi-Pattern String Matching
 Part 52: Minimax Algorithm with Alpha-Beta Pruning
 Part 53: Held-Karp Travelling Salesperson Problem (Bitmask DP)
 Part 54: Bloom Filter Probabilistic Data Structure
+Part 55: Count-Min Sketch Frequency Estimator
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1672,6 +1673,25 @@ class BloomFilter:
         return all(self.bit_array[idx] == 1 for idx in self._hashes(item))
 
 
+class CountMinSketch:
+    """Probabilistic frequency estimation data structure for streaming data."""
+    def __init__(self, width: int = 100, depth: int = 5):
+        self.width = width
+        self.depth = depth
+        self.table = [[0] * width for _ in range(depth)]
+
+    def _hash(self, item: str, seed: int) -> int:
+        return (hash(item) ^ (seed * 0x5bd1e995)) % self.width
+
+    def add(self, item: str, count: int = 1):
+        for i in range(self.depth):
+            idx = self._hash(item, i)
+            self.table[i][idx] += count
+
+    def estimate(self, item: str) -> int:
+        return min(self.table[i][self._hash(item, i)] for i in range(self.depth))
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1987,3 +2007,11 @@ if __name__ == "__main__":
     bf.add("algorithms")
     print("Contains 'python':", bf.contains("python"))
     print("Contains 'javascript':", bf.contains("javascript"))
+    print("\n=== Iteration 55: Count-Min Sketch ===")
+    cms = CountMinSketch()
+    for _ in range(42):
+        cms.add("apple")
+    for _ in range(15):
+        cms.add("banana")
+    print("Estimated 'apple' frequency:", cms.estimate("apple"))
+    print("Estimated 'banana' frequency:", cms.estimate("banana"))
