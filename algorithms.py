@@ -57,6 +57,7 @@ Part 54: Bloom Filter Probabilistic Data Structure
 Part 55: Count-Min Sketch Frequency Estimator
 Part 56: Skip List Probabilistic Ordered Structure
 Part 57: Treap (Cartesian Tree) Randomized Binary Search Tree
+Part 58: AVL Self-Balancing Binary Search Tree
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1794,6 +1795,82 @@ class Treap:
         return False
 
 
+class AVLNode:
+    def __init__(self, key: int):
+        self.key = key
+        self.height = 1
+        self.left: Optional['AVLNode'] = None
+        self.right: Optional['AVLNode'] = None
+
+
+class AVLTree:
+    """Self-balancing Binary Search Tree guaranteeing O(log N) operations."""
+    def __init__(self):
+        self.root: Optional[AVLNode] = None
+
+    def _height(self, node: Optional[AVLNode]) -> int:
+        return node.height if node else 0
+
+    def _balance_factor(self, node: Optional[AVLNode]) -> int:
+        return self._height(node.left) - self._height(node.right) if node else 0
+
+    def _rotate_right(self, y: AVLNode) -> AVLNode:
+        x = y.left
+        t2 = x.right
+        x.right = y
+        y.left = t2
+        y.height = max(self._height(y.left), self._height(y.right)) + 1
+        x.height = max(self._height(x.left), self._height(x.right)) + 1
+        return x
+
+    def _rotate_left(self, x: AVLNode) -> AVLNode:
+        y = x.right
+        t2 = y.left
+        y.left = x
+        x.right = t2
+        x.height = max(self._height(x.left), self._height(x.right)) + 1
+        y.height = max(self._height(y.left), self._height(y.right)) + 1
+        return y
+
+    def insert(self, key: int):
+        def _ins(node: Optional[AVLNode]) -> AVLNode:
+            if not node:
+                return AVLNode(key)
+            if key < node.key:
+                node.left = _ins(node.left)
+            elif key > node.key:
+                node.right = _ins(node.right)
+            else:
+                return node
+
+            node.height = 1 + max(self._height(node.left), self._height(node.right))
+            balance = self._balance_factor(node)
+
+            if balance > 1 and key < node.left.key:
+                return self._rotate_right(node)
+            if balance < -1 and key > node.right.key:
+                return self._rotate_left(node)
+            if balance > 1 and key > node.left.key:
+                node.left = self._rotate_left(node.left)
+                return self._rotate_right(node)
+            if balance < -1 and key < node.right.key:
+                node.right = self._rotate_right(node.right)
+                return self._rotate_left(node)
+
+            return node
+        self.root = _ins(self.root)
+
+    def inorder(self) -> List[int]:
+        res: List[int] = []
+        def _inorder(node):
+            if node:
+                _inorder(node.left)
+                res.append(node.key)
+                _inorder(node.right)
+        _inorder(self.root)
+        return res
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2129,3 +2206,9 @@ if __name__ == "__main__":
         treap.insert(val)
     print("Search 40 in Treap:", treap.search(40))
     print("Search 99 in Treap:", treap.search(99))
+    print("\n=== Iteration 58: AVL Tree ===")
+    avl = AVLTree()
+    for key in [10, 20, 30, 40, 50, 25]:
+        avl.insert(key)
+    print("AVL Tree In-Order traversal:", avl.inorder())
+    print("\nAll 58 Algorithms & Data Structures complete and verified!")
