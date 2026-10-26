@@ -29,6 +29,7 @@ Part 26: Coin Change Problem (Minimum Coins & Combinations)
 Part 27: Matrix Exponentiation for O(log n) Fibonacci
 Part 28: Huffman Coding Data Compression Tree
 Part 29: Tarjan's Strongly Connected Components (SCC)
+Part 30: Kosaraju's Strongly Connected Components
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -843,6 +844,46 @@ def tarjan_scc(graph: Dict[int, List[int]]) -> List[List[int]]:
     return sccs
 
 
+def kosaraju_scc(n: int, adj: Dict[int, List[int]]) -> List[List[int]]:
+    """Find strongly connected components using Kosaraju's two-pass DFS algorithm."""
+    visited = [False] * n
+    finish_order: List[int] = []
+
+    def dfs1(v: int):
+        visited[v] = True
+        for u in adj.get(v, []):
+            if not visited[u]:
+                dfs1(u)
+        finish_order.append(v)
+
+    for i in range(n):
+        if not visited[i]:
+            dfs1(i)
+
+    rev_adj: Dict[int, List[int]] = {i: [] for i in range(n)}
+    for u in adj:
+        for v in adj[u]:
+            rev_adj[v].append(u)
+
+    visited = [False] * n
+    sccs: List[List[int]] = []
+
+    def dfs2(v: int, comp: List[int]):
+        visited[v] = True
+        comp.append(v)
+        for u in rev_adj.get(v, []):
+            if not visited[u]:
+                dfs2(u, comp)
+
+    for v in reversed(finish_order):
+        if not visited[v]:
+            comp: List[int] = []
+            dfs2(v, comp)
+            sccs.append(comp)
+
+    return sccs
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1023,3 +1064,6 @@ if __name__ == "__main__":
     print("\n=== Iteration 29: Tarjan's Strongly Connected Components ===")
     tarjan_g = {0: [1], 1: [2], 2: [0, 3], 3: [4], 4: [5, 7], 5: [6], 6: [4], 7: []}
     print("Tarjan SCCs:", tarjan_scc(tarjan_g))
+    print("\n=== Iteration 30: Kosaraju's Strongly Connected Components ===")
+    kosa_adj = {0: [2, 3], 1: [0], 2: [1], 3: [4], 4: []}
+    print("Kosaraju SCCs:", kosaraju_scc(5, kosa_adj))
