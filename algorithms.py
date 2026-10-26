@@ -52,6 +52,7 @@ Part 49: Chinese Remainder Theorem (CRT) Solver
 Part 50: Suffix Array & Kasai's LCP Construction
 Part 51: Aho-Corasick Multi-Pattern String Matching
 Part 52: Minimax Algorithm with Alpha-Beta Pruning
+Part 53: Held-Karp Travelling Salesperson Problem (Bitmask DP)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1612,6 +1613,44 @@ def minimax_alpha_beta(
         return min_eval, best_move
 
 
+def tsp_held_karp(matrix: List[List[float]]) -> Tuple[float, List[int]]:
+    """Solve the Traveling Salesperson Problem optimally using Held-Karp dynamic programming with bitmasks."""
+    n = len(matrix)
+    memo: Dict[Tuple[int, int], float] = {}
+    parent: Dict[Tuple[int, int], int] = {}
+
+    def tsp(mask: int, u: int) -> float:
+        if mask == (1 << n) - 1:
+            return matrix[u][0]
+        if (mask, u) in memo:
+            return memo[(mask, u)]
+
+        res = float('inf')
+        best_v = -1
+        for v in range(n):
+            if not (mask & (1 << v)):
+                cost = matrix[u][v] + tsp(mask | (1 << v), v)
+                if cost < res:
+                    res = cost
+                    best_v = v
+
+        memo[(mask, u)] = res
+        parent[(mask, u)] = best_v
+        return res
+
+    min_cost = tsp(1, 0)
+    path = [0]
+    mask = 1
+    curr = 0
+    while mask != (1 << n) - 1:
+        nxt = parent.get((mask, curr), 0)
+        path.append(nxt)
+        mask |= (1 << nxt)
+        curr = nxt
+    path.append(0)
+    return min_cost, path
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1912,3 +1951,12 @@ if __name__ == "__main__":
     def nim_children(st): return [st - 1, st - 2] if st >= 2 else ([st - 1] if st == 1 else [])
     val, move = minimax_alpha_beta(4, True, 5, -float('inf'), float('inf'), nim_eval, nim_children)
     print(f"Optimal move from state 5: {move} with eval {val}")
+    print("\n=== Iteration 53: Held-Karp Traveling Salesperson ===")
+    tsp_matrix = [
+        [0.0, 10.0, 15.0, 20.0],
+        [10.0, 0.0, 35.0, 25.0],
+        [15.0, 35.0, 0.0, 30.0],
+        [20.0, 25.0, 30.0, 0.0]
+    ]
+    tsp_cost, tsp_tour = tsp_held_karp(tsp_matrix)
+    print(f"Optimal TSP Tour: {tsp_tour} with cost {tsp_cost}")
