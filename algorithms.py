@@ -41,6 +41,7 @@ Part 38: Euler Tour Technique for Tree Subtree Queries
 Part 39: Graham Scan 2D Convex Hull
 Part 40: Quickhull 2D Convex Hull
 Part 41: Closest Pair of Points in 2D (O(n log n))
+Part 42: 2D Kadane's Algorithm (Max Submatrix Sum)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1259,6 +1260,28 @@ def closest_pair_of_points(points: List[Tuple[float, float]]) -> Tuple[float, Tu
     return rec_closest(px, py)
 
 
+def max_submatrix_sum(matrix: List[List[int]]) -> int:
+    """Find the maximum sum of any contiguous 2D rectangular submatrix using 2D Kadane."""
+    if not matrix or not matrix[0]:
+        return 0
+    rows = len(matrix)
+    cols = len(matrix[0])
+    max_sum = -float('inf')
+
+    for top in range(rows):
+        temp = [0] * cols
+        for bottom in range(top, rows):
+            for col in range(cols):
+                temp[col] += matrix[bottom][col]
+
+            curr_sum = 0
+            for val in temp:
+                curr_sum = max(val, curr_sum + val)
+                max_sum = max(max_sum, curr_sum)
+
+    return int(max_sum)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1508,3 +1531,11 @@ if __name__ == "__main__":
     cloud_pts = [(2.0, 3.0), (12.0, 30.0), (40.0, 50.0), (5.0, 1.0), (12.0, 10.0), (3.0, 4.0)]
     min_dist, closest_pts = closest_pair_of_points(cloud_pts)
     print(f"Closest distance: {min_dist:.4f} between {closest_pts}")
+    print("\n=== Iteration 42: 2D Kadane Max Submatrix Sum ===")
+    mat_kadane = [
+        [1, 2, -1, -4, -20],
+        [-8, -3, 4, 2, 1],
+        [3, 8, 10, 1, 3],
+        [-4, -1, 1, 7, -6]
+    ]
+    print("Maximum submatrix sum:", max_submatrix_sum(mat_kadane))
