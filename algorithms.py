@@ -39,6 +39,7 @@ Part 36: Boyer-Moore String Search
 Part 37: Lowest Common Ancestor (LCA) with Binary Lifting
 Part 38: Euler Tour Technique for Tree Subtree Queries
 Part 39: Graham Scan 2D Convex Hull
+Part 40: Quickhull 2D Convex Hull
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1176,6 +1177,43 @@ def graham_scan_convex_hull(points: List[Tuple[float, float]]) -> List[Tuple[flo
     return lower[:-1] + upper[:-1]
 
 
+def quickhull(points: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+    """Compute 2D Convex Hull using the divide-and-conquer Quickhull algorithm."""
+    pts = list(set(points))
+    if len(pts) <= 2:
+        return pts
+
+    def distance_from_line(p1, p2, p):
+        return (p[1] - p1[1]) * (p2[0] - p1[0]) - (p2[1] - p1[1]) * (p[0] - p1[0])
+
+    def find_hull(p1, p2, point_set, hull):
+        if not point_set:
+            return
+        farthest_point = None
+        max_dist = 0.0
+        for p in point_set:
+            dist = distance_from_line(p1, p2, p)
+            if dist > max_dist:
+                max_dist = dist
+                farthest_point = p
+        if farthest_point is None:
+            return
+        hull.append(farthest_point)
+        s1 = [p for p in point_set if distance_from_line(p1, farthest_point, p) > 0]
+        s2 = [p for p in point_set if distance_from_line(farthest_point, p2, p) > 0]
+        find_hull(p1, farthest_point, s1, hull)
+        find_hull(farthest_point, p2, s2, hull)
+
+    min_x = min(pts, key=lambda p: (p[0], p[1]))
+    max_x = max(pts, key=lambda p: (p[0], p[1]))
+    hull = [min_x, max_x]
+    left_set = [p for p in pts if distance_from_line(min_x, max_x, p) > 0]
+    right_set = [p for p in pts if distance_from_line(max_x, min_x, p) > 0]
+    find_hull(min_x, max_x, left_set, hull)
+    find_hull(max_x, min_x, right_set, hull)
+    return hull
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1417,3 +1455,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 39: Graham Scan Convex Hull ===")
     gs_pts = [(0.0, 3.0), (1.0, 1.0), (2.0, 2.0), (4.0, 4.0), (0.0, 0.0), (1.0, 2.0), (3.0, 1.0), (3.0, 3.0)]
     print("Convex Hull points:", graham_scan_convex_hull(gs_pts))
+    print("\n=== Iteration 40: Quickhull ===")
+    qh_pts = [(0.0, 3.0), (1.0, 1.0), (2.0, 2.0), (4.0, 4.0), (0.0, 0.0), (1.0, 2.0), (3.0, 1.0), (3.0, 3.0)]
+    qh_hull = quickhull(qh_pts)
+    print("Quickhull vertices count:", len(qh_hull))
