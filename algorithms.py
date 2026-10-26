@@ -42,6 +42,7 @@ Part 39: Graham Scan 2D Convex Hull
 Part 40: Quickhull 2D Convex Hull
 Part 41: Closest Pair of Points in 2D (O(n log n))
 Part 42: 2D Kadane's Algorithm (Max Submatrix Sum)
+Part 43: Longest Increasing Subsequence (LIS) in O(n log n)
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1282,6 +1283,34 @@ def max_submatrix_sum(matrix: List[List[int]]) -> int:
     return int(max_sum)
 
 
+def longest_increasing_subsequence(nums: List[int]) -> List[int]:
+    """Find the Longest Increasing Subsequence (LIS) in O(N log N) using patience sorting and binary search."""
+    if not nums:
+        return []
+    import bisect
+    tails: List[int] = []
+    tail_indices: List[int] = []
+    parent = [-1] * len(nums)
+
+    for i, x in enumerate(nums):
+        idx = bisect.bisect_left(tails, x)
+        if idx == len(tails):
+            tails.append(x)
+            tail_indices.append(i)
+        else:
+            tails[idx] = x
+            tail_indices[idx] = i
+        if idx > 0:
+            parent[i] = tail_indices[idx - 1]
+
+    curr = tail_indices[-1]
+    lis: List[int] = []
+    while curr != -1:
+        lis.append(nums[curr])
+        curr = parent[curr]
+    return lis[::-1]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1539,3 +1568,6 @@ if __name__ == "__main__":
         [-4, -1, 1, 7, -6]
     ]
     print("Maximum submatrix sum:", max_submatrix_sum(mat_kadane))
+    print("\n=== Iteration 43: Longest Increasing Subsequence ===")
+    lis_arr = [10, 9, 2, 5, 3, 7, 101, 18]
+    print(f"LIS of {lis_arr}: {longest_increasing_subsequence(lis_arr)}")
