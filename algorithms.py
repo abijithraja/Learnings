@@ -43,6 +43,7 @@ Part 40: Quickhull 2D Convex Hull
 Part 41: Closest Pair of Points in 2D (O(n log n))
 Part 42: 2D Kadane's Algorithm (Max Submatrix Sum)
 Part 43: Longest Increasing Subsequence (LIS) in O(n log n)
+Part 44: Hopcroft-Karp Maximum Bipartite Matching
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1311,6 +1312,56 @@ def longest_increasing_subsequence(nums: List[int]) -> List[int]:
     return lis[::-1]
 
 
+class HopcroftKarp:
+    """Find maximum cardinality bipartite matching in O(E * sqrt(V)) time."""
+    def __init__(self, n_u: int, n_v: int, adj: Dict[int, List[int]]):
+        self.n_u = n_u
+        self.n_v = n_v
+        self.adj = adj
+        self.match_u = [-1] * n_u
+        self.match_v = [-1] * n_v
+        self.dist = [0] * n_u
+
+    def bfs(self) -> bool:
+        q = deque()
+        for u in range(self.n_u):
+            if self.match_u[u] == -1:
+                self.dist[u] = 0
+                q.append(u)
+            else:
+                self.dist[u] = 10**9
+
+        found_augmenting_path = False
+        while q:
+            u = q.popleft()
+            for v in self.adj.get(u, []):
+                next_u = self.match_v[v]
+                if next_u == -1:
+                    found_augmenting_path = True
+                elif self.dist[next_u] == 10**9:
+                    self.dist[next_u] = self.dist[u] + 1
+                    q.append(next_u)
+        return found_augmenting_path
+
+    def dfs(self, u: int) -> bool:
+        for v in self.adj.get(u, []):
+            next_u = self.match_v[v]
+            if next_u == -1 or (self.dist[next_u] == self.dist[u] + 1 and self.dfs(next_u)):
+                self.match_u[u] = v
+                self.match_v[v] = u
+                return True
+        self.dist[u] = 10**9
+        return False
+
+    def max_matching(self) -> int:
+        matching = 0
+        while self.bfs():
+            for u in range(self.n_u):
+                if self.match_u[u] == -1 and self.dfs(u):
+                    matching += 1
+        return matching
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1571,3 +1622,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 43: Longest Increasing Subsequence ===")
     lis_arr = [10, 9, 2, 5, 3, 7, 101, 18]
     print(f"LIS of {lis_arr}: {longest_increasing_subsequence(lis_arr)}")
+    print("\n=== Iteration 44: Hopcroft-Karp Matching ===")
+    hk_adj = {0: [0, 1], 1: [0], 2: [2], 3: [1, 2]}
+    hk = HopcroftKarp(4, 3, hk_adj)
+    print("Max bipartite matching cardinality:", hk.max_matching())
