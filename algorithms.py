@@ -37,6 +37,7 @@ Part 34: Manacher's Algorithm for Longest Palindromic Substring
 Part 35: Z-Algorithm for Linear Time Pattern Matching
 Part 36: Boyer-Moore String Search
 Part 37: Lowest Common Ancestor (LCA) with Binary Lifting
+Part 38: Euler Tour Technique for Tree Subtree Queries
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1124,6 +1125,32 @@ class BinaryLiftingLCA:
         return self.up[u][0]
 
 
+class EulerTourTree:
+    """Tree flattening via Euler Tour technique to map subtree queries into contiguous array intervals."""
+    def __init__(self, n: int, adj: Dict[int, List[int]], root: int = 0):
+        self.n = n
+        self.tin = [0] * n
+        self.tout = [0] * n
+        self.tour: List[int] = []
+        self.timer = 0
+        self._dfs(root, -1, adj)
+
+    def _dfs(self, u: int, p: int, adj: Dict[int, List[int]]):
+        self.tin[u] = self.timer
+        self.tour.append(u)
+        self.timer += 1
+        for v in adj.get(u, []):
+            if v != p:
+                self._dfs(v, u, adj)
+        self.tout[u] = self.timer
+
+    def is_ancestor(self, u: int, v: int) -> bool:
+        return self.tin[u] <= self.tin[v] and self.tout[u] >= self.tout[v]
+
+    def subtree_range(self, u: int) -> Tuple[int, int]:
+        return self.tin[u], self.tout[u] - 1
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1356,3 +1383,9 @@ if __name__ == "__main__":
     lca_solver = BinaryLiftingLCA(6, lca_adj, root=0)
     print("LCA(3, 4):", lca_solver.query_lca(3, 4))
     print("LCA(3, 5):", lca_solver.query_lca(3, 5))
+    print("\n=== Iteration 38: Euler Tour Tree ===")
+    ett_adj = {0: [1, 2], 1: [0, 3, 4], 2: [0, 5], 3: [1], 4: [1], 5: [2]}
+    ett = EulerTourTree(6, ett_adj, root=0)
+    print("Subtree 1 range in Euler tour:", ett.subtree_range(1))
+    print("Is 1 ancestor of 3?:", ett.is_ancestor(1, 3))
+    print("Is 2 ancestor of 3?:", ett.is_ancestor(2, 3))
