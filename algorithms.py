@@ -31,6 +31,7 @@ Part 28: Huffman Coding Data Compression Tree
 Part 29: Tarjan's Strongly Connected Components (SCC)
 Part 30: Kosaraju's Strongly Connected Components
 Part 31: Edmonds-Karp Maximum Flow (Ford-Fulkerson BFS)
+Part 32: Dinic's Algorithm for Maximum Flow
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -925,6 +926,56 @@ def edmonds_karp_max_flow(capacity: List[List[int]], source: int, sink: int) -> 
     return max_flow
 
 
+class DinicMaxFlow:
+    """Fast maximum flow algorithm using level graphs and blocking flows (Dinic's Algorithm)."""
+    def __init__(self, n: int):
+        self.n = n
+        self.graph: List[List[List[int]]] = [[] for _ in range(n)]
+
+    def add_edge(self, u: int, v: int, cap: int):
+        self.graph[u].append([v, cap, len(self.graph[v])])
+        self.graph[v].append([u, 0, len(self.graph[u]) - 1])
+
+    def bfs(self, s: int, t: int, level: List[int]) -> bool:
+        for i in range(self.n):
+            level[i] = -1
+        level[s] = 0
+        q = deque([s])
+        while q:
+            u = q.popleft()
+            for v, cap, _ in self.graph[u]:
+                if cap > 0 and level[v] < 0:
+                    level[v] = level[u] + 1
+                    q.append(v)
+        return level[t] >= 0
+
+    def dfs(self, u: int, t: int, flow: int, level: List[int], ptr: List[int]) -> int:
+        if u == t or flow == 0:
+            return flow
+        for i in range(ptr[u], len(self.graph[u])):
+            ptr[u] = i
+            v, cap, rev_idx = self.graph[u][i]
+            if level[v] == level[u] + 1 and cap > 0:
+                pushed = self.dfs(v, t, min(flow, cap), level, ptr)
+                if pushed > 0:
+                    self.graph[u][i][1] -= pushed
+                    self.graph[v][rev_idx][1] += pushed
+                    return pushed
+        return 0
+
+    def compute_max_flow(self, s: int, t: int) -> int:
+        flow = 0
+        level = [-1] * self.n
+        while self.bfs(s, t, level):
+            ptr = [0] * self.n
+            while True:
+                pushed = self.dfs(s, t, 10**9, level, ptr)
+                if pushed == 0:
+                    break
+                flow += pushed
+        return flow
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1118,3 +1169,14 @@ if __name__ == "__main__":
         [0, 0, 0, 0, 0, 0]
     ]
     print("Edmonds-Karp Max Flow from 0 to 5:", edmonds_karp_max_flow(cap_mat, 0, 5))
+    print("\n=== Iteration 32: Dinic's Algorithm ===")
+    dinic = DinicMaxFlow(6)
+    dinic.add_edge(0, 1, 10)
+    dinic.add_edge(0, 2, 10)
+    dinic.add_edge(1, 2, 2)
+    dinic.add_edge(1, 3, 4)
+    dinic.add_edge(1, 4, 8)
+    dinic.add_edge(2, 4, 9)
+    dinic.add_edge(3, 5, 10)
+    dinic.add_edge(4, 5, 10)
+    print("Dinic Max Flow from 0 to 5:", dinic.compute_max_flow(0, 5))
