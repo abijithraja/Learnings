@@ -53,6 +53,7 @@ Part 50: Suffix Array & Kasai's LCP Construction
 Part 51: Aho-Corasick Multi-Pattern String Matching
 Part 52: Minimax Algorithm with Alpha-Beta Pruning
 Part 53: Held-Karp Travelling Salesperson Problem (Bitmask DP)
+Part 54: Bloom Filter Probabilistic Data Structure
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1651,6 +1652,26 @@ def tsp_held_karp(matrix: List[List[float]]) -> Tuple[float, List[int]]:
     return min_cost, path
 
 
+class BloomFilter:
+    """Probabilistic space-efficient data structure for testing set membership."""
+    def __init__(self, size: int = 1000, num_hashes: int = 4):
+        self.size = size
+        self.num_hashes = num_hashes
+        self.bit_array = [0] * size
+
+    def _hashes(self, item: str) -> List[int]:
+        h1 = hash(item)
+        h2 = hash(item + "_salt")
+        return [(h1 + i * h2) % self.size for i in range(self.num_hashes)]
+
+    def add(self, item: str):
+        for bit_idx in self._hashes(item):
+            self.bit_array[bit_idx] = 1
+
+    def contains(self, item: str) -> bool:
+        return all(self.bit_array[idx] == 1 for idx in self._hashes(item))
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1960,3 +1981,9 @@ if __name__ == "__main__":
     ]
     tsp_cost, tsp_tour = tsp_held_karp(tsp_matrix)
     print(f"Optimal TSP Tour: {tsp_tour} with cost {tsp_cost}")
+    print("\n=== Iteration 54: Bloom Filter ===")
+    bf = BloomFilter(size=500, num_hashes=3)
+    bf.add("python")
+    bf.add("algorithms")
+    print("Contains 'python':", bf.contains("python"))
+    print("Contains 'javascript':", bf.contains("javascript"))
