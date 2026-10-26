@@ -45,6 +45,7 @@ Part 42: 2D Kadane's Algorithm (Max Submatrix Sum)
 Part 43: Longest Increasing Subsequence (LIS) in O(n log n)
 Part 44: Hopcroft-Karp Maximum Bipartite Matching
 Part 45: Fast Fourier Transform (FFT) Polynomial Multiplication
+Part 46: Miller-Rabin Primality Test
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1398,6 +1399,38 @@ def fft_multiply(poly1: List[int], poly2: List[int]) -> List[int]:
     return [round(c[i].real) for i in range(target_len)]
 
 
+def miller_rabin_primality(n: int) -> bool:
+    """Deterministic primality test for 64-bit integers using the Miller-Rabin algorithm."""
+    if n < 2:
+        return False
+    if n in (2, 3):
+        return True
+    if n % 2 == 0:
+        return False
+
+    r, d = 0, n - 1
+    while d % 2 == 0:
+        r += 1
+        d //= 2
+
+    test_bases = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37]
+    for a in test_bases:
+        if a >= n:
+            break
+        x = pow(a, d, n)
+        if x == 1 or x == n - 1:
+            continue
+        composite = True
+        for _ in range(r - 1):
+            x = pow(x, 2, n)
+            if x == n - 1:
+                composite = False
+                break
+        if composite:
+            return False
+    return True
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1666,3 +1699,6 @@ if __name__ == "__main__":
     p1 = [1, 2, 3]
     p2 = [4, 5, 6]
     print("FFT (1 + 2x + 3x^2) * (4 + 5x + 6x^2):", fft_multiply(p1, p2))
+    print("\n=== Iteration 46: Miller-Rabin Primality ===")
+    print("Is 1,000,000,007 prime?:", miller_rabin_primality(1000000007))
+    print("Is 1,000,000,009 prime?:", miller_rabin_primality(1000000009))
