@@ -44,6 +44,7 @@ Part 41: Closest Pair of Points in 2D (O(n log n))
 Part 42: 2D Kadane's Algorithm (Max Submatrix Sum)
 Part 43: Longest Increasing Subsequence (LIS) in O(n log n)
 Part 44: Hopcroft-Karp Maximum Bipartite Matching
+Part 45: Fast Fourier Transform (FFT) Polynomial Multiplication
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1362,6 +1363,41 @@ class HopcroftKarp:
         return matching
 
 
+def fft_multiply(poly1: List[int], poly2: List[int]) -> List[int]:
+    """Multiply two polynomials in O(n log n) using Cooley-Tukey Fast Fourier Transform (FFT)."""
+    n = 1
+    target_len = len(poly1) + len(poly2) - 1
+    while n < target_len:
+        n <<= 1
+
+    def fft(a: List[complex], invert: bool = False) -> List[complex]:
+        sz = len(a)
+        if sz == 1:
+            return a
+        even = fft(a[0::2], invert)
+        odd = fft(a[1::2], invert)
+        angle = -2 * math.pi / sz if invert else 2 * math.pi / sz
+        w = 1.0
+        wn = complex(math.cos(angle), math.sin(angle))
+        res = [0j] * sz
+        for i in range(sz // 2):
+            res[i] = even[i] + w * odd[i]
+            res[i + sz // 2] = even[i] - w * odd[i]
+            if invert:
+                res[i] /= 2
+                res[i + sz // 2] /= 2
+            w *= wn
+        return res
+
+    a = [complex(x, 0) for x in poly1] + [0j] * (n - len(poly1))
+    b = [complex(x, 0) for x in poly2] + [0j] * (n - len(poly2))
+    fa = fft(a, False)
+    fb = fft(b, False)
+    fc = [fa[i] * fb[i] for i in range(n)]
+    c = fft(fc, True)
+    return [round(c[i].real) for i in range(target_len)]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -1626,3 +1662,7 @@ if __name__ == "__main__":
     hk_adj = {0: [0, 1], 1: [0], 2: [2], 3: [1, 2]}
     hk = HopcroftKarp(4, 3, hk_adj)
     print("Max bipartite matching cardinality:", hk.max_matching())
+    print("\n=== Iteration 45: Fast Fourier Transform Polynomial Multiplication ===")
+    p1 = [1, 2, 3]
+    p2 = [4, 5, 6]
+    print("FFT (1 + 2x + 3x^2) * (4 + 5x + 6x^2):", fft_multiply(p1, p2))
