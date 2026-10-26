@@ -56,6 +56,7 @@ Part 53: Held-Karp Travelling Salesperson Problem (Bitmask DP)
 Part 54: Bloom Filter Probabilistic Data Structure
 Part 55: Count-Min Sketch Frequency Estimator
 Part 56: Skip List Probabilistic Ordered Structure
+Part 57: Treap (Cartesian Tree) Randomized Binary Search Tree
 """
 
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
@@ -1743,6 +1744,56 @@ class SkipList:
             update[i].forward[i] = new_node
 
 
+class TreapNode:
+    def __init__(self, key: int, priority: Optional[float] = None):
+        import random
+        self.key = key
+        self.priority = priority if priority is not None else random.random()
+        self.left: Optional['TreapNode'] = None
+        self.right: Optional['TreapNode'] = None
+
+
+class Treap:
+    """Randomized binary search tree maintaining BST property on keys and heap property on priorities."""
+    def __init__(self):
+        self.root: Optional[TreapNode] = None
+
+    def _rotate_right(self, y: TreapNode) -> TreapNode:
+        x = y.left
+        y.left = x.right
+        x.right = y
+        return x
+
+    def _rotate_left(self, x: TreapNode) -> TreapNode:
+        y = x.right
+        x.right = y.left
+        y.left = x
+        return y
+
+    def insert(self, key: int, priority: Optional[float] = None):
+        def _ins(node: Optional[TreapNode]) -> TreapNode:
+            if not node:
+                return TreapNode(key, priority)
+            if key < node.key:
+                node.left = _ins(node.left)
+                if node.left.priority > node.priority:
+                    node = self._rotate_right(node)
+            elif key > node.key:
+                node.right = _ins(node.right)
+                if node.right.priority > node.priority:
+                    node = self._rotate_left(node)
+            return node
+        self.root = _ins(self.root)
+
+    def search(self, key: int) -> bool:
+        curr = self.root
+        while curr:
+            if key == curr.key:
+                return True
+            curr = curr.left if key < curr.key else curr.right
+        return False
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2072,3 +2123,9 @@ if __name__ == "__main__":
         sl.insert(num)
     print("Search 19 in SkipList:", sl.search(19))
     print("Search 100 in SkipList:", sl.search(100))
+    print("\n=== Iteration 57: Treap (Cartesian Tree) ===")
+    treap = Treap()
+    for val in [50, 30, 20, 40, 70, 60, 80]:
+        treap.insert(val)
+    print("Search 40 in Treap:", treap.search(40))
+    print("Search 99 in Treap:", treap.search(99))
