@@ -59,7 +59,6 @@ Part 56: Skip List Probabilistic Ordered Structure
 Part 57: Treap (Cartesian Tree) Randomized Binary Search Tree
 Part 58: AVL Self-Balancing Binary Search Tree
 """
-
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
 import math
