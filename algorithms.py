@@ -64,6 +64,7 @@ Part 61: Splay Tree Self-Adjusting BST
 Part 62: Heavy-Light Decomposition (HLD)
 Part 63: Mo's Algorithm for Offline Range Queries
 Part 64: Suffix Automaton (DAWG)
+Part 65: Push-Relabel Maximum Flow
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2300,6 +2301,61 @@ class SuffixAutomaton:
         return sum(self.st[i].len - self.st[self.st[i].link].len for i in range(1, len(self.st)))
 
 
+class PushRelabelMaxFlow:
+    """Maximum flow algorithm using push and relabel operations with preflow."""
+    def __init__(self, n: int):
+        self.n = n
+        self.capacity = [[0] * n for _ in range(n)]
+        self.flow = [[0] * n for _ in range(n)]
+        self.excess = [0] * n
+        self.height = [0] * n
+
+    def add_edge(self, u: int, v: int, cap: int):
+        self.capacity[u][v] += cap
+
+    def _push(self, u: int, v: int):
+        send = min(self.excess[u], self.capacity[u][v] - self.flow[u][v])
+        self.flow[u][v] += send
+        self.flow[v][u] -= send
+        self.excess[u] -= send
+        self.excess[v] += send
+
+    def _relabel(self, u: int):
+        min_height = float('inf')
+        for v in range(self.n):
+            if self.capacity[u][v] - self.flow[u][v] > 0:
+                min_height = min(min_height, self.height[v])
+        if min_height < float('inf'):
+            self.height[u] = int(min_height) + 1
+
+    def compute_max_flow(self, s: int, t: int) -> int:
+        self.height[s] = self.n
+        self.excess[s] = float('inf')
+        for v in range(self.n):
+            if self.capacity[s][v] > 0:
+                self._push(s, v)
+
+        while True:
+            active = -1
+            for i in range(self.n):
+                if i != s and i != t and self.excess[i] > 0:
+                    active = i
+                    break
+            if active == -1:
+                break
+
+            pushed = False
+            for v in range(self.n):
+                if self.capacity[active][v] - self.flow[active][v] > 0 and self.height[active] == self.height[v] + 1:
+                    self._push(active, v)
+                    pushed = True
+                    break
+            if not pushed:
+                self._relabel(active)
+
+        return sum(self.flow[s][v] for v in range(self.n))
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2671,3 +2727,16 @@ if __name__ == "__main__":
     print("Contains 'bab':", sam.contains("bab"))
     print("Contains 'bb':", sam.contains("bb"))
     print("Total distinct substrings of 'ababa':", sam.count_distinct_substrings())
+    print("\n=== Iteration 65: Push-Relabel Maximum Flow ===")
+    pr_flow = PushRelabelMaxFlow(6)
+    pr_flow.add_edge(0, 1, 16)
+    pr_flow.add_edge(0, 2, 13)
+    pr_flow.add_edge(1, 2, 10)
+    pr_flow.add_edge(1, 3, 12)
+    pr_flow.add_edge(2, 1, 4)
+    pr_flow.add_edge(2, 4, 14)
+    pr_flow.add_edge(3, 2, 9)
+    pr_flow.add_edge(3, 5, 20)
+    pr_flow.add_edge(4, 3, 7)
+    pr_flow.add_edge(4, 5, 4)
+    print("Push-Relabel Max Flow (0 to 5):", pr_flow.compute_max_flow(0, 5))
