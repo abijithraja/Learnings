@@ -65,6 +65,7 @@ Part 62: Heavy-Light Decomposition (HLD)
 Part 63: Mo's Algorithm for Offline Range Queries
 Part 64: Suffix Automaton (DAWG)
 Part 65: Push-Relabel Maximum Flow
+Part 66: Kuhn's Algorithm for Maximum Bipartite Matching
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2356,6 +2357,26 @@ class PushRelabelMaxFlow:
         return sum(self.flow[s][v] for v in range(self.n))
 
 
+def kuhn_bipartite_matching(n_left: int, n_right: int, adj: Dict[int, List[int]]) -> List[Tuple[int, int]]:
+    """Maximum bipartite matching using Kuhn's augmenting paths algorithm."""
+    match = [-1] * n_right
+
+    def dfs(u: int, visited: List[bool]) -> bool:
+        for v in adj.get(u, []):
+            if not visited[v]:
+                visited[v] = True
+                if match[v] < 0 or dfs(match[v], visited):
+                    match[v] = u
+                    return True
+        return False
+
+    for u in range(n_left):
+        visited = [False] * n_right
+        dfs(u, visited)
+
+    return [(u, v) for v, u in enumerate(match) if u != -1]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2740,3 +2761,7 @@ if __name__ == "__main__":
     pr_flow.add_edge(4, 3, 7)
     pr_flow.add_edge(4, 5, 4)
     print("Push-Relabel Max Flow (0 to 5):", pr_flow.compute_max_flow(0, 5))
+    print("\n=== Iteration 66: Kuhn's Maximum Bipartite Matching ===")
+    kuhn_adj = {0: [0, 1], 1: [1], 2: [0, 2], 3: [2]}
+    kuhn_pairs = kuhn_bipartite_matching(4, 3, kuhn_adj)
+    print(f"Kuhn Matched Pairs (size {len(kuhn_pairs)}):", kuhn_pairs)
