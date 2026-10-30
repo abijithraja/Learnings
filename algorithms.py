@@ -63,6 +63,7 @@ Part 60: B-Tree Multiway Search Tree
 Part 61: Splay Tree Self-Adjusting BST
 Part 62: Heavy-Light Decomposition (HLD)
 Part 63: Mo's Algorithm for Offline Range Queries
+Part 64: Suffix Automaton (DAWG)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2246,6 +2247,59 @@ def mo_algorithm(arr: List[int], queries: List[Tuple[int, int]]) -> List[int]:
     return ans
 
 
+class SuffixAutomatonNode:
+    def __init__(self, length: int = 0, link: int = -1):
+        self.len = length
+        self.link = link
+        self.next: Dict[str, int] = {}
+
+
+class SuffixAutomaton:
+    """Minimal Deterministic Finite Automaton (DAWG) recognizing all substrings of a text in O(N)."""
+    def __init__(self, s: str = ""):
+        self.st: List[SuffixAutomatonNode] = [SuffixAutomatonNode(0, -1)]
+        self.last = 0
+        for ch in s:
+            self.extend(ch)
+
+    def extend(self, c: str):
+        cur = len(self.st)
+        self.st.append(SuffixAutomatonNode(self.st[self.last].len + 1))
+        p = self.last
+        while p != -1 and c not in self.st[p].next:
+            self.st[p].next[c] = cur
+            p = self.st[p].link
+
+        if p == -1:
+            self.st[cur].link = 0
+        else:
+            q = self.st[p].next[c]
+            if self.st[p].len + 1 == self.st[q].len:
+                self.st[cur].link = q
+            else:
+                clone = len(self.st)
+                clone_node = SuffixAutomatonNode(self.st[p].len + 1, self.st[q].link)
+                clone_node.next = dict(self.st[q].next)
+                self.st.append(clone_node)
+                while p != -1 and self.st[p].next.get(c) == q:
+                    self.st[p].next[c] = clone
+                    p = self.st[p].link
+                self.st[q].link = clone
+                self.st[cur].link = clone
+        self.last = cur
+
+    def contains(self, pattern: str) -> bool:
+        curr = 0
+        for ch in pattern:
+            if ch not in self.st[curr].next:
+                return False
+            curr = self.st[curr].next[ch]
+        return True
+
+    def count_distinct_substrings(self) -> int:
+        return sum(self.st[i].len - self.st[self.st[i].link].len for i in range(1, len(self.st)))
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2611,3 +2665,9 @@ if __name__ == "__main__":
     mo_arr = [1, 1, 2, 1, 3, 4, 5, 2, 8]
     mo_queries = [(0, 4), (1, 3), (2, 7)]
     print("Distinct elements for queries:", mo_algorithm(mo_arr, mo_queries))
+    print("\n=== Iteration 64: Suffix Automaton ===")
+    sam = SuffixAutomaton("ababa")
+    print("Contains 'aba':", sam.contains("aba"))
+    print("Contains 'bab':", sam.contains("bab"))
+    print("Contains 'bb':", sam.contains("bb"))
+    print("Total distinct substrings of 'ababa':", sam.count_distinct_substrings())
