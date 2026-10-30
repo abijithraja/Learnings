@@ -60,6 +60,7 @@ Part 57: Treap (Cartesian Tree) Randomized Binary Search Tree
 Part 58: AVL Self-Balancing Binary Search Tree
 Part 59: Red-Black Tree (Self-Balancing BST)
 Part 60: B-Tree Multiway Search Tree
+Part 61: Splay Tree Self-Adjusting BST
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2064,6 +2065,80 @@ class BTree:
             self._insert_non_full(x.children[i], k)
 
 
+class SplayNode:
+    def __init__(self, key: int):
+        self.key = key
+        self.left: Optional['SplayNode'] = None
+        self.right: Optional['SplayNode'] = None
+
+
+class SplayTree:
+    """Self-adjusting binary search tree where accessed elements are splayed to the root."""
+    def __init__(self):
+        self.root: Optional[SplayNode] = None
+
+    def _right_rotate(self, x: SplayNode) -> SplayNode:
+        y = x.left
+        x.left = y.right
+        y.right = x
+        return y
+
+    def _left_rotate(self, x: SplayNode) -> SplayNode:
+        y = x.right
+        x.right = y.left
+        y.left = x
+        return y
+
+    def _splay(self, root: Optional[SplayNode], key: int) -> Optional[SplayNode]:
+        if root is None or root.key == key:
+            return root
+
+        if key < root.key:
+            if root.left is None:
+                return root
+            if key < root.left.key:
+                root.left.left = self._splay(root.left.left, key)
+                root = self._right_rotate(root)
+            elif key > root.left.key:
+                root.left.right = self._splay(root.left.right, key)
+                if root.left.right is not None:
+                    root.left = self._left_rotate(root.left)
+            return self._right_rotate(root) if root.left is not None else root
+        else:
+            if root.right is None:
+                return root
+            if key > root.right.key:
+                root.right.right = self._splay(root.right.right, key)
+                root = self._left_rotate(root)
+            elif key < root.right.key:
+                root.right.left = self._splay(root.right.left, key)
+                if root.right.left is not None:
+                    root.right = self._right_rotate(root.right)
+            return self._left_rotate(root) if root.right is not None else root
+
+    def insert(self, key: int):
+        if self.root is None:
+            self.root = SplayNode(key)
+            return
+        self.root = self._splay(self.root, key)
+        if self.root.key == key:
+            return
+        new_node = SplayNode(key)
+        if key < self.root.key:
+            new_node.right = self.root
+            new_node.left = self.root.left
+            self.root.left = None
+        else:
+            new_node.left = self.root
+            new_node.right = self.root.right
+            self.root.right = None
+        self.root = new_node
+
+    def search(self, key: int) -> bool:
+        self.root = self._splay(self.root, key)
+        return self.root is not None and self.root.key == key
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2415,3 +2490,9 @@ if __name__ == "__main__":
         btree.insert(key)
     print("Search 12 in B-Tree:", btree.search(12))
     print("Search 99 in B-Tree:", btree.search(99))
+    print("\n=== Iteration 61: Splay Tree ===")
+    splay = SplayTree()
+    for val in [100, 50, 200, 40, 60]:
+        splay.insert(val)
+    print("Search 60 in Splay Tree:", splay.search(60))
+    print("Root after splaying 60:", splay.root.key)
