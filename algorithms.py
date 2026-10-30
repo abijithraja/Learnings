@@ -66,6 +66,7 @@ Part 63: Mo's Algorithm for Offline Range Queries
 Part 64: Suffix Automaton (DAWG)
 Part 65: Push-Relabel Maximum Flow
 Part 66: Kuhn's Algorithm for Maximum Bipartite Matching
+Part 67: Stoer-Wagner Algorithm for Global Minimum Cut
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2377,6 +2378,47 @@ def kuhn_bipartite_matching(n_left: int, n_right: int, adj: Dict[int, List[int]]
     return [(u, v) for v, u in enumerate(match) if u != -1]
 
 
+def stoer_wagner_min_cut(n: int, adj_matrix: List[List[int]]) -> int:
+    """Compute global minimum cut on an undirected weighted graph using Stoer-Wagner algorithm."""
+    mat = [row[:] for row in adj_matrix]
+    vertices = list(range(n))
+    min_cut = float('inf')
+
+    while len(vertices) > 1:
+        weights = [0] * len(vertices)
+        added = [False] * len(vertices)
+        prev = 0
+        curr = 0
+
+        for _ in range(len(vertices)):
+            max_w = -1
+            curr = -1
+            for j in range(len(vertices)):
+                if not added[j] and weights[j] > max_w:
+                    max_w = weights[j]
+                    curr = j
+            added[curr] = True
+            if _ < len(vertices) - 1:
+                prev = curr
+                for j in range(len(vertices)):
+                    if not added[j]:
+                        u_orig = vertices[curr]
+                        v_orig = vertices[j]
+                        weights[j] += mat[u_orig][v_orig]
+
+        cut_weight = weights[curr]
+        min_cut = min(min_cut, cut_weight)
+
+        u = vertices[prev]
+        v = vertices[curr]
+        for w in range(n):
+            mat[u][w] += mat[v][w]
+            mat[w][u] = mat[u][w]
+        vertices.pop(curr)
+
+    return int(min_cut)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2765,3 +2807,11 @@ if __name__ == "__main__":
     kuhn_adj = {0: [0, 1], 1: [1], 2: [0, 2], 3: [2]}
     kuhn_pairs = kuhn_bipartite_matching(4, 3, kuhn_adj)
     print(f"Kuhn Matched Pairs (size {len(kuhn_pairs)}):", kuhn_pairs)
+    print("\n=== Iteration 67: Stoer-Wagner Global Min Cut ===")
+    sw_mat = [
+        [0, 2, 3, 0],
+        [2, 0, 1, 5],
+        [3, 1, 0, 2],
+        [0, 5, 2, 0]
+    ]
+    print("Global minimum cut weight:", stoer_wagner_min_cut(4, sw_mat))
