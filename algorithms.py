@@ -62,6 +62,7 @@ Part 59: Red-Black Tree (Self-Balancing BST)
 Part 60: B-Tree Multiway Search Tree
 Part 61: Splay Tree Self-Adjusting BST
 Part 62: Heavy-Light Decomposition (HLD)
+Part 63: Mo's Algorithm for Offline Range Queries
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2194,6 +2195,57 @@ class HeavyLightDecomposition:
         return segments
 
 
+def mo_algorithm(arr: List[int], queries: List[Tuple[int, int]]) -> List[int]:
+    """Offline processing of range queries in O((N + Q) * sqrt(N)) time using Mo's Algorithm."""
+    if not arr or not queries:
+        return []
+
+    n = len(arr)
+    block_size = max(1, int(math.isqrt(n)))
+
+    indexed_queries = sorted(
+        [(i, q[0], q[1]) for i, q in enumerate(queries)],
+        key=lambda x: (x[1] // block_size, x[2] if (x[1] // block_size) % 2 == 0 else -x[2])
+    )
+
+    ans = [0] * len(queries)
+    cur_l, cur_r = 0, -1
+    freq: Dict[int, int] = {}
+    distinct_count = 0
+
+    def add(idx: int):
+        nonlocal distinct_count
+        val = arr[idx]
+        if freq.get(val, 0) == 0:
+            distinct_count += 1
+        freq[val] = freq.get(val, 0) + 1
+
+    def remove(idx: int):
+        nonlocal distinct_count
+        val = arr[idx]
+        freq[val] -= 1
+        if freq[val] == 0:
+            distinct_count -= 1
+
+    for q_idx, l, r in indexed_queries:
+        while cur_l > l:
+            cur_l -= 1
+            add(cur_l)
+        while cur_r < r:
+            cur_r += 1
+            add(cur_r)
+        while cur_l < l:
+            remove(cur_l)
+            cur_l += 1
+        while cur_r > r:
+            remove(cur_r)
+            cur_r -= 1
+
+        ans[q_idx] = distinct_count
+
+    return ans
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2555,3 +2607,7 @@ if __name__ == "__main__":
     hld_adj = {0: [1, 2], 1: [0, 3, 4], 2: [0, 5], 3: [1], 4: [1], 5: [2]}
     hld = HeavyLightDecomposition(6, hld_adj, root=0)
     print("HLD path segments between 3 and 5:", hld.get_path_segments(3, 5))
+    print("\n=== Iteration 63: Mo's Algorithm ===")
+    mo_arr = [1, 1, 2, 1, 3, 4, 5, 2, 8]
+    mo_queries = [(0, 4), (1, 3), (2, 7)]
+    print("Distinct elements for queries:", mo_algorithm(mo_arr, mo_queries))
