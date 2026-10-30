@@ -59,6 +59,7 @@ Part 56: Skip List Probabilistic Ordered Structure
 Part 57: Treap (Cartesian Tree) Randomized Binary Search Tree
 Part 58: AVL Self-Balancing Binary Search Tree
 Part 59: Red-Black Tree (Self-Balancing BST)
+Part 60: B-Tree Multiway Search Tree
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -1995,6 +1996,74 @@ class RedBlackTree:
         return res
 
 
+class BTreeNode:
+    def __init__(self, t: int, leaf: bool = True):
+        self.t = t
+        self.leaf = leaf
+        self.keys: List[int] = []
+        self.children: List['BTreeNode'] = []
+
+
+class BTree:
+    """Self-balancing multiway search tree of order t with node splitting."""
+    def __init__(self, t: int = 3):
+        self.t = t
+        self.root = BTreeNode(t, True)
+
+    def search(self, k: int, node: Optional[BTreeNode] = None) -> bool:
+        if node is None:
+            node = self.root
+        i = 0
+        while i < len(node.keys) and k > node.keys[i]:
+            i += 1
+        if i < len(node.keys) and node.keys[i] == k:
+            return True
+        if node.leaf:
+            return False
+        return self.search(k, node.children[i])
+
+    def insert(self, k: int):
+        root = self.root
+        if len(root.keys) == (2 * self.t) - 1:
+            s = BTreeNode(self.t, False)
+            self.root = s
+            s.children.append(root)
+            self._split_child(s, 0)
+            self._insert_non_full(s, k)
+        else:
+            self._insert_non_full(root, k)
+
+    def _split_child(self, x: BTreeNode, i: int):
+        t = self.t
+        y = x.children[i]
+        z = BTreeNode(t, y.leaf)
+        x.children.insert(i + 1, z)
+        x.keys.insert(i, y.keys[t - 1])
+        z.keys = y.keys[t:(2 * t - 1)]
+        y.keys = y.keys[0:t - 1]
+        if not y.leaf:
+            z.children = y.children[t:(2 * t)]
+            y.children = y.children[0:t]
+
+    def _insert_non_full(self, x: BTreeNode, k: int):
+        i = len(x.keys) - 1
+        if x.leaf:
+            x.keys.append(0)
+            while i >= 0 and k < x.keys[i]:
+                x.keys[i + 1] = x.keys[i]
+                i -= 1
+            x.keys[i + 1] = k
+        else:
+            while i >= 0 and k < x.keys[i]:
+                i -= 1
+            i += 1
+            if len(x.children[i].keys) == (2 * self.t) - 1:
+                self._split_child(x, i)
+                if k > x.keys[i]:
+                    i += 1
+            self._insert_non_full(x.children[i], k)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2340,3 +2409,9 @@ if __name__ == "__main__":
     for k in [7, 3, 18, 10, 22, 8, 11, 26]:
         rbt.insert(k)
     print("Red-Black Tree In-Order traversal:", rbt.inorder())
+    print("\n=== Iteration 60: B-Tree Multiway Search Tree ===")
+    btree = BTree(t=3)
+    for key in [10, 20, 5, 6, 12, 30, 7, 17]:
+        btree.insert(key)
+    print("Search 12 in B-Tree:", btree.search(12))
+    print("Search 99 in B-Tree:", btree.search(99))
