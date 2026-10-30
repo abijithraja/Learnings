@@ -61,6 +61,7 @@ Part 58: AVL Self-Balancing Binary Search Tree
 Part 59: Red-Black Tree (Self-Balancing BST)
 Part 60: B-Tree Multiway Search Tree
 Part 61: Splay Tree Self-Adjusting BST
+Part 62: Heavy-Light Decomposition (HLD)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2139,6 +2140,60 @@ class SplayTree:
         return self.root is not None and self.root.key == key
 
 
+class HeavyLightDecomposition:
+    """Heavy-Light Decomposition for efficient tree path queries in O(log^2 N)."""
+    def __init__(self, n: int, adj: Dict[int, List[int]], root: int = 0):
+        self.n = n
+        self.adj = adj
+        self.root = root
+        self.parent = [-1] * n
+        self.depth = [0] * n
+        self.heavy = [-1] * n
+        self.head = [0] * n
+        self.pos = [0] * n
+        self.cur_pos = 0
+
+        self._dfs_size(root, -1, 0)
+        self._dfs_hld(root, root)
+
+    def _dfs_size(self, u: int, p: int, d: int) -> int:
+        self.parent[u] = p
+        self.depth[u] = d
+        size = 1
+        max_c_size = 0
+        for v in self.adj.get(u, []):
+            if v != p:
+                c_size = self._dfs_size(v, u, d + 1)
+                size += c_size
+                if c_size > max_c_size:
+                    max_c_size = c_size
+                    self.heavy[u] = v
+        return size
+
+    def _dfs_hld(self, u: int, h: int):
+        self.head[u] = h
+        self.pos[u] = self.cur_pos
+        self.cur_pos += 1
+        if self.heavy[u] != -1:
+            self._dfs_hld(self.heavy[u], h)
+        for v in self.adj.get(u, []):
+            if v != self.parent[u] and v != self.heavy[u]:
+                self._dfs_hld(v, v)
+
+    def get_path_segments(self, u: int, v: int) -> List[Tuple[int, int]]:
+        """Decompose path between u and v into disjoint intervals on the flattened array."""
+        segments = []
+        while self.head[u] != self.head[v]:
+            if self.depth[self.head[u]] > self.depth[self.head[v]]:
+                u, v = v, u
+            segments.append((self.pos[self.head[v]], self.pos[v]))
+            v = self.parent[self.head[v]]
+        if self.depth[u] > self.depth[v]:
+            u, v = v, u
+        segments.append((self.pos[u], self.pos[v]))
+        return segments
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2496,3 +2551,7 @@ if __name__ == "__main__":
         splay.insert(val)
     print("Search 60 in Splay Tree:", splay.search(60))
     print("Root after splaying 60:", splay.root.key)
+    print("\n=== Iteration 62: Heavy-Light Decomposition ===")
+    hld_adj = {0: [1, 2], 1: [0, 3, 4], 2: [0, 5], 3: [1], 4: [1], 5: [2]}
+    hld = HeavyLightDecomposition(6, hld_adj, root=0)
+    print("HLD path segments between 3 and 5:", hld.get_path_segments(3, 5))
