@@ -58,6 +58,7 @@ Part 55: Count-Min Sketch Frequency Estimator
 Part 56: Skip List Probabilistic Ordered Structure
 Part 57: Treap (Cartesian Tree) Randomized Binary Search Tree
 Part 58: AVL Self-Balancing Binary Search Tree
+Part 59: Red-Black Tree (Self-Balancing BST)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -1870,6 +1871,130 @@ class AVLTree:
         return res
 
 
+RED = True
+BLACK = False
+
+class RBNode:
+    """Node for Red-Black Tree."""
+    def __init__(self, key: int, color: bool = RED):
+        self.key = key
+        self.color = color
+        self.left: Optional['RBNode'] = None
+        self.right: Optional['RBNode'] = None
+        self.parent: Optional['RBNode'] = None
+
+
+class RedBlackTree:
+    """Self-balancing Red-Black binary search tree ensuring O(log N) operations."""
+    def __init__(self):
+        self.NIL = RBNode(0, BLACK)
+        self.root = self.NIL
+
+    def _left_rotate(self, x: RBNode):
+        y = x.right
+        x.right = y.left
+        if y.left != self.NIL:
+            y.left.parent = x
+        y.parent = x.parent
+        if x.parent is None:
+            self.root = y
+        elif x == x.parent.left:
+            x.parent.left = y
+        else:
+            x.parent.right = y
+        y.left = x
+        x.parent = y
+
+    def _right_rotate(self, y: RBNode):
+        x = y.left
+        y.left = x.right
+        if x.right != self.NIL:
+            x.right.parent = y
+        x.parent = y.parent
+        if y.parent is None:
+            self.root = x
+        elif y == y.parent.right:
+            y.parent.right = x
+        else:
+            y.parent.left = x
+        x.right = y
+        y.parent = x
+
+    def insert(self, key: int):
+        node = RBNode(key, RED)
+        node.left = self.NIL
+        node.right = self.NIL
+
+        y = None
+        x = self.root
+        while x != self.NIL:
+            y = x
+            if node.key < x.key:
+                x = x.left
+            else:
+                x = x.right
+
+        node.parent = y
+        if y is None:
+            self.root = node
+        elif node.key < y.key:
+            y.left = node
+        else:
+            y.right = node
+
+        if node.parent is None:
+            node.color = BLACK
+            return
+        if node.parent.parent is None:
+            return
+
+        self._fix_insert(node)
+
+    def _fix_insert(self, k: RBNode):
+        while k.parent and k.parent.color == RED:
+            if k.parent == k.parent.parent.right:
+                u = k.parent.parent.left
+                if u.color == RED:
+                    u.color = BLACK
+                    k.parent.color = BLACK
+                    k.parent.parent.color = RED
+                    k = k.parent.parent
+                else:
+                    if k == k.parent.left:
+                        k = k.parent
+                        self._right_rotate(k)
+                    k.parent.color = BLACK
+                    k.parent.parent.color = RED
+                    self._left_rotate(k.parent.parent)
+            else:
+                u = k.parent.parent.right
+                if u.color == RED:
+                    u.color = BLACK
+                    k.parent.color = BLACK
+                    k.parent.parent.color = RED
+                    k = k.parent.parent
+                else:
+                    if k == k.parent.right:
+                        k = k.parent
+                        self._left_rotate(k)
+                    k.parent.color = BLACK
+                    k.parent.parent.color = RED
+                    self._right_rotate(k.parent.parent)
+            if k == self.root:
+                break
+        self.root.color = BLACK
+
+    def inorder(self) -> List[int]:
+        res = []
+        def _inorder(node):
+            if node != self.NIL:
+                _inorder(node.left)
+                res.append(node.key)
+                _inorder(node.right)
+        _inorder(self.root)
+        return res
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2210,4 +2335,8 @@ if __name__ == "__main__":
     for key in [10, 20, 30, 40, 50, 25]:
         avl.insert(key)
     print("AVL Tree In-Order traversal:", avl.inorder())
-    print("\nAll 58 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 59: Red-Black Tree ===")
+    rbt = RedBlackTree()
+    for k in [7, 3, 18, 10, 22, 8, 11, 26]:
+        rbt.insert(k)
+    print("Red-Black Tree In-Order traversal:", rbt.inorder())
