@@ -77,6 +77,7 @@ Part 74: Segment Tree with Lazy Propagation
 Part 75: Sparse Table for Static RMQ
 Part 76: Bitwise 0-1 Trie for Maximum XOR Pair
 Part 77: Convex Hull Trick (Line Container for DP Optimization)
+Part 78: 2D K-D Tree Spatial Partitioning
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2831,6 +2832,57 @@ class ConvexHullTrickMin:
         return m * x + c
 
 
+class KDNode2D:
+    def __init__(self, point: Tuple[float, float], left=None, right=None):
+        self.point = point
+        self.left = left
+        self.right = right
+
+
+class KDTree2D:
+    """2-Dimensional KD-Tree for spatial indexing and nearest neighbor search."""
+    def __init__(self, points: List[Tuple[float, float]]):
+        def build(pts: List[Tuple[float, float]], depth: int = 0) -> Optional[KDNode2D]:
+            if not pts:
+                return None
+            axis = depth % 2
+            pts.sort(key=lambda p: p[axis])
+            mid = len(pts) // 2
+            return KDNode2D(
+                point=pts[mid],
+                left=build(pts[:mid], depth + 1),
+                right=build(pts[mid + 1:], depth + 1)
+            )
+        self.root = build(points)
+
+    def nearest_neighbor(self, target: Tuple[float, float]) -> Tuple[Tuple[float, float], float]:
+        """Find the nearest point to target in 2D space."""
+        best_point = None
+        best_dist = float('inf')
+
+        def search(node: Optional[KDNode2D], depth: int = 0):
+            nonlocal best_point, best_dist
+            if node is None:
+                return
+
+            d = math.hypot(node.point[0] - target[0], node.point[1] - target[1])
+            if d < best_dist:
+                best_dist = d
+                best_point = node.point
+
+            axis = depth % 2
+            diff = target[axis] - node.point[axis]
+            first = node.left if diff < 0 else node.right
+            second = node.right if diff < 0 else node.left
+
+            search(first, depth + 1)
+            if abs(diff) < best_dist:
+                search(second, depth + 1)
+
+        search(self.root)
+        return best_point, best_dist
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3291,3 +3343,8 @@ if __name__ == "__main__":
     cht.add_line(1.0, 25.0)
     print("Min at x = 1.0:", cht.query(1.0))
     print("Min at x = 10.0:", cht.query(10.0))
+    print("\n=== Iteration 78: 2D K-D Tree ===")
+    kd_pts = [(2.0, 3.0), (5.0, 4.0), (9.0, 6.0), (4.0, 7.0), (8.0, 1.0), (7.0, 2.0)]
+    kdtree = KDTree2D(kd_pts)
+    nearest, dist = kdtree.nearest_neighbor((9.0, 2.0))
+    print(f"Nearest neighbor to (9, 2): {nearest} with distance {dist:.4f}")
