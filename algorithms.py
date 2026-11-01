@@ -70,6 +70,7 @@ Part 67: Stoer-Wagner Algorithm for Global Minimum Cut
 Part 68: Johnson's Algorithm for All-Pairs Shortest Paths
 Part 69: Bipartite Graph Verification (2-Coloring)
 Part 70: Tarjan's Bridges and Articulation Points
+Part 71: Hungarian Algorithm (Kuhn-Munkres) for Min-Weight Bipartite Matching
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2536,6 +2537,60 @@ def find_bridges_and_articulation_points(
     return sorted(bridges), articulation_points
 
 
+def hungarian_min_weight_matching(cost_matrix: List[List[float]]) -> Tuple[float, List[int]]:
+    """Find minimum cost maximum weight assignment using Hungarian Algorithm (O(V^3))."""
+    n = len(cost_matrix)
+    if n == 0:
+        return 0.0, []
+    m = len(cost_matrix[0])
+    u = [0.0] * (n + 1)
+    v = [0.0] * (m + 1)
+    p = [0] * (m + 1)
+    way = [0] * (m + 1)
+
+    for i in range(1, n + 1):
+        p[0] = i
+        j0 = 0
+        minv = [float('inf')] * (m + 1)
+        used = [False] * (m + 1)
+        while True:
+            used[j0] = True
+            i0 = p[j0]
+            delta = float('inf')
+            j1 = 0
+            for j in range(1, m + 1):
+                if not used[j]:
+                    cur = cost_matrix[i0 - 1][j - 1] - u[i0] - v[j]
+                    if cur < minv[j]:
+                        minv[j] = cur
+                        way[j] = j0
+                    if minv[j] < delta:
+                        delta = minv[j]
+                        j1 = j
+            for j in range(0, m + 1):
+                if used[j]:
+                    u[p[j]] += delta
+                    v[j] -= delta
+                else:
+                    minv[j] -= delta
+            j0 = j1
+            if p[j0] == 0:
+                break
+        while True:
+            j1 = way[j0]
+            p[j0] = p[j1]
+            j0 = j1
+            if j0 == 0:
+                break
+
+    matching = [-1] * n
+    for j in range(1, m + 1):
+        if 0 < p[j] <= n:
+            matching[p[j] - 1] = j - 1
+    total_cost = -v[0]
+    return total_cost, matching
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2951,3 +3006,11 @@ if __name__ == "__main__":
     bridge_adj = {0: [1, 2], 1: [0, 2], 2: [0, 1, 3], 3: [2, 4], 4: [3]}
     found_bridges, cut_pts = find_bridges_and_articulation_points(5, bridge_adj)
     print(f"Bridges: {found_bridges}, Articulation Points: {cut_pts}")
+    print("\n=== Iteration 71: Hungarian Algorithm Min-Weight Matching ===")
+    cost_mat = [
+        [4.0, 1.0, 3.0],
+        [2.0, 0.0, 5.0],
+        [3.0, 2.0, 2.0]
+    ]
+    min_cost, match_assign = hungarian_min_weight_matching(cost_mat)
+    print(f"Optimal Assignment Cost: {min_cost}, Matches: {match_assign}")
