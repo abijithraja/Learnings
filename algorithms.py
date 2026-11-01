@@ -73,6 +73,7 @@ Part 70: Tarjan's Bridges and Articulation Points
 Part 71: Hungarian Algorithm (Kuhn-Munkres) for Min-Weight Bipartite Matching
 Part 72: Ford-Fulkerson with Capacity Scaling
 Part 73: 2D Fenwick Tree (Binary Indexed Tree)
+Part 74: Segment Tree with Lazy Propagation
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2667,6 +2668,64 @@ class FenwickTree2D:
         )
 
 
+class LazySegmentTree:
+    """Segment tree supporting range addition updates and range sum queries in O(log N)."""
+    def __init__(self, data: List[int]):
+        self.n = len(data)
+        self.tree = [0] * (4 * self.n)
+        self.lazy = [0] * (4 * self.n)
+        if self.n > 0:
+            self._build(data, 1, 0, self.n - 1)
+
+    def _build(self, data: List[int], node: int, start: int, end: int):
+        if start == end:
+            self.tree[node] = data[start]
+            return
+        mid = (start + end) // 2
+        self._build(data, 2 * node, start, mid)
+        self._build(data, 2 * node + 1, mid + 1, end)
+        self.tree[node] = self.tree[2 * node] + self.tree[2 * node + 1]
+
+    def _push(self, node: int, start: int, end: int):
+        if self.lazy[node] != 0:
+            mid = (start + end) // 2
+            val = self.lazy[node]
+            self.lazy[2 * node] += val
+            self.tree[2 * node] += val * (mid - start + 1)
+            self.lazy[2 * node + 1] += val
+            self.tree[2 * node + 1] += val * (end - mid)
+            self.lazy[node] = 0
+
+    def update_range(self, l: int, r: int, val: int, node: int = 1, start: int = 0, end: int = None):
+        if end is None:
+            end = self.n - 1
+        if l <= start and end <= r:
+            self.tree[node] += val * (end - start + 1)
+            self.lazy[node] += val
+            return
+        self._push(node, start, end)
+        mid = (start + end) // 2
+        if l <= mid:
+            self.update_range(l, r, val, 2 * node, start, mid)
+        if r > mid:
+            self.update_range(l, r, val, 2 * node + 1, mid + 1, end)
+        self.tree[node] = self.tree[2 * node] + self.tree[2 * node + 1]
+
+    def query_range(self, l: int, r: int, node: int = 1, start: int = 0, end: int = None) -> int:
+        if end is None:
+            end = self.n - 1
+        if l <= start and end <= r:
+            return self.tree[node]
+        self._push(node, start, end)
+        mid = (start + end) // 2
+        total = 0
+        if l <= mid:
+            total += self.query_range(l, r, 2 * node, start, mid)
+        if r > mid:
+            total += self.query_range(l, r, 2 * node + 1, mid + 1, end)
+        return total
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3105,3 +3164,8 @@ if __name__ == "__main__":
     bit2d.update(3, 3, 5)
     print("Subgrid (1,1) to (3,3) sum:", bit2d.range_query(1, 1, 3, 3))
     print("Subgrid (2,2) to (3,3) sum:", bit2d.range_query(2, 2, 3, 3))
+    print("\n=== Iteration 74: Lazy Segment Tree ===")
+    lazy_st = LazySegmentTree([1, 2, 3, 4, 5])
+    print("Initial range sum [1, 3]:", lazy_st.query_range(1, 3))
+    lazy_st.update_range(1, 3, 10)  # [1, 12, 13, 14, 5]
+    print("After +10 range sum [1, 3]:", lazy_st.query_range(1, 3))
