@@ -76,6 +76,7 @@ Part 73: 2D Fenwick Tree (Binary Indexed Tree)
 Part 74: Segment Tree with Lazy Propagation
 Part 75: Sparse Table for Static RMQ
 Part 76: Bitwise 0-1 Trie for Maximum XOR Pair
+Part 77: Convex Hull Trick (Line Container for DP Optimization)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2792,6 +2793,44 @@ class BinaryXORTrie:
         return xor_sum
 
 
+class ConvexHullTrickMin:
+    """Convex Hull Trick for dynamic programming to query minimum linear function m*x + c."""
+    def __init__(self):
+        self.lines: List[Tuple[float, float]] = []
+
+    def add_line(self, m: float, c: float):
+        """Add line y = m*x + c assuming m is decreasing."""
+        def intersect_x(l1: Tuple[float, float], l2: Tuple[float, float]) -> float:
+            return (l2[1] - l1[1]) / (l1[0] - l2[0])
+
+        new_line = (m, c)
+        while len(self.lines) >= 2:
+            x_prev = intersect_x(self.lines[-2], self.lines[-1])
+            x_new = intersect_x(self.lines[-1], new_line)
+            if x_new <= x_prev:
+                self.lines.pop()
+            else:
+                break
+        self.lines.append(new_line)
+
+    def query(self, x: float) -> float:
+        """Query min(m*x + c) across all lines using binary search."""
+        if not self.lines:
+            return float('inf')
+
+        low, high = 0, len(self.lines) - 1
+        while low < high:
+            mid = (low + high) // 2
+            m1, c1 = self.lines[mid]
+            m2, c2 = self.lines[mid + 1]
+            if m1 * x + c1 >= m2 * x + c2:
+                low = mid + 1
+            else:
+                high = mid
+        m, c = self.lines[low]
+        return m * x + c
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3245,3 +3284,10 @@ if __name__ == "__main__":
     for val in [3, 10, 5, 25, 2, 8]:
         xor_trie.insert(val)
     print("Max XOR with 5:", xor_trie.max_xor(5))
+    print("\n=== Iteration 77: Convex Hull Trick Min ===")
+    cht = ConvexHullTrickMin()
+    cht.add_line(4.0, 10.0)
+    cht.add_line(2.0, 15.0)
+    cht.add_line(1.0, 25.0)
+    print("Min at x = 1.0:", cht.query(1.0))
+    print("Min at x = 10.0:", cht.query(10.0))
