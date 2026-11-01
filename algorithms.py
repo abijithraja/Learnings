@@ -72,6 +72,7 @@ Part 69: Bipartite Graph Verification (2-Coloring)
 Part 70: Tarjan's Bridges and Articulation Points
 Part 71: Hungarian Algorithm (Kuhn-Munkres) for Min-Weight Bipartite Matching
 Part 72: Ford-Fulkerson with Capacity Scaling
+Part 73: 2D Fenwick Tree (Binary Indexed Tree)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2627,6 +2628,45 @@ def capacity_scaling_max_flow(capacity: List[List[int]], source: int, sink: int)
     return total_flow
 
 
+class FenwickTree2D:
+    """2D Binary Indexed Tree for subgrid prefix and range sum queries."""
+    def __init__(self, rows: int, cols: int):
+        self.rows = rows
+        self.cols = cols
+        self.tree = [[0] * (cols + 1) for _ in range(rows + 1)]
+
+    def update(self, r: int, c: int, delta: int):
+        """Add delta to cell (r, c) (1-indexed)."""
+        i = r
+        while i <= self.rows:
+            j = c
+            while j <= self.cols:
+                self.tree[i][j] += delta
+                j += j & (-j)
+            i += i & (-i)
+
+    def query(self, r: int, c: int) -> int:
+        """Query sum of subgrid from (1, 1) to (r, c)."""
+        total = 0
+        i = r
+        while i > 0:
+            j = c
+            while j > 0:
+                total += self.tree[i][j]
+                j -= j & (-j)
+            i -= i & (-i)
+        return total
+
+    def range_query(self, r1: int, c1: int, r2: int, c2: int) -> int:
+        """Query subgrid sum in [r1, r2] x [c1, c2]."""
+        return (
+            self.query(r2, c2)
+            - self.query(r1 - 1, c2)
+            - self.query(r2, c1 - 1)
+            + self.query(r1 - 1, c1 - 1)
+        )
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3058,3 +3098,10 @@ if __name__ == "__main__":
         [0, 0, 0, 0]
     ]
     print("Capacity Scaling Max Flow (0 -> 3):", capacity_scaling_max_flow(cs_caps, 0, 3))
+    print("\n=== Iteration 73: 2D Fenwick Tree ===")
+    bit2d = FenwickTree2D(4, 4)
+    bit2d.update(1, 1, 2)
+    bit2d.update(2, 2, 3)
+    bit2d.update(3, 3, 5)
+    print("Subgrid (1,1) to (3,3) sum:", bit2d.range_query(1, 1, 3, 3))
+    print("Subgrid (2,2) to (3,3) sum:", bit2d.range_query(2, 2, 3, 3))
