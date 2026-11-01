@@ -74,6 +74,7 @@ Part 71: Hungarian Algorithm (Kuhn-Munkres) for Min-Weight Bipartite Matching
 Part 72: Ford-Fulkerson with Capacity Scaling
 Part 73: 2D Fenwick Tree (Binary Indexed Tree)
 Part 74: Segment Tree with Lazy Propagation
+Part 75: Sparse Table for Static RMQ
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2726,6 +2727,36 @@ class LazySegmentTree:
         return total
 
 
+class SparseTableRMQ:
+    """Static Range Minimum Query (RMQ) data structure with O(N log N) build and O(1) query."""
+    def __init__(self, arr: List[int]):
+        self.n = len(arr)
+        if self.n == 0:
+            self.st = []
+            return
+        self.k = int(math.log2(self.n)) + 1
+        self.st = [[0] * self.n for _ in range(self.k)]
+        for i in range(self.n):
+            self.st[0][i] = arr[i]
+
+        j = 1
+        while (1 << j) <= self.n:
+            i = 0
+            while i + (1 << j) - 1 < self.n:
+                self.st[j][i] = min(
+                    self.st[j - 1][i],
+                    self.st[j - 1][i + (1 << (j - 1))]
+                )
+                i += 1
+            j += 1
+
+    def query(self, l: int, r: int) -> int:
+        """Return the minimum element in interval [l, r] in O(1)."""
+        length = r - l + 1
+        j = int(math.log2(length))
+        return min(self.st[j][l], self.st[j][r - (1 << j) + 1])
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3169,3 +3200,8 @@ if __name__ == "__main__":
     print("Initial range sum [1, 3]:", lazy_st.query_range(1, 3))
     lazy_st.update_range(1, 3, 10)  # [1, 12, 13, 14, 5]
     print("After +10 range sum [1, 3]:", lazy_st.query_range(1, 3))
+    print("\n=== Iteration 75: Sparse Table RMQ ===")
+    st_arr = [7, 2, 3, 0, 5, 10, 3, 12, 18]
+    st_rmq = SparseTableRMQ(st_arr)
+    print("Sparse Table Min [0, 4]:", st_rmq.query(0, 4))
+    print("Sparse Table Min [4, 7]:", st_rmq.query(4, 7))
