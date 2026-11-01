@@ -75,6 +75,7 @@ Part 72: Ford-Fulkerson with Capacity Scaling
 Part 73: 2D Fenwick Tree (Binary Indexed Tree)
 Part 74: Segment Tree with Lazy Propagation
 Part 75: Sparse Table for Static RMQ
+Part 76: Bitwise 0-1 Trie for Maximum XOR Pair
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2757,6 +2758,40 @@ class SparseTableRMQ:
         return min(self.st[j][l], self.st[j][r - (1 << j) + 1])
 
 
+class BinaryTrieNode:
+    def __init__(self):
+        self.children: List[Optional['BinaryTrieNode']] = [None, None]
+
+
+class BinaryXORTrie:
+    """0-1 Prefix tree for finding maximum XOR pairs in O(32 * N)."""
+    def __init__(self, bit_depth: int = 31):
+        self.root = BinaryTrieNode()
+        self.bit_depth = bit_depth
+
+    def insert(self, num: int):
+        curr = self.root
+        for b in reversed(range(self.bit_depth + 1)):
+            bit = (num >> b) & 1
+            if not curr.children[bit]:
+                curr.children[bit] = BinaryTrieNode()
+            curr = curr.children[bit]
+
+    def max_xor(self, num: int) -> int:
+        curr = self.root
+        xor_sum = 0
+        for b in reversed(range(self.bit_depth + 1)):
+            wanted_bit = 1 - ((num >> b) & 1)
+            if curr.children[wanted_bit]:
+                xor_sum |= (1 << b)
+                curr = curr.children[wanted_bit]
+            elif curr.children[1 - wanted_bit]:
+                curr = curr.children[1 - wanted_bit]
+            else:
+                break
+        return xor_sum
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3205,3 +3240,8 @@ if __name__ == "__main__":
     st_rmq = SparseTableRMQ(st_arr)
     print("Sparse Table Min [0, 4]:", st_rmq.query(0, 4))
     print("Sparse Table Min [4, 7]:", st_rmq.query(4, 7))
+    print("\n=== Iteration 76: Bitwise 0-1 XOR Trie ===")
+    xor_trie = BinaryXORTrie(bit_depth=16)
+    for val in [3, 10, 5, 25, 2, 8]:
+        xor_trie.insert(val)
+    print("Max XOR with 5:", xor_trie.max_xor(5))
