@@ -69,6 +69,7 @@ Part 66: Kuhn's Algorithm for Maximum Bipartite Matching
 Part 67: Stoer-Wagner Algorithm for Global Minimum Cut
 Part 68: Johnson's Algorithm for All-Pairs Shortest Paths
 Part 69: Bipartite Graph Verification (2-Coloring)
+Part 70: Tarjan's Bridges and Articulation Points
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2492,6 +2493,49 @@ def is_bipartite_graph(n: int, adj: Dict[int, List[int]]) -> Tuple[bool, Dict[in
     return True, color
 
 
+def find_bridges_and_articulation_points(
+    n: int, adj: Dict[int, List[int]]
+) -> Tuple[List[Tuple[int, int]], List[int]]:
+    """Find all bridges and cut vertices (articulation points) in an undirected graph."""
+    tin = [-1] * n
+    low = [-1] * n
+    visited = [False] * n
+    timer = 0
+    bridges: List[Tuple[int, int]] = []
+    is_cut_vertex = [False] * n
+
+    def dfs(u: int, p: int = -1):
+        nonlocal timer
+        visited[u] = True
+        timer += 1
+        tin[u] = low[u] = timer
+        children = 0
+
+        for v in adj.get(u, []):
+            if v == p:
+                continue
+            if visited[v]:
+                low[u] = min(low[u], tin[v])
+            else:
+                dfs(v, u)
+                low[u] = min(low[u], low[v])
+                if low[v] > tin[u]:
+                    bridges.append((min(u, v), max(u, v)))
+                if low[v] >= tin[u] and p != -1:
+                    is_cut_vertex[u] = True
+                children += 1
+
+        if p == -1 and children > 1:
+            is_cut_vertex[u] = True
+
+    for i in range(n):
+        if not visited[i]:
+            dfs(i)
+
+    articulation_points = [i for i, cut in enumerate(is_cut_vertex) if cut]
+    return sorted(bridges), articulation_points
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2903,3 +2947,7 @@ if __name__ == "__main__":
     bipartite_adj = {0: [1, 3], 1: [0, 2], 2: [1, 3], 3: [0, 2]}
     is_bip, coloring = is_bipartite_graph(4, bipartite_adj)
     print(f"Graph is bipartite: {is_bip}, Coloring: {coloring}")
+    print("\n=== Iteration 70: Bridges and Articulation Points ===")
+    bridge_adj = {0: [1, 2], 1: [0, 2], 2: [0, 1, 3], 3: [2, 4], 4: [3]}
+    found_bridges, cut_pts = find_bridges_and_articulation_points(5, bridge_adj)
+    print(f"Bridges: {found_bridges}, Articulation Points: {cut_pts}")
