@@ -71,6 +71,7 @@ Part 68: Johnson's Algorithm for All-Pairs Shortest Paths
 Part 69: Bipartite Graph Verification (2-Coloring)
 Part 70: Tarjan's Bridges and Articulation Points
 Part 71: Hungarian Algorithm (Kuhn-Munkres) for Min-Weight Bipartite Matching
+Part 72: Ford-Fulkerson with Capacity Scaling
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2591,6 +2592,41 @@ def hungarian_min_weight_matching(cost_matrix: List[List[float]]) -> Tuple[float
     return total_cost, matching
 
 
+def capacity_scaling_max_flow(capacity: List[List[int]], source: int, sink: int) -> int:
+    """Compute maximum flow using Ford-Fulkerson with capacity scaling in O(E^2 log(U))."""
+    n = len(capacity)
+    residual = [row[:] for row in capacity]
+    max_cap = max(max(row) for row in capacity) if n > 0 else 0
+    delta = 1
+    while delta * 2 <= max_cap:
+        delta *= 2
+
+    def dfs(u: int, t: int, flow: int, visited: List[bool], cur_delta: int) -> int:
+        if u == t:
+            return flow
+        visited[u] = True
+        for v in range(n):
+            if not visited[v] and residual[u][v] >= cur_delta:
+                pushed = dfs(v, t, min(flow, residual[u][v]), visited, cur_delta)
+                if pushed > 0:
+                    residual[u][v] -= pushed
+                    residual[v][u] += pushed
+                    return pushed
+        return 0
+
+    total_flow = 0
+    while delta > 0:
+        while True:
+            visited = [False] * n
+            pushed = dfs(source, sink, 10**9, visited, delta)
+            if pushed == 0:
+                break
+            total_flow += int(pushed)
+        delta //= 2
+
+    return total_flow
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3014,3 +3050,11 @@ if __name__ == "__main__":
     ]
     min_cost, match_assign = hungarian_min_weight_matching(cost_mat)
     print(f"Optimal Assignment Cost: {min_cost}, Matches: {match_assign}")
+    print("\n=== Iteration 72: Capacity Scaling Max Flow ===")
+    cs_caps = [
+        [0, 10, 10, 0],
+        [0, 0, 2, 8],
+        [0, 0, 0, 9],
+        [0, 0, 0, 0]
+    ]
+    print("Capacity Scaling Max Flow (0 -> 3):", capacity_scaling_max_flow(cs_caps, 0, 3))
