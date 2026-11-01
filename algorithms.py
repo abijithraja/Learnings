@@ -78,6 +78,7 @@ Part 75: Sparse Table for Static RMQ
 Part 76: Bitwise 0-1 Trie for Maximum XOR Pair
 Part 77: Convex Hull Trick (Line Container for DP Optimization)
 Part 78: 2D K-D Tree Spatial Partitioning
+Part 79: Tonelli-Shanks Modular Square Root Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2883,6 +2884,48 @@ class KDTree2D:
         return best_point, best_dist
 
 
+def tonelli_shanks(n: int, p: int) -> Optional[int]:
+    """Solve r^2 = n (mod p) for odd prime p using the Tonelli-Shanks algorithm."""
+    n %= p
+    if n == 0:
+        return 0
+    if p == 2:
+        return n
+    if pow(n, (p - 1) // 2, p) != 1:
+        return None
+
+    q = p - 1
+    s = 0
+    while q % 2 == 0:
+        s += 1
+        q //= 2
+
+    z = 2
+    while pow(z, (p - 1) // 2, p) != p - 1:
+        z += 1
+
+    c = pow(z, q, p)
+    x = pow(n, (q + 1) // 2, p)
+    t = pow(n, q, p)
+    m = s
+
+    while t != 1:
+        i = 0
+        temp = t
+        while temp != 1:
+            temp = pow(temp, 2, p)
+            i += 1
+            if i == m:
+                return None
+        b = pow(c, 1 << (m - i - 1), p)
+        x = (x * b) % p
+        t = (t * b * b) % p
+        c = (b * b) % p
+        m = i
+
+    return min(x, p - x)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3348,3 +3391,7 @@ if __name__ == "__main__":
     kdtree = KDTree2D(kd_pts)
     nearest, dist = kdtree.nearest_neighbor((9.0, 2.0))
     print(f"Nearest neighbor to (9, 2): {nearest} with distance {dist:.4f}")
+    print("\n=== Iteration 79: Tonelli-Shanks Modular Square Root ===")
+    root_val = tonelli_shanks(10, 13)
+    print("Square root of 10 mod 13:", root_val)
+    print("Verification (root^2 % 13):", (root_val * root_val) % 13 if root_val else None)
