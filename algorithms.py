@@ -68,6 +68,7 @@ Part 65: Push-Relabel Maximum Flow
 Part 66: Kuhn's Algorithm for Maximum Bipartite Matching
 Part 67: Stoer-Wagner Algorithm for Global Minimum Cut
 Part 68: Johnson's Algorithm for All-Pairs Shortest Paths
+Part 69: Bipartite Graph Verification (2-Coloring)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2473,6 +2474,24 @@ def johnsons_all_pairs_shortest_path(nodes: List[int], edges: List[Tuple[int, in
     return all_dists
 
 
+def is_bipartite_graph(n: int, adj: Dict[int, List[int]]) -> Tuple[bool, Dict[int, int]]:
+    """Determine whether an undirected graph is bipartite and return a 2-coloring if valid."""
+    color: Dict[int, int] = {}
+    for node in range(n):
+        if node not in color:
+            color[node] = 0
+            queue = deque([node])
+            while queue:
+                u = queue.popleft()
+                for v in adj.get(u, []):
+                    if v not in color:
+                        color[v] = 1 - color[u]
+                        queue.append(v)
+                    elif color[v] == color[u]:
+                        return False, {}
+    return True, color
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -2880,4 +2899,7 @@ if __name__ == "__main__":
     ]
     j_res = johnsons_all_pairs_shortest_path(johnson_nodes, johnson_edges)
     print("Shortest distance 0 -> 3:", j_res[0][3] if j_res else "Negative cycle")
-    print("\nAll 68 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 69: Bipartite Graph 2-Coloring ===")
+    bipartite_adj = {0: [1, 3], 1: [0, 2], 2: [1, 3], 3: [0, 2]}
+    is_bip, coloring = is_bipartite_graph(4, bipartite_adj)
+    print(f"Graph is bipartite: {is_bip}, Coloring: {coloring}")
