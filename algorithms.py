@@ -83,6 +83,7 @@ Part 80: HyperLogLog Cardinality Estimation
 Part 81: Dial's Bucket Algorithm for Shortest Path
 Part 82: 0-1 BFS Deque Shortest Path
 Part 83: Disjoint Sparse Table
+Part 84: Cartesian Tree Construction in O(N)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3046,6 +3047,29 @@ class DisjointSparseTable:
         return self.table[level][l] + self.table[level][r]
 
 
+class CartesianTreeNode:
+    def __init__(self, val: int, idx: int):
+        self.val = val
+        self.idx = idx
+        self.left: Optional['CartesianTreeNode'] = None
+        self.right: Optional['CartesianTreeNode'] = None
+
+
+def build_cartesian_tree(arr: List[int]) -> Optional[CartesianTreeNode]:
+    """Construct min-heap Cartesian Tree from an array in O(N) using a monotonic stack."""
+    stack: List[CartesianTreeNode] = []
+    for i, val in enumerate(arr):
+        node = CartesianTreeNode(val, i)
+        last_popped = None
+        while stack and stack[-1].val > val:
+            last_popped = stack.pop()
+        node.left = last_popped
+        if stack:
+            stack[-1].right = node
+        stack.append(node)
+    return stack[0] if stack else None
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3530,3 +3554,6 @@ if __name__ == "__main__":
     dst = DisjointSparseTable([2, 4, 3, 1, 6, 7, 8, 9])
     print("Disjoint Sparse Table Sum [1, 4]:", dst.query(1, 4))
     print("Disjoint Sparse Table Sum [2, 6]:", dst.query(2, 6))
+    print("\n=== Iteration 84: Cartesian Tree ===")
+    c_tree = build_cartesian_tree([9, 3, 7, 1, 8, 12, 10, 20, 15, 18, 5])
+    print("Cartesian Tree Root Value (min):", c_tree.val if c_tree else None)
