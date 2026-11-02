@@ -86,6 +86,7 @@ Part 83: Disjoint Sparse Table
 Part 84: Cartesian Tree Construction in O(N)
 Part 85: Wavelet Tree for Range Rank Queries
 Part 86: Link-Cut Tree Dynamic Forest
+Part 87: Implicit Treap with Range Reversal
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3210,6 +3211,91 @@ class LinkCutTree:
         return y.sum
 
 
+class ImplicitTreapNode:
+    def __init__(self, val: int):
+        import random
+        self.val = val
+        self.priority = random.random()
+        self.size = 1
+        self.rev = False
+        self.left: Optional['ImplicitTreapNode'] = None
+        self.right: Optional['ImplicitTreapNode'] = None
+
+
+class ImplicitTreap:
+    """Treap indexed by implicit positions supporting range reversal and slicing in O(log N)."""
+    def __init__(self):
+        self.root: Optional[ImplicitTreapNode] = None
+
+    def _size(self, t: Optional[ImplicitTreapNode]) -> int:
+        return t.size if t else 0
+
+    def _push(self, t: Optional[ImplicitTreapNode]):
+        if t and t.rev:
+            t.left, t.right = t.right, t.left
+            if t.left:
+                t.left.rev = not t.left.rev
+            if t.right:
+                t.right.rev = not t.right.rev
+            t.rev = False
+
+    def _pull(self, t: Optional[ImplicitTreapNode]):
+        if t:
+            t.size = 1 + self._size(t.left) + self._size(t.right)
+
+    def split(self, t: Optional[ImplicitTreapNode], key: int) -> Tuple[Optional[ImplicitTreapNode], Optional[ImplicitTreapNode]]:
+        if not t:
+            return None, None
+        self._push(t)
+        left_sz = self._size(t.left)
+        if left_sz >= key:
+            l, r = self.split(t.left, key)
+            t.left = r
+            self._pull(t)
+            return l, t
+        else:
+            l, r = self.split(t.right, key - left_sz - 1)
+            t.right = l
+            self._pull(t)
+            return t, r
+
+    def merge(self, l: Optional[ImplicitTreapNode], r: Optional[ImplicitTreapNode]) -> Optional[ImplicitTreapNode]:
+        self._push(l)
+        self._push(r)
+        if not l or not r:
+            return l or r
+        if l.priority > r.priority:
+            l.right = self.merge(l.right, r)
+            self._pull(l)
+            return l
+        else:
+            r.left = self.merge(l, r.left)
+            self._pull(r)
+            return r
+
+    def append(self, val: int):
+        self.root = self.merge(self.root, ImplicitTreapNode(val))
+
+    def reverse_range(self, l: int, r: int):
+        t1, t2 = self.split(self.root, l)
+        t2, t3 = self.split(t2, r - l + 1)
+        if t2:
+            t2.rev = not t2.rev
+        self.root = self.merge(self.merge(t1, t2), t3)
+
+    def to_list(self) -> List[int]:
+        res = []
+        def dfs(t):
+            if not t:
+                return
+            self._push(t)
+            dfs(t.left)
+            res.append(t.val)
+            dfs(t.right)
+        dfs(self.root)
+        return res
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3707,3 +3793,9 @@ if __name__ == "__main__":
     lct.link(n1, n2)
     lct.link(n2, n3)
     print("Path sum from n1 to n3:", lct.query_path(n1, n3))
+    print("\n=== Iteration 87: Implicit Treap ===")
+    it = ImplicitTreap()
+    for v in [1, 2, 3, 4, 5, 6, 7]:
+        it.append(v)
+    it.reverse_range(2, 5)  # Reverse elements at indices 2 through 5: [3, 4, 5, 6] -> [6, 5, 4, 3]
+    print("Array after reversing range [2, 5]:", it.to_list())
