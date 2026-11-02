@@ -103,6 +103,7 @@ Part 100: Persistent Segment Tree
 Part 101: Li Chao Segment Tree for Dynamic Line Container
 Part 102: Range-Update Range-Query Fenwick Tree
 Part 103: Centroid Decomposition of Trees
+Part 104: Bidirectional Dijkstra Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4133,6 +4134,56 @@ class CentroidDecomposition:
         return centroid
 
 
+def bidirectional_dijkstra(
+    n: int, adj: Dict[int, List[Tuple[int, float]]], src: int, target: int
+) -> float:
+    """Compute shortest path between src and target using Bidirectional Dijkstra."""
+    if src == target:
+        return 0.0
+
+    rev_adj: Dict[int, List[Tuple[int, float]]] = {i: [] for i in range(n)}
+    for u in adj:
+        for v, w in adj[u]:
+            rev_adj[v].append((u, w))
+
+    dist_f = [float('inf')] * n
+    dist_b = [float('inf')] * n
+    dist_f[src] = 0.0
+    dist_b[target] = 0.0
+
+    pq_f: List[Tuple[float, int]] = [(0.0, src)]
+    pq_b: List[Tuple[float, int]] = [(0.0, target)]
+    visited_f = [False] * n
+    visited_b = [False] * n
+    best_path = float('inf')
+
+    while pq_f and pq_b:
+        d_f, u_f = heapq.heappop(pq_f)
+        if not visited_f[u_f]:
+            visited_f[u_f] = True
+            for v, w in adj.get(u_f, []):
+                if dist_f[u_f] + w < dist_f[v]:
+                    dist_f[v] = dist_f[u_f] + w
+                    heapq.heappush(pq_f, (dist_f[v], v))
+                if visited_b[v] and dist_f[u_f] + w + dist_b[v] < best_path:
+                    best_path = dist_f[u_f] + w + dist_b[v]
+
+        d_b, u_b = heapq.heappop(pq_b)
+        if not visited_b[u_b]:
+            visited_b[u_b] = True
+            for v, w in rev_adj.get(u_b, []):
+                if dist_b[u_b] + w < dist_b[v]:
+                    dist_b[v] = dist_b[u_b] + w
+                    heapq.heappush(pq_b, (dist_b[v], v))
+                if visited_f[v] and dist_b[u_b] + w + dist_f[v] < best_path:
+                    best_path = dist_b[u_b] + w + dist_f[v]
+
+        if d_f + d_b >= best_path:
+            break
+
+    return best_path
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4729,3 +4780,11 @@ if __name__ == "__main__":
     cd = CentroidDecomposition(5, cd_adj)
     print("Centroid Tree Root:", cd.root)
     print("Centroid Parents:", cd.centroid_parent)
+    print("\n=== Iteration 104: Bidirectional Dijkstra ===")
+    bd_adj = {
+        0: [(1, 4.0), (2, 1.0)],
+        1: [(3, 1.0)],
+        2: [(1, 2.0), (3, 5.0)],
+        3: []
+    }
+    print("Bidirectional Dijkstra shortest path (0 -> 3):", bidirectional_dijkstra(4, bd_adj, 0, 3))
