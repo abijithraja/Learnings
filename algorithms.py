@@ -95,6 +95,7 @@ Part 92: Shunting-Yard Arithmetic Expression Evaluator
 Part 93: Simplex Linear Programming Algorithm
 Part 94: Strassen's Sub-Cubic Matrix Multiplication
 Part 95: Baby-Step Giant-Step Discrete Logarithm
+Part 96: Fibonacci Heap Priority Queue
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3643,6 +3644,116 @@ def baby_step_giant_step(a: int, b: int, p: int) -> Optional[int]:
     return None
 
 
+class FibHeapNode:
+    def __init__(self, key: int, val: Any = None):
+        self.key = key
+        self.val = val
+        self.degree = 0
+        self.mark = False
+        self.parent: Optional['FibHeapNode'] = None
+        self.child: Optional['FibHeapNode'] = None
+        self.left = self
+        self.right = self
+
+
+class FibonacciHeap:
+    """Fibonacci Heap supporting O(1) amortized insertion, union, and decrease-key."""
+    def __init__(self):
+        self.min_node: Optional[FibHeapNode] = None
+        self.total_nodes = 0
+
+    def insert(self, key: int, val: Any = None) -> FibHeapNode:
+        node = FibHeapNode(key, val)
+        if self.min_node is None:
+            self.min_node = node
+        else:
+            self._link_root_list(node)
+            if node.key < self.min_node.key:
+                self.min_node = node
+        self.total_nodes += 1
+        return node
+
+    def _link_root_list(self, node: FibHeapNode):
+        node.left = self.min_node
+        node.right = self.min_node.right
+        self.min_node.right.left = node
+        self.min_node.right = node
+
+    def extract_min(self) -> Optional[FibHeapNode]:
+        z = self.min_node
+        if z is not None:
+            if z.child is not None:
+                children = []
+                c = z.child
+                while True:
+                    children.append(c)
+                    c = c.right
+                    if c == z.child:
+                        break
+                for child in children:
+                    self._link_root_list(child)
+                    child.parent = None
+            z.left.right = z.right
+            z.right.left = z.left
+            if z == z.right:
+                self.min_node = None
+            else:
+                self.min_node = z.right
+                self._consolidate()
+            self.total_nodes -= 1
+        return z
+
+    def _consolidate(self):
+        max_deg = 45
+        A: List[Optional[FibHeapNode]] = [None] * max_deg
+        root_nodes = []
+        x = self.min_node
+        if x:
+            while True:
+                root_nodes.append(x)
+                x = x.right
+                if x == self.min_node:
+                    break
+        for w in root_nodes:
+            x = w
+            d = x.degree
+            while A[d] is not None:
+                y = A[d]
+                if x.key > y.key:
+                    x, y = y, x
+                self._heap_link(y, x)
+                A[d] = None
+                d += 1
+            A[d] = x
+        self.min_node = None
+        for i in range(max_deg):
+            if A[i] is not None:
+                if self.min_node is None:
+                    self.min_node = A[i]
+                    A[i].left = A[i]
+                    A[i].right = A[i]
+                else:
+                    self._link_root_list(A[i])
+                    if A[i].key < self.min_node.key:
+                        self.min_node = A[i]
+
+    def _heap_link(self, y: FibHeapNode, x: FibHeapNode):
+        y.left.right = y.right
+        y.right.left = y.left
+        y.parent = x
+        if x.child is None:
+            x.child = y
+            y.left = y
+            y.right = y
+        else:
+            y.left = x.child
+            y.right = x.child.right
+            x.child.right.left = y
+            x.child.right = y
+        x.degree += 1
+        y.mark = False
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4192,4 +4303,9 @@ if __name__ == "__main__":
     d_log = baby_step_giant_step(2, 64, 101)  # 2^6 = 64
     print("Discrete log of 2^x = 64 mod 101:", d_log)
     print("Verification (2^x % 101):", pow(2, d_log, 101) if d_log is not None else None)
-    print("\nAll 95 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 96: Fibonacci Heap ===")
+    fib_heap = FibonacciHeap()
+    for v in [10, 3, 15, 7, 2, 24]:
+        fib_heap.insert(v)
+    min_item = fib_heap.extract_min()
+    print("Fibonacci Heap extracted minimum:", min_item.key if min_item else None)
