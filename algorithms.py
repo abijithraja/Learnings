@@ -91,6 +91,7 @@ Part 88: Boruvka's Minimum Spanning Tree Algorithm
 Part 89: 2-SAT Solver via Strongly Connected Components
 Part 90: Bron-Kerbosch Algorithm for Maximal Cliques
 Part 91: Hierholzer's Eulerian Circuit Algorithm
+Part 92: Shunting-Yard Arithmetic Expression Evaluator
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3441,6 +3442,70 @@ def hierholzer_eulerian_circuit(n: int, adj: Dict[int, List[int]]) -> Optional[L
     return circuit
 
 
+def shunting_yard_eval(expr: str) -> float:
+    """Evaluate mathematical arithmetic expressions using Dijkstra's Shunting-Yard algorithm."""
+    precedence = {'+': 1, '-': 1, '*': 2, '/': 2, '^': 3}
+    associativity = {'+': 'L', '-': 'L', '*': 'L', '/': 'L', '^': 'R'}
+
+    def tokenize(s: str) -> List[str]:
+        tokens = []
+        i = 0
+        while i < len(s):
+            if s[i].isspace():
+                i += 1
+            elif s[i] in "+-*/^()":
+                tokens.append(s[i])
+                i += 1
+            elif s[i].isdigit() or s[i] == '.':
+                num_str = ""
+                while i < len(s) and (s[i].isdigit() or s[i] == '.'):
+                    num_str += s[i]
+                    i += 1
+                tokens.append(num_str)
+            else:
+                i += 1
+        return tokens
+
+    tokens = tokenize(expr)
+    output: List[str] = []
+    ops: List[str] = []
+
+    for token in tokens:
+        if token.replace('.', '', 1).isdigit():
+            output.append(token)
+        elif token in precedence:
+            while (ops and ops[-1] in precedence and
+                   ((associativity[token] == 'L' and precedence[token] <= precedence[ops[-1]]) or
+                    (associativity[token] == 'R' and precedence[token] < precedence[ops[-1]]))):
+                output.append(ops.pop())
+            ops.append(token)
+        elif token == '(':
+            ops.append(token)
+        elif token == ')':
+            while ops and ops[-1] != '(':
+                output.append(ops.pop())
+            if ops and ops[-1] == '(':
+                ops.pop()
+
+    while ops:
+        output.append(ops.pop())
+
+    stack: List[float] = []
+    for token in output:
+        if token.replace('.', '', 1).isdigit():
+            stack.append(float(token))
+        else:
+            b = stack.pop()
+            a = stack.pop()
+            if token == '+': stack.append(a + b)
+            elif token == '-': stack.append(a - b)
+            elif token == '*': stack.append(a * b)
+            elif token == '/': stack.append(a / b)
+            elif token == '^': stack.append(a ** b)
+
+    return stack[0] if stack else 0.0
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3963,3 +4028,6 @@ if __name__ == "__main__":
     print("\n=== Iteration 91: Hierholzer's Eulerian Circuit ===")
     euler_adj = {0: [1], 1: [2], 2: [0]}
     print("Eulerian circuit:", hierholzer_eulerian_circuit(3, euler_adj))
+    print("\n=== Iteration 92: Shunting-Yard Evaluator ===")
+    expr = "3 + 4 * 2 / ( 1 - 5 ) ^ 2"
+    print(f"Evaluated '{expr}':", shunting_yard_eval(expr))
