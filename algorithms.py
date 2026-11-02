@@ -89,6 +89,7 @@ Part 86: Link-Cut Tree Dynamic Forest
 Part 87: Implicit Treap with Range Reversal
 Part 88: Boruvka's Minimum Spanning Tree Algorithm
 Part 89: 2-SAT Solver via Strongly Connected Components
+Part 90: Bron-Kerbosch Algorithm for Maximal Cliques
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3387,6 +3388,25 @@ def solve_2sat(num_vars: int, clauses: List[Tuple[int, int]]) -> Optional[Dict[i
     return assignment
 
 
+def bron_kerbosch_maximal_cliques(adj: Dict[int, Set[int]]) -> List[List[int]]:
+    """Find all maximal cliques in an undirected graph using Bron-Kerbosch with pivoting."""
+    cliques: List[List[int]] = []
+
+    def bron_kerbosch(r: Set[int], p: Set[int], x: Set[int]):
+        if not p and not x:
+            cliques.append(sorted(list(r)))
+            return
+        pivot = next(iter(p | x))
+        for v in list(p - adj.get(pivot, set())):
+            bron_kerbosch(r | {v}, p & adj.get(v, set()), x & adj.get(v, set()))
+            p.remove(v)
+            x.add(v)
+
+    all_vertices = set(adj.keys())
+    bron_kerbosch(set(), all_vertices, set())
+    return sorted(cliques)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3898,3 +3918,11 @@ if __name__ == "__main__":
     sat_clauses = [(1, 2), (-1, 2), (-1, -2)]
     sat_solution = solve_2sat(2, sat_clauses)
     print("2-SAT solution:", sat_solution)
+    print("\n=== Iteration 90: Bron-Kerbosch Maximal Cliques ===")
+    clique_adj = {
+        0: {1, 2},
+        1: {0, 2, 3},
+        2: {0, 1, 3},
+        3: {1, 2}
+    }
+    print("Maximal cliques:", bron_kerbosch_maximal_cliques(clique_adj))
