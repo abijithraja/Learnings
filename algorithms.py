@@ -82,6 +82,7 @@ Part 79: Tonelli-Shanks Modular Square Root Algorithm
 Part 80: HyperLogLog Cardinality Estimation
 Part 81: Dial's Bucket Algorithm for Shortest Path
 Part 82: 0-1 BFS Deque Shortest Path
+Part 83: Disjoint Sparse Table
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3012,6 +3013,39 @@ def zero_one_bfs(n: int, adj: Dict[int, List[Tuple[int, int]]], src: int) -> Lis
     return dist
 
 
+class DisjointSparseTable:
+    """Disjoint Sparse Table supporting static range associative queries in O(1)."""
+    def __init__(self, arr: List[int]):
+        self.n = len(arr)
+        if self.n == 0:
+            self.table = []
+            return
+        self.levels = (self.n - 1).bit_length()
+        self.size = 1 << self.levels
+        padded = arr + [0] * (self.size - self.n)
+        self.table = [[0] * self.size for _ in range(self.levels)]
+
+        for level in range(self.levels):
+            half = 1 << level
+            full = half << 1
+            for center in range(half, self.size, full):
+                acc = 0
+                for i in reversed(range(center - half, center)):
+                    acc += padded[i]
+                    self.table[level][i] = acc
+                acc = 0
+                for i in range(center, min(self.size, center + half)):
+                    acc += padded[i]
+                    self.table[level][i] = acc
+
+    def query(self, l: int, r: int) -> int:
+        """Query range sum in [l, r] in O(1)."""
+        if l == r:
+            return self.table[0][l]
+        level = (l ^ r).bit_length() - 1
+        return self.table[level][l] + self.table[level][r]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3492,3 +3526,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 82: 0-1 BFS ===")
     bfs01_adj = {0: [(1, 0), (2, 1)], 1: [(3, 1)], 2: [(3, 0)], 3: []}
     print("0-1 BFS distances from 0:", zero_one_bfs(4, bfs01_adj, 0))
+    print("\n=== Iteration 83: Disjoint Sparse Table ===")
+    dst = DisjointSparseTable([2, 4, 3, 1, 6, 7, 8, 9])
+    print("Disjoint Sparse Table Sum [1, 4]:", dst.query(1, 4))
+    print("Disjoint Sparse Table Sum [2, 6]:", dst.query(2, 6))
