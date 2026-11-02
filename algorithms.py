@@ -87,6 +87,7 @@ Part 84: Cartesian Tree Construction in O(N)
 Part 85: Wavelet Tree for Range Rank Queries
 Part 86: Link-Cut Tree Dynamic Forest
 Part 87: Implicit Treap with Range Reversal
+Part 88: Boruvka's Minimum Spanning Tree Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3296,6 +3297,61 @@ class ImplicitTreap:
         return res
 
 
+def boruvka_mst(n: int, edges: List[Tuple[int, int, int]]) -> Tuple[int, List[Tuple[int, int, int]]]:
+    """Compute Minimum Spanning Tree using Boruvka's component-based algorithm in O(E log V)."""
+    parent = list(range(n))
+    rank = [0] * n
+
+    def find(i: int) -> int:
+        if parent[i] == i:
+            return i
+        parent[i] = find(parent[i])
+        return parent[i]
+
+    def union(i: int, j: int) -> bool:
+        root_i = find(i)
+        root_j = find(j)
+        if root_i == root_j:
+            return False
+        if rank[root_i] < rank[root_j]:
+            parent[root_i] = root_j
+        elif rank[root_i] > rank[root_j]:
+            parent[root_j] = root_i
+        else:
+            parent[root_j] = root_i
+            rank[root_i] += 1
+        return True
+
+    num_components = n
+    mst_weight = 0
+    mst_edges: List[Tuple[int, int, int]] = []
+
+    while num_components > 1:
+        cheapest: List[Optional[Tuple[int, int, int]]] = [None] * n
+        for u, v, w in edges:
+            set_u = find(u)
+            set_v = find(v)
+            if set_u != set_v:
+                if cheapest[set_u] is None or cheapest[set_u][2] > w:
+                    cheapest[set_u] = (u, v, w)
+                if cheapest[set_v] is None or cheapest[set_v][2] > w:
+                    cheapest[set_v] = (u, v, w)
+
+        progress = False
+        for edge in cheapest:
+            if edge is not None:
+                u, v, w = edge
+                if union(u, v):
+                    mst_weight += w
+                    mst_edges.append((u, v, w))
+                    num_components -= 1
+                    progress = True
+        if not progress:
+            break
+
+    return mst_weight, mst_edges
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3799,3 +3855,7 @@ if __name__ == "__main__":
         it.append(v)
     it.reverse_range(2, 5)  # Reverse elements at indices 2 through 5: [3, 4, 5, 6] -> [6, 5, 4, 3]
     print("Array after reversing range [2, 5]:", it.to_list())
+    print("\n=== Iteration 88: Boruvka's MST ===")
+    boruvka_edges = [(0, 1, 10), (0, 2, 6), (0, 3, 5), (1, 3, 15), (2, 3, 4)]
+    b_wt, b_edges = boruvka_mst(4, boruvka_edges)
+    print(f"Boruvka MST Weight: {b_wt}, Edges: {b_edges}")
