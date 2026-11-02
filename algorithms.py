@@ -99,6 +99,7 @@ Part 96: Fibonacci Heap Priority Queue
 Part 97: Pairing Heap Priority Queue
 Part 98: Leftist Heap Priority Queue
 Part 99: Binomial Heap Priority Queue
+Part 100: Persistent Segment Tree
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3956,6 +3957,53 @@ class BinomialHeap:
         return min_node.key
 
 
+class PersistentSegNode:
+    def __init__(self, val: int, left: Optional['PersistentSegNode'] = None, right: Optional['PersistentSegNode'] = None):
+        self.val = val
+        self.left = left
+        self.right = right
+
+
+class PersistentSegmentTree:
+    """Fully persistent segment tree supporting historical range sum queries."""
+    def __init__(self, size: int):
+        self.size = size
+        self.roots: List[Optional[PersistentSegNode]] = [self._build(0, size - 1)]
+
+    def _build(self, l: int, r: int) -> PersistentSegNode:
+        if l == r:
+            return PersistentSegNode(0)
+        mid = (l + r) // 2
+        return PersistentSegNode(0, self._build(l, mid), self._build(mid + 1, r))
+
+    def update(self, version: int, idx: int, delta: int) -> int:
+        """Update element at idx by delta on version, return new version index."""
+        def _update(node: PersistentSegNode, l: int, r: int) -> PersistentSegNode:
+            if l == r:
+                return PersistentSegNode(node.val + delta)
+            mid = (l + r) // 2
+            if idx <= mid:
+                return PersistentSegNode(node.val + delta, _update(node.left, l, mid), node.right)
+            else:
+                return PersistentSegNode(node.val + delta, node.left, _update(node.right, mid + 1, r))
+
+        new_root = _update(self.roots[version], 0, self.size - 1)
+        self.roots.append(new_root)
+        return len(self.roots) - 1
+
+    def query(self, version: int, ql: int, qr: int) -> int:
+        """Query range sum in [ql, qr] at specific version."""
+        def _query(node: Optional[PersistentSegNode], l: int, r: int) -> int:
+            if not node or ql > r or qr < l:
+                return 0
+            if ql <= l and r <= qr:
+                return node.val
+            mid = (l + r) // 2
+            return _query(node.left, l, mid) + _query(node.right, mid + 1, r)
+
+        return _query(self.roots[version], 0, self.size - 1)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4529,3 +4577,10 @@ if __name__ == "__main__":
         bh.insert(v)
     print("Binomial Heap Min:", bh.extract_min())
     print("Binomial Heap Next Min:", bh.extract_min())
+    print("\n=== Iteration 100: Persistent Segment Tree ===")
+    pst = PersistentSegmentTree(5)
+    v1 = pst.update(0, 2, 10)  # [0, 0, 10, 0, 0]
+    v2 = pst.update(v1, 4, 5)   # [0, 0, 10, 0, 5]
+    print("Sum [0, 4] at Version 0:", pst.query(0, 0, 4))
+    print("Sum [0, 4] at Version 1:", pst.query(v1, 0, 4))
+    print("Sum [0, 4] at Version 2:", pst.query(v2, 0, 4))
