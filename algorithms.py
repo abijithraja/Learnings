@@ -93,6 +93,7 @@ Part 90: Bron-Kerbosch Algorithm for Maximal Cliques
 Part 91: Hierholzer's Eulerian Circuit Algorithm
 Part 92: Shunting-Yard Arithmetic Expression Evaluator
 Part 93: Simplex Linear Programming Algorithm
+Part 94: Strassen's Sub-Cubic Matrix Multiplication
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3565,6 +3566,56 @@ def simplex_linear_programming(c: List[float], A: List[List[float]], b: List[flo
     return opt_val, solution
 
 
+def strassen_matrix_multiply(A: List[List[int]], B: List[List[int]]) -> List[List[int]]:
+    """Multiply two n x n matrices using Strassen's sub-cubic O(n^2.807) divide-and-conquer algorithm."""
+    n = len(A)
+    if n <= 2:
+        res = [[0] * n for _ in range(n)]
+        for i in range(n):
+            for k in range(n):
+                for j in range(n):
+                    res[i][j] += A[i][k] * B[k][j]
+        return res
+
+    def add_mat(X, Y):
+        return [[X[i][j] + Y[i][j] for j in range(len(X))] for i in range(len(X))]
+
+    def sub_mat(X, Y):
+        return [[X[i][j] - Y[i][j] for j in range(len(X))] for i in range(len(X))]
+
+    mid = n // 2
+    a11 = [row[:mid] for row in A[:mid]]
+    a12 = [row[mid:] for row in A[:mid]]
+    a21 = [row[:mid] for row in A[mid:]]
+    a22 = [row[mid:] for row in A[mid:]]
+
+    b11 = [row[:mid] for row in B[:mid]]
+    b12 = [row[mid:] for row in B[:mid]]
+    b21 = [row[:mid] for row in B[mid:]]
+    b22 = [row[mid:] for row in B[mid:]]
+
+    m1 = strassen_matrix_multiply(add_mat(a11, a22), add_mat(b11, b22))
+    m2 = strassen_matrix_multiply(add_mat(a21, a22), b11)
+    m3 = strassen_matrix_multiply(a11, sub_mat(b12, b22))
+    m4 = strassen_matrix_multiply(a22, sub_mat(b21, b11))
+    m5 = strassen_matrix_multiply(add_mat(a11, a12), b22)
+    m6 = strassen_matrix_multiply(sub_mat(a21, a11), add_mat(b11, b12))
+    m7 = strassen_matrix_multiply(sub_mat(a12, a22), add_mat(b21, b22))
+
+    c11 = add_mat(sub_mat(add_mat(m1, m4), m5), m7)
+    c12 = add_mat(m3, m5)
+    c21 = add_mat(m2, m4)
+    c22 = add_mat(sub_mat(add_mat(m1, m3), m2), m6)
+
+    C = [[0] * n for _ in range(n)]
+    for i in range(mid):
+        C[i][:mid] = c11[i]
+        C[i][mid:] = c12[i]
+        C[mid + i][:mid] = c21[i]
+        C[mid + i][mid:] = c22[i]
+    return C
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4096,3 +4147,17 @@ if __name__ == "__main__":
     b_vec = [4.0, 12.0, 18.0]
     opt_obj, opt_sol = simplex_linear_programming(c_obj, A_mat, b_vec)
     print(f"Max Objective Value: {opt_obj}, Optimal Solution: {opt_sol}")
+    print("\n=== Iteration 94: Strassen Matrix Multiplication ===")
+    mat_A = [
+        [1, 2, 3, 4],
+        [5, 6, 7, 8],
+        [9, 1, 2, 3],
+        [4, 5, 6, 7]
+    ]
+    mat_B = [
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ]
+    print("Strassen A * Identity:", strassen_matrix_multiply(mat_A, mat_B))
