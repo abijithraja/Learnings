@@ -105,6 +105,7 @@ Part 102: Range-Update Range-Query Fenwick Tree
 Part 103: Centroid Decomposition of Trees
 Part 104: Bidirectional Dijkstra Algorithm
 Part 105: Edmonds' Blossom Algorithm for General Matching
+Part 106: Booth's Lexicographically Minimal String Rotation
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4266,6 +4267,29 @@ def edmonds_blossom_matching(n: int, edges: List[Tuple[int, int]]) -> List[Tuple
     return matching
 
 
+def booths_minimal_rotation(s: str) -> int:
+    """Find the starting index of the lexicographically minimal rotation of s in O(n) time."""
+    n = len(s)
+    s2 = s + s
+    f = [-1] * (2 * n)
+    k = 0
+
+    for j in range(1, 2 * n):
+        i = f[j - k - 1]
+        while i != -1 and s2[j] != s2[k + i + 1]:
+            if s2[j] < s2[k + i + 1]:
+                k = j - i - 1
+            i = f[i]
+        if i == -1 and s2[j] != s2[k + i + 1]:
+            if s2[j] < s2[k + i + 1]:
+                k = j
+            f[j - k] = -1
+        else:
+            f[j - k] = i + 1
+
+    return k % n
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4873,3 +4897,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 105: Edmonds' Blossom Matching ===")
     blossom_edges = [(0, 1), (1, 2), (2, 0), (2, 3), (3, 4)]
     print("Blossom Maximum Matching:", edmonds_blossom_matching(5, blossom_edges))
+    print("\n=== Iteration 106: Booth's Minimal Rotation ===")
+    sample_str = "bbaaccaadd"
+    start_idx = booths_minimal_rotation(sample_str)
+    print(f"Minimal rotation of '{sample_str}' starts at {start_idx}: '{sample_str[start_idx:] + sample_str[:start_idx]}'")
