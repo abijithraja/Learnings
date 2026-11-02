@@ -108,6 +108,7 @@ Part 105: Edmonds' Blossom Algorithm for General Matching
 Part 106: Booth's Lexicographically Minimal String Rotation
 Part 107: Duval's Algorithm for Lyndon Factorization
 Part 108: Hopcroft's DFA State Minimization Algorithm
+Part 109: Sutherland-Hodgman Polygon Clipping
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4355,6 +4356,42 @@ def hopcrofts_dfa_minimization(
     return P
 
 
+def sutherland_hodgman_polygon_clip(
+    subject_polygon: List[Tuple[float, float]],
+    clip_polygon: List[Tuple[float, float]]
+) -> List[Tuple[float, float]]:
+    """Clip a subject polygon against a convex clip polygon using Sutherland-Hodgman algorithm."""
+    def inside(p: Tuple[float, float], cp1: Tuple[float, float], cp2: Tuple[float, float]) -> bool:
+        return (cp2[0] - cp1[0]) * (p[1] - cp1[1]) > (cp2[1] - cp1[1]) * (p[0] - cp1[0])
+
+    def intersection(cp1: Tuple[float, float], cp2: Tuple[float, float], s: Tuple[float, float], e: Tuple[float, float]) -> Tuple[float, float]:
+        dc = (cp1[0] - cp2[0], cp1[1] - cp2[1])
+        dp = (s[0] - e[0], s[1] - e[1])
+        n1 = cp1[0] * cp2[1] - cp1[1] * cp2[0]
+        n2 = s[0] * e[1] - s[1] * e[0]
+        denom = dc[0] * dp[1] - dc[1] * dp[0]
+        return ((n1 * dp[0] - n2 * dc[0]) / denom, (n1 * dp[1] - n2 * dc[1]) / denom)
+
+    output_list = subject_polygon
+    cp1 = clip_polygon[-1]
+    for cp2 in clip_polygon:
+        input_list = output_list
+        output_list = []
+        if not input_list:
+            break
+        s = input_list[-1]
+        for e in input_list:
+            if inside(e, cp1, cp2):
+                if not inside(s, cp1, cp2):
+                    output_list.append(intersection(cp1, cp2, s, e))
+                output_list.append(e)
+            elif inside(s, cp1, cp2):
+                output_list.append(intersection(cp1, cp2, s, e))
+            s = e
+        cp1 = cp2
+    return output_list
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4980,3 +5017,8 @@ if __name__ == "__main__":
     }
     dfa_min = hopcrofts_dfa_minimization(dfa_states, dfa_alpha, dfa_trans, 0, {3})
     print("Minimized DFA Equivalence Classes:", dfa_min)
+    print("\n=== Iteration 109: Sutherland-Hodgman Polygon Clip ===")
+    subj_poly = [(50.0, 150.0), (200.0, 50.0), (350.0, 150.0), (350.0, 300.0), (250.0, 300.0), (200.0, 250.0), (150.0, 350.0), (100.0, 250.0), (100.0, 200.0)]
+    clip_poly = [(100.0, 100.0), (300.0, 100.0), (300.0, 300.0), (100.0, 300.0)]
+    clipped = sutherland_hodgman_polygon_clip(subj_poly, clip_poly)
+    print(f"Clipped polygon vertex count: {len(clipped)}")
