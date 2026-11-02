@@ -104,6 +104,7 @@ Part 101: Li Chao Segment Tree for Dynamic Line Container
 Part 102: Range-Update Range-Query Fenwick Tree
 Part 103: Centroid Decomposition of Trees
 Part 104: Bidirectional Dijkstra Algorithm
+Part 105: Edmonds' Blossom Algorithm for General Matching
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4184,6 +4185,87 @@ def bidirectional_dijkstra(
     return best_path
 
 
+def edmonds_blossom_matching(n: int, edges: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
+    """Maximum cardinality matching on general graphs using Edmonds' Blossom algorithm."""
+    adj: Dict[int, List[int]] = {i: [] for i in range(n)}
+    for u, v in edges:
+        adj[u].append(v)
+        adj[v].append(u)
+
+    match = [-1] * n
+    parent = [-1] * n
+    base = list(range(n))
+
+    def find_lca(root: int, u: int, v: int) -> int:
+        path = []
+        visited = [False] * n
+        while True:
+            u = base[u]
+            path.append(u)
+            if u == root: break
+            u = parent[match[u]]
+        for x in path: visited[x] = True
+        while True:
+            v = base[v]
+            if visited[v]: return v
+            v = parent[match[v]]
+
+    def mark_blossom(lca: int, u: int) -> List[int]:
+        blossom_nodes = []
+        while base[u] != lca:
+            v = match[u]
+            blossom_nodes.extend([base[u], base[v]])
+            u = parent[v]
+        return blossom_nodes
+
+    def bfs(root: int) -> bool:
+        for i in range(n):
+            parent[i] = -1
+            base[i] = i
+        q = deque([root])
+        state = [0] * n
+        state[root] = 1
+
+        while q:
+            u = q.popleft()
+            for v in adj[u]:
+                if base[u] == base[v] or match[u] == v:
+                    continue
+                if state[v] == 0:
+                    parent[v] = u
+                    state[v] = 2
+                    if match[v] == -1:
+                        curr = v
+                        while curr != -1:
+                            prev_node = parent[curr]
+                            next_node = match[prev_node]
+                            match[curr] = prev_node
+                            match[prev_node] = curr
+                            curr = next_node
+                        return True
+                    state[match[v]] = 1
+                    q.append(match[v])
+                elif state[v] == 1:
+                    lca = find_lca(root, u, v)
+                    blossom = mark_blossom(lca, u) + mark_blossom(lca, v)
+                    for b in blossom:
+                        base[b] = lca
+                        if state[b] == 2:
+                            state[b] = 1
+                            q.append(b)
+        return False
+
+    for i in range(n):
+        if match[i] == -1:
+            bfs(i)
+
+    matching = []
+    for u in range(n):
+        if match[u] > u:
+            matching.append((u, match[u]))
+    return matching
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4788,3 +4870,6 @@ if __name__ == "__main__":
         3: []
     }
     print("Bidirectional Dijkstra shortest path (0 -> 3):", bidirectional_dijkstra(4, bd_adj, 0, 3))
+    print("\n=== Iteration 105: Edmonds' Blossom Matching ===")
+    blossom_edges = [(0, 1), (1, 2), (2, 0), (2, 3), (3, 4)]
+    print("Blossom Maximum Matching:", edmonds_blossom_matching(5, blossom_edges))
