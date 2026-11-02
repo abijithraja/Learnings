@@ -96,6 +96,7 @@ Part 93: Simplex Linear Programming Algorithm
 Part 94: Strassen's Sub-Cubic Matrix Multiplication
 Part 95: Baby-Step Giant-Step Discrete Logarithm
 Part 96: Fibonacci Heap Priority Queue
+Part 97: Pairing Heap Priority Queue
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3754,6 +3755,70 @@ class FibonacciHeap:
         y.mark = False
 
 
+class PairingHeapNode:
+    def __init__(self, key: int, val: Any = None):
+        self.key = key
+        self.val = val
+        self.child: Optional['PairingHeapNode'] = None
+        self.next: Optional['PairingHeapNode'] = None
+
+
+class PairingHeap:
+    """Self-adjusting Pairing Heap with fast empirical operations."""
+    def __init__(self):
+        self.root: Optional[PairingHeapNode] = None
+
+    def merge(self, h1: Optional[PairingHeapNode], h2: Optional[PairingHeapNode]) -> Optional[PairingHeapNode]:
+        if not h1: return h2
+        if not h2: return h1
+        if h1.key < h2.key:
+            h2.next = h1.child
+            h1.child = h2
+            return h1
+        else:
+            h1.next = h2.child
+            h2.child = h1
+            return h2
+
+    def insert(self, key: int, val: Any = None) -> PairingHeapNode:
+        node = PairingHeapNode(key, val)
+        self.root = self.merge(self.root, node)
+        return node
+
+    def extract_min(self) -> Optional[int]:
+        if not self.root:
+            return None
+        min_key = self.root.key
+        self.root = self._merge_pairs(self.root.child)
+        return min_key
+
+    def _merge_pairs(self, node: Optional[PairingHeapNode]) -> Optional[PairingHeapNode]:
+        if not node:
+            return None
+        if not node.next:
+            return node
+        nodes = []
+        curr = node
+        while curr:
+            nxt = curr.next
+            curr.next = None
+            nodes.append(curr)
+            curr = nxt
+        pass1 = []
+        i = 0
+        while i < len(nodes):
+            if i + 1 < len(nodes):
+                pass1.append(self.merge(nodes[i], nodes[i + 1]))
+                i += 2
+            else:
+                pass1.append(nodes[i])
+                i += 1
+        res = None
+        for h in reversed(pass1):
+            res = self.merge(h, res)
+        return res
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4309,3 +4374,9 @@ if __name__ == "__main__":
         fib_heap.insert(v)
     min_item = fib_heap.extract_min()
     print("Fibonacci Heap extracted minimum:", min_item.key if min_item else None)
+    print("\n=== Iteration 97: Pairing Heap ===")
+    ph = PairingHeap()
+    for v in [20, 8, 12, 4, 16]:
+        ph.insert(v)
+    print("Pairing Heap Extracted Min:", ph.extract_min())
+    print("Pairing Heap Next Min:", ph.extract_min())
