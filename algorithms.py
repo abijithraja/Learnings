@@ -100,6 +100,7 @@ Part 97: Pairing Heap Priority Queue
 Part 98: Leftist Heap Priority Queue
 Part 99: Binomial Heap Priority Queue
 Part 100: Persistent Segment Tree
+Part 101: Li Chao Segment Tree for Dynamic Line Container
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4004,6 +4005,63 @@ class PersistentSegmentTree:
         return _query(self.roots[version], 0, self.size - 1)
 
 
+class LiChaoLine:
+    def __init__(self, m: float, c: float):
+        self.m = m
+        self.c = c
+
+    def eval(self, x: float) -> float:
+        return self.m * x + self.c
+
+
+class LiChaoNode:
+    def __init__(self, line: LiChaoLine):
+        self.line = line
+        self.left: Optional['LiChaoNode'] = None
+        self.right: Optional['LiChaoNode'] = None
+
+
+class LiChaoTreeMin:
+    """Li Chao Tree for maintaining linear functions and querying min m*x + c in O(log C)."""
+    def __init__(self, x_min: int, x_max: int):
+        self.x_min = x_min
+        self.x_max = x_max
+        self.root: Optional[LiChaoNode] = None
+
+    def add_line(self, m: float, c: float):
+        new_line = LiChaoLine(m, c)
+        def _insert(node: Optional[LiChaoNode], l: int, r: int, line: LiChaoLine) -> LiChaoNode:
+            if not node:
+                return LiChaoNode(line)
+            mid = (l + r) // 2
+            mid_better = line.eval(mid) < node.line.eval(mid)
+            left_better = line.eval(l) < node.line.eval(l)
+            if mid_better:
+                node.line, line = line, node.line
+            if l == r:
+                return node
+            if left_better != mid_better:
+                node.left = _insert(node.left, l, mid, line)
+            else:
+                node.right = _insert(node.right, mid + 1, r, line)
+            return node
+        self.root = _insert(self.root, self.x_min, self.x_max, new_line)
+
+    def query(self, x: int) -> float:
+        def _query(node: Optional[LiChaoNode], l: int, r: int) -> float:
+            if not node:
+                return float('inf')
+            val = node.line.eval(x)
+            if l == r:
+                return val
+            mid = (l + r) // 2
+            if x <= mid:
+                return min(val, _query(node.left, l, mid))
+            else:
+                return min(val, _query(node.right, mid + 1, r))
+        return _query(self.root, self.x_min, self.x_max)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4584,3 +4642,9 @@ if __name__ == "__main__":
     print("Sum [0, 4] at Version 0:", pst.query(0, 0, 4))
     print("Sum [0, 4] at Version 1:", pst.query(v1, 0, 4))
     print("Sum [0, 4] at Version 2:", pst.query(v2, 0, 4))
+    print("\n=== Iteration 101: Li Chao Segment Tree ===")
+    lct_min = LiChaoTreeMin(0, 100)
+    lct_min.add_line(2.0, 10.0)
+    lct_min.add_line(1.0, 20.0)
+    print("Li Chao Min at x=5:", lct_min.query(5))
+    print("Li Chao Min at x=15:", lct_min.query(15))
