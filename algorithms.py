@@ -106,6 +106,7 @@ Part 103: Centroid Decomposition of Trees
 Part 104: Bidirectional Dijkstra Algorithm
 Part 105: Edmonds' Blossom Algorithm for General Matching
 Part 106: Booth's Lexicographically Minimal String Rotation
+Part 107: Duval's Algorithm for Lyndon Factorization
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4290,6 +4291,28 @@ def booths_minimal_rotation(s: str) -> int:
     return k % n
 
 
+def duvals_lyndon_factorization(s: str) -> List[str]:
+    """Factorize string into non-increasing Lyndon words in O(n) time and O(1) space."""
+    n = len(s)
+    i = 0
+    factors: List[str] = []
+
+    while i < n:
+        j = i + 1
+        k = i
+        while j < n and s[k] <= s[j]:
+            if s[k] < s[j]:
+                k = i
+            else:
+                k += 1
+            j += 1
+        while i <= k:
+            factors.append(s[i:i + j - k])
+            i += j - k
+
+    return factors
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4901,3 +4924,6 @@ if __name__ == "__main__":
     sample_str = "bbaaccaadd"
     start_idx = booths_minimal_rotation(sample_str)
     print(f"Minimal rotation of '{sample_str}' starts at {start_idx}: '{sample_str[start_idx:] + sample_str[:start_idx]}'")
+    print("\n=== Iteration 107: Duval's Lyndon Factorization ===")
+    lyndon_text = "abacaba"
+    print(f"Lyndon factorization of '{lyndon_text}':", duvals_lyndon_factorization(lyndon_text))
