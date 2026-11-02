@@ -90,6 +90,7 @@ Part 87: Implicit Treap with Range Reversal
 Part 88: Boruvka's Minimum Spanning Tree Algorithm
 Part 89: 2-SAT Solver via Strongly Connected Components
 Part 90: Bron-Kerbosch Algorithm for Maximal Cliques
+Part 91: Hierholzer's Eulerian Circuit Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3407,6 +3408,39 @@ def bron_kerbosch_maximal_cliques(adj: Dict[int, Set[int]]) -> List[List[int]]:
     return sorted(cliques)
 
 
+def hierholzer_eulerian_circuit(n: int, adj: Dict[int, List[int]]) -> Optional[List[int]]:
+    """Find an Eulerian circuit in a directed graph using Hierholzer's linear time algorithm."""
+    in_deg = [0] * n
+    out_deg = [0] * n
+    graph: Dict[int, List[int]] = {i: list(adj.get(i, [])) for i in range(n)}
+
+    for u in range(n):
+        out_deg[u] = len(graph[u])
+        for v in graph[u]:
+            in_deg[v] += 1
+
+    start_node = 0
+    for i in range(n):
+        if in_deg[i] != out_deg[i]:
+            return None
+        if out_deg[i] > 0 and start_node == 0:
+            start_node = i
+
+    curr_path = [start_node]
+    circuit: List[int] = []
+
+    while curr_path:
+        curr = curr_path[-1]
+        if graph[curr]:
+            nxt = graph[curr].pop()
+            curr_path.append(nxt)
+        else:
+            circuit.append(curr_path.pop())
+
+    circuit.reverse()
+    return circuit
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3926,3 +3960,6 @@ if __name__ == "__main__":
         3: {1, 2}
     }
     print("Maximal cliques:", bron_kerbosch_maximal_cliques(clique_adj))
+    print("\n=== Iteration 91: Hierholzer's Eulerian Circuit ===")
+    euler_adj = {0: [1], 1: [2], 2: [0]}
+    print("Eulerian circuit:", hierholzer_eulerian_circuit(3, euler_adj))
