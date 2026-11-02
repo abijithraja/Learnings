@@ -81,6 +81,7 @@ Part 78: 2D K-D Tree Spatial Partitioning
 Part 79: Tonelli-Shanks Modular Square Root Algorithm
 Part 80: HyperLogLog Cardinality Estimation
 Part 81: Dial's Bucket Algorithm for Shortest Path
+Part 82: 0-1 BFS Deque Shortest Path
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2993,6 +2994,24 @@ def dial_shortest_path(n: int, adj: Dict[int, List[Tuple[int, int]]], src: int, 
     return dist
 
 
+def zero_one_bfs(n: int, adj: Dict[int, List[Tuple[int, int]]], src: int) -> List[int]:
+    """Shortest paths on graphs with edge weights in {0, 1} in O(V + E) using a double-ended queue."""
+    dist = [float('inf')] * n
+    dist[src] = 0
+    q = deque([src])
+
+    while q:
+        u = q.popleft()
+        for v, w in adj.get(u, []):
+            if dist[u] + w < dist[v]:
+                dist[v] = dist[u] + w
+                if w == 0:
+                    q.appendleft(v)
+                else:
+                    q.append(v)
+    return dist
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3470,3 +3489,6 @@ if __name__ == "__main__":
     print("\n=== Iteration 81: Dial's Bucket Algorithm ===")
     dial_adj = {0: [(1, 2), (2, 5)], 1: [(2, 1), (3, 2)], 2: [(3, 1)], 3: []}
     print("Dial shortest paths from 0:", dial_shortest_path(4, dial_adj, 0, max_weight=5))
+    print("\n=== Iteration 82: 0-1 BFS ===")
+    bfs01_adj = {0: [(1, 0), (2, 1)], 1: [(3, 1)], 2: [(3, 0)], 3: []}
+    print("0-1 BFS distances from 0:", zero_one_bfs(4, bfs01_adj, 0))
