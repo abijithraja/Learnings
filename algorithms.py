@@ -97,6 +97,7 @@ Part 94: Strassen's Sub-Cubic Matrix Multiplication
 Part 95: Baby-Step Giant-Step Discrete Logarithm
 Part 96: Fibonacci Heap Priority Queue
 Part 97: Pairing Heap Priority Queue
+Part 98: Leftist Heap Priority Queue
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3819,6 +3820,41 @@ class PairingHeap:
         return res
 
 
+class LeftistHeapNode:
+    def __init__(self, key: int):
+        self.key = key
+        self.npl = 0
+        self.left: Optional['LeftistHeapNode'] = None
+        self.right: Optional['LeftistHeapNode'] = None
+
+
+class LeftistHeap:
+    """Priority queue maintaining the leftist property for O(log n) merges."""
+    def __init__(self):
+        self.root: Optional[LeftistHeapNode] = None
+
+    def merge(self, h1: Optional[LeftistHeapNode], h2: Optional[LeftistHeapNode]) -> Optional[LeftistHeapNode]:
+        if not h1: return h2
+        if not h2: return h1
+        if h1.key > h2.key:
+            h1, h2 = h2, h1
+        h1.right = self.merge(h1.right, h2)
+        if not h1.left or (h1.right and h1.left.npl < h1.right.npl):
+            h1.left, h1.right = h1.right, h1.left
+        h1.npl = (h1.right.npl + 1) if h1.right else 0
+        return h1
+
+    def insert(self, key: int):
+        self.root = self.merge(self.root, LeftistHeapNode(key))
+
+    def extract_min(self) -> Optional[int]:
+        if not self.root:
+            return None
+        min_val = self.root.key
+        self.root = self.merge(self.root.left, self.root.right)
+        return min_val
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4380,3 +4416,9 @@ if __name__ == "__main__":
         ph.insert(v)
     print("Pairing Heap Extracted Min:", ph.extract_min())
     print("Pairing Heap Next Min:", ph.extract_min())
+    print("\n=== Iteration 98: Leftist Heap ===")
+    lh = LeftistHeap()
+    for v in [9, 14, 5, 23, 7]:
+        lh.insert(v)
+    print("Leftist Heap Min:", lh.extract_min())
+    print("Leftist Heap Second Min:", lh.extract_min())
