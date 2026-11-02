@@ -80,6 +80,7 @@ Part 77: Convex Hull Trick (Line Container for DP Optimization)
 Part 78: 2D K-D Tree Spatial Partitioning
 Part 79: Tonelli-Shanks Modular Square Root Algorithm
 Part 80: HyperLogLog Cardinality Estimation
+Part 81: Dial's Bucket Algorithm for Shortest Path
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -2967,6 +2968,31 @@ class HyperLogLog:
         return round(raw_estimate)
 
 
+def dial_shortest_path(n: int, adj: Dict[int, List[Tuple[int, int]]], src: int, max_weight: int) -> List[int]:
+    """Compute single-source shortest paths in O(V * W + E) using Dial's bucket algorithm."""
+    dist = [float('inf')] * n
+    dist[src] = 0
+    max_dist = max_weight * n
+    buckets: List[List[int]] = [[] for _ in range(max_dist + 1)]
+    buckets[0].append(src)
+    idx = 0
+
+    while idx <= max_dist:
+        while idx <= max_dist and not buckets[idx]:
+            idx += 1
+        if idx > max_dist:
+            break
+        u = buckets[idx].pop()
+        if idx > dist[u]:
+            continue
+        for v, w in adj.get(u, []):
+            if dist[u] + w < dist[v]:
+                dist[v] = dist[u] + w
+                if dist[v] <= max_dist:
+                    buckets[dist[v]].append(v)
+    return dist
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3441,4 +3467,6 @@ if __name__ == "__main__":
     for i in range(1000):
         hll.add(f"token_{i % 250}")
     print("Estimated distinct elements (actual 250):", hll.estimate())
-    print("\nAll 80 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 81: Dial's Bucket Algorithm ===")
+    dial_adj = {0: [(1, 2), (2, 5)], 1: [(2, 1), (3, 2)], 2: [(3, 1)], 3: []}
+    print("Dial shortest paths from 0:", dial_shortest_path(4, dial_adj, 0, max_weight=5))
