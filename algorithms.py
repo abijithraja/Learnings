@@ -84,6 +84,7 @@ Part 81: Dial's Bucket Algorithm for Shortest Path
 Part 82: 0-1 BFS Deque Shortest Path
 Part 83: Disjoint Sparse Table
 Part 84: Cartesian Tree Construction in O(N)
+Part 85: Wavelet Tree for Range Rank Queries
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3070,6 +3071,41 @@ def build_cartesian_tree(arr: List[int]) -> Optional[CartesianTreeNode]:
     return stack[0] if stack else None
 
 
+class WaveletTreeNode:
+    def __init__(self, arr: List[int], low: int, high: int):
+        self.low = low
+        self.high = high
+        self.left: Optional['WaveletTreeNode'] = None
+        self.right: Optional['WaveletTreeNode'] = None
+        self.pref: List[int] = [0]
+        if low == high or not arr:
+            return
+        mid = (low + high) // 2
+        left_arr, right_arr = [], []
+        for x in arr:
+            if x <= mid:
+                left_arr.append(x)
+                self.pref.append(self.pref[-1] + 1)
+            else:
+                right_arr.append(x)
+                self.pref.append(self.pref[-1])
+        self.left = WaveletTreeNode(left_arr, low, mid)
+        self.right = WaveletTreeNode(right_arr, mid + 1, high)
+
+    def rank(self, x: int, i: int) -> int:
+        """Count occurrences of value <= x in prefix arr[0..i-1]."""
+        if i <= 0 or not self.pref or len(self.pref) <= 1:
+            return 0
+        if self.low == self.high:
+            return min(i, len(self.pref) - 1) if self.low <= x else 0
+        mid = (self.low + self.high) // 2
+        if x <= mid:
+            return self.left.rank(x, self.pref[i]) if self.left else 0
+        left_count = self.pref[i]
+        right_rank = self.right.rank(x, i - self.pref[i]) if self.right else 0
+        return left_count + right_rank
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3557,3 +3593,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 84: Cartesian Tree ===")
     c_tree = build_cartesian_tree([9, 3, 7, 1, 8, 12, 10, 20, 15, 18, 5])
     print("Cartesian Tree Root Value (min):", c_tree.val if c_tree else None)
+    print("\n=== Iteration 85: Wavelet Tree ===")
+    wt_arr = [5, 1, 4, 2, 3, 1, 2, 5]
+    wt_root = WaveletTreeNode(wt_arr, 1, 5)
+    print("Count of elements <= 3 in first 5 elements:", wt_root.rank(3, 5))
