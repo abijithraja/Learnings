@@ -98,6 +98,7 @@ Part 95: Baby-Step Giant-Step Discrete Logarithm
 Part 96: Fibonacci Heap Priority Queue
 Part 97: Pairing Heap Priority Queue
 Part 98: Leftist Heap Priority Queue
+Part 99: Binomial Heap Priority Queue
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3855,6 +3856,106 @@ class LeftistHeap:
         return min_val
 
 
+class BinomialNode:
+    def __init__(self, key: int):
+        self.key = key
+        self.degree = 0
+        self.parent: Optional['BinomialNode'] = None
+        self.child: Optional['BinomialNode'] = None
+        self.sibling: Optional['BinomialNode'] = None
+
+
+class BinomialHeap:
+    """Binomial Heap data structure with O(log n) worst-case merge, insert, and extract-min."""
+    def __init__(self):
+        self.head: Optional[BinomialNode] = None
+
+    def _link(self, y: BinomialNode, z: BinomialNode):
+        y.parent = z
+        y.sibling = z.child
+        z.child = y
+        z.degree += 1
+
+    def _merge_roots(self, h1: Optional[BinomialNode], h2: Optional[BinomialNode]) -> Optional[BinomialNode]:
+        if not h1: return h2
+        if not h2: return h1
+        dummy = BinomialNode(0)
+        curr = dummy
+        while h1 and h2:
+            if h1.degree <= h2.degree:
+                curr.sibling = h1
+                h1 = h1.sibling
+            else:
+                curr.sibling = h2
+                h2 = h2.sibling
+            curr = curr.sibling
+        curr.sibling = h1 or h2
+        return dummy.sibling
+
+    def union(self, other: 'BinomialHeap'):
+        new_head = self._merge_roots(self.head, other.head)
+        if not new_head:
+            self.head = None
+            return
+        prev = None
+        curr = new_head
+        nxt = curr.sibling
+        while nxt:
+            if curr.degree != nxt.degree or (nxt.sibling and nxt.sibling.degree == curr.degree):
+                prev = curr
+                curr = nxt
+            elif curr.key <= nxt.key:
+                curr.sibling = nxt.sibling
+                self._link(nxt, curr)
+            else:
+                if not prev:
+                    new_head = nxt
+                else:
+                    prev.sibling = nxt
+                self._link(curr, nxt)
+                curr = nxt
+            nxt = curr.sibling
+        self.head = new_head
+
+    def insert(self, key: int):
+        h = BinomialHeap()
+        h.head = BinomialNode(key)
+        self.union(h)
+
+    def extract_min(self) -> Optional[int]:
+        if not self.head:
+            return None
+        min_node = self.head
+        min_prev = None
+        prev = self.head
+        curr = self.head.sibling
+        while curr:
+            if curr.key < min_node.key:
+                min_node = curr
+                min_prev = prev
+            prev = curr
+            curr = curr.sibling
+
+        if not min_prev:
+            self.head = min_node.sibling
+        else:
+            min_prev.sibling = min_node.sibling
+
+        child = min_node.child
+        rev_head = None
+        while child:
+            nxt = child.sibling
+            child.sibling = rev_head
+            child.parent = None
+            rev_head = child
+            child = nxt
+
+        h = BinomialHeap()
+        h.head = rev_head
+        self.union(h)
+        return min_node.key
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4422,3 +4523,9 @@ if __name__ == "__main__":
         lh.insert(v)
     print("Leftist Heap Min:", lh.extract_min())
     print("Leftist Heap Second Min:", lh.extract_min())
+    print("\n=== Iteration 99: Binomial Heap ===")
+    bh = BinomialHeap()
+    for v in [18, 3, 27, 9, 1]:
+        bh.insert(v)
+    print("Binomial Heap Min:", bh.extract_min())
+    print("Binomial Heap Next Min:", bh.extract_min())
