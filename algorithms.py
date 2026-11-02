@@ -109,6 +109,7 @@ Part 106: Booth's Lexicographically Minimal String Rotation
 Part 107: Duval's Algorithm for Lyndon Factorization
 Part 108: Hopcroft's DFA State Minimization Algorithm
 Part 109: Sutherland-Hodgman Polygon Clipping
+Part 110: Bentley-Ottmann Sweep-Line Segment Intersection
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4392,6 +4393,46 @@ def sutherland_hodgman_polygon_clip(
     return output_list
 
 
+def bentley_ottmann_segment_intersections(
+    segments: List[Tuple[Tuple[float, float], Tuple[float, float]]]
+) -> List[Tuple[float, float]]:
+    """Find intersection points between line segments using a sweep-line algorithm."""
+    intersections: List[Tuple[float, float]] = []
+
+    def line_intersection(seg1, seg2) -> Optional[Tuple[float, float]]:
+        (x1, y1), (x2, y2) = seg1
+        (x3, y3), (x4, y4) = seg2
+        denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+        if abs(denom) < 1e-9:
+            return None
+        t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+        u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
+        if 0.0 <= t <= 1.0 and 0.0 <= u <= 1.0:
+            return (round(x1 + t * (x2 - x1), 5), round(y1 + t * (y2 - y1), 5))
+        return None
+
+    events = []
+    for i, ((x1, y1), (x2, y2)) in enumerate(segments):
+        left_x, right_x = min(x1, x2), max(x1, x2)
+        events.append((left_x, 0, i))
+        events.append((right_x, 1, i))
+
+    events.sort()
+    active: Set[int] = set()
+
+    for x, event_type, seg_idx in events:
+        if event_type == 0:
+            for active_idx in active:
+                pt = line_intersection(segments[seg_idx], segments[active_idx])
+                if pt and pt not in intersections:
+                    intersections.append(pt)
+            active.add(seg_idx)
+        else:
+            active.discard(seg_idx)
+
+    return sorted(intersections)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5022,3 +5063,10 @@ if __name__ == "__main__":
     clip_poly = [(100.0, 100.0), (300.0, 100.0), (300.0, 300.0), (100.0, 300.0)]
     clipped = sutherland_hodgman_polygon_clip(subj_poly, clip_poly)
     print(f"Clipped polygon vertex count: {len(clipped)}")
+    print("\n=== Iteration 110: Bentley-Ottmann Segment Intersection ===")
+    test_segs = [
+        ((0.0, 0.0), (4.0, 4.0)),
+        ((0.0, 4.0), (4.0, 0.0)),
+        ((2.0, 0.0), (2.0, 4.0))
+    ]
+    print("Found intersection points:", bentley_ottmann_segment_intersections(test_segs))
