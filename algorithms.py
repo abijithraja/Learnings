@@ -85,6 +85,7 @@ Part 82: 0-1 BFS Deque Shortest Path
 Part 83: Disjoint Sparse Table
 Part 84: Cartesian Tree Construction in O(N)
 Part 85: Wavelet Tree for Range Rank Queries
+Part 86: Link-Cut Tree Dynamic Forest
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3106,6 +3107,109 @@ class WaveletTreeNode:
         return left_count + right_rank
 
 
+class LCTNode:
+    def __init__(self, val: int):
+        self.val = val
+        self.sum = val
+        self.rev = False
+        self.left: Optional['LCTNode'] = None
+        self.right: Optional['LCTNode'] = None
+        self.parent: Optional['LCTNode'] = None
+
+
+class LinkCutTree:
+    """Dynamic forest data structure supporting link, cut, and path queries in O(log N)."""
+    def _is_root(self, x: LCTNode) -> bool:
+        return x.parent is None or (x.parent.left != x and x.parent.right != x)
+
+    def _push(self, x: Optional[LCTNode]):
+        if x and x.rev:
+            x.left, x.right = x.right, x.left
+            if x.left:
+                x.left.rev = not x.left.rev
+            if x.right:
+                x.right.rev = not x.right.rev
+            x.rev = False
+
+    def _pull(self, x: Optional[LCTNode]):
+        if x:
+            x.sum = x.val
+            if x.left:
+                x.sum += x.left.sum
+            if x.right:
+                x.sum += x.right.sum
+
+    def _rotate(self, x: LCTNode):
+        p = x.parent
+        g = p.parent
+        self._push(p)
+        self._push(x)
+        is_left = (p.left == x)
+        child = x.right if is_left else x.left
+        if is_left:
+            x.right = p
+            p.left = child
+        else:
+            x.left = p
+            p.right = child
+        if child:
+            child.parent = p
+        if not self._is_root(p):
+            if g.left == p:
+                g.left = x
+            else:
+                g.right = x
+        x.parent = g
+        p.parent = x
+        self._pull(p)
+        self._pull(x)
+
+    def _splay(self, x: LCTNode):
+        self._push(x)
+        while not self._is_root(x):
+            p = x.parent
+            if not self._is_root(p):
+                g = p.parent
+                if (g.left == p) == (p.left == x):
+                    self._rotate(p)
+                else:
+                    self._rotate(x)
+            self._rotate(x)
+
+    def access(self, x: LCTNode) -> Optional[LCTNode]:
+        t = None
+        curr = x
+        while curr:
+            self._splay(curr)
+            curr.right = t
+            self._pull(curr)
+            t = curr
+            curr = curr.parent
+        self._splay(x)
+        return t
+
+    def make_root(self, x: LCTNode):
+        self.access(x)
+        x.rev = not x.rev
+
+    def link(self, x: LCTNode, y: LCTNode):
+        self.make_root(x)
+        x.parent = y
+
+    def cut(self, x: LCTNode, y: LCTNode):
+        self.make_root(x)
+        self.access(y)
+        if y.left == x and x.right is None:
+            y.left = None
+            x.parent = None
+            self._pull(y)
+
+    def query_path(self, x: LCTNode, y: LCTNode) -> int:
+        self.make_root(x)
+        self.access(y)
+        return y.sum
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3597,3 +3701,9 @@ if __name__ == "__main__":
     wt_arr = [5, 1, 4, 2, 3, 1, 2, 5]
     wt_root = WaveletTreeNode(wt_arr, 1, 5)
     print("Count of elements <= 3 in first 5 elements:", wt_root.rank(3, 5))
+    print("\n=== Iteration 86: Link-Cut Tree ===")
+    lct = LinkCutTree()
+    n1, n2, n3 = LCTNode(10), LCTNode(20), LCTNode(30)
+    lct.link(n1, n2)
+    lct.link(n2, n3)
+    print("Path sum from n1 to n3:", lct.query_path(n1, n3))
