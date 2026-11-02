@@ -92,6 +92,7 @@ Part 89: 2-SAT Solver via Strongly Connected Components
 Part 90: Bron-Kerbosch Algorithm for Maximal Cliques
 Part 91: Hierholzer's Eulerian Circuit Algorithm
 Part 92: Shunting-Yard Arithmetic Expression Evaluator
+Part 93: Simplex Linear Programming Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3506,6 +3507,64 @@ def shunting_yard_eval(expr: str) -> float:
     return stack[0] if stack else 0.0
 
 
+def simplex_linear_programming(c: List[float], A: List[List[float]], b: List[float]) -> Tuple[float, List[float]]:
+    """Solve standard maximization linear program (max c^T x s.t. Ax <= b, x >= 0) using Simplex."""
+    m = len(b)
+    n = len(c)
+    tableau = [[0.0] * (n + m + 1) for _ in range(m + 1)]
+
+    for i in range(m):
+        for j in range(n):
+            tableau[i][j] = float(A[i][j])
+        tableau[i][n + i] = 1.0
+        tableau[i][-1] = float(b[i])
+
+    for j in range(n):
+        tableau[m][j] = -float(c[j])
+
+    basis = [n + i for i in range(m)]
+
+    while True:
+        enter_col = -1
+        min_c = -1e-9
+        for j in range(n + m):
+            if tableau[m][j] < min_c:
+                min_c = tableau[m][j]
+                enter_col = j
+        if enter_col == -1:
+            break
+
+        leave_row = -1
+        min_ratio = float('inf')
+        for i in range(m):
+            if tableau[i][enter_col] > 1e-9:
+                ratio = tableau[i][-1] / tableau[i][enter_col]
+                if ratio < min_ratio:
+                    min_ratio = ratio
+                    leave_row = i
+        if leave_row == -1:
+            raise ValueError("Linear program is unbounded")
+
+        pivot_val = tableau[leave_row][enter_col]
+        for j in range(n + m + 1):
+            tableau[leave_row][j] /= pivot_val
+        for i in range(m + 1):
+            if i != leave_row:
+                factor = tableau[i][enter_col]
+                for j in range(n + m + 1):
+                    tableau[i][j] -= factor * tableau[leave_row][j]
+
+        basis[leave_row] = enter_col
+
+    opt_val = tableau[m][-1]
+    solution = [0.0] * n
+    for i in range(m):
+        if basis[i] < n:
+            solution[basis[i]] = tableau[i][-1]
+
+    return opt_val, solution
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4031,3 +4090,9 @@ if __name__ == "__main__":
     print("\n=== Iteration 92: Shunting-Yard Evaluator ===")
     expr = "3 + 4 * 2 / ( 1 - 5 ) ^ 2"
     print(f"Evaluated '{expr}':", shunting_yard_eval(expr))
+    print("\n=== Iteration 93: Simplex Linear Programming ===")
+    c_obj = [3.0, 5.0]
+    A_mat = [[1.0, 0.0], [0.0, 2.0], [3.0, 2.0]]
+    b_vec = [4.0, 12.0, 18.0]
+    opt_obj, opt_sol = simplex_linear_programming(c_obj, A_mat, b_vec)
+    print(f"Max Objective Value: {opt_obj}, Optimal Solution: {opt_sol}")
