@@ -88,6 +88,7 @@ Part 85: Wavelet Tree for Range Rank Queries
 Part 86: Link-Cut Tree Dynamic Forest
 Part 87: Implicit Treap with Range Reversal
 Part 88: Boruvka's Minimum Spanning Tree Algorithm
+Part 89: 2-SAT Solver via Strongly Connected Components
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3352,6 +3353,40 @@ def boruvka_mst(n: int, edges: List[Tuple[int, int, int]]) -> Tuple[int, List[Tu
     return mst_weight, mst_edges
 
 
+def solve_2sat(num_vars: int, clauses: List[Tuple[int, int]]) -> Optional[Dict[int, bool]]:
+    """Solve 2-Satisfiability problem in O(V + E) using implication graph and Tarjan's SCC."""
+    total_nodes = 2 * num_vars
+    adj: Dict[int, List[int]] = {i: [] for i in range(total_nodes)}
+
+    def to_node(lit: int) -> int:
+        var = abs(lit) - 1
+        return 2 * var if lit > 0 else 2 * var + 1
+
+    def neg_node(node: int) -> int:
+        return node ^ 1
+
+    for a, b in clauses:
+        na, nb = to_node(a), to_node(b)
+        adj[neg_node(na)].append(nb)
+        adj[neg_node(nb)].append(na)
+
+    sccs = tarjan_scc(adj)
+    comp_map = {}
+    for comp_idx, comp in enumerate(sccs):
+        for node in comp:
+            comp_map[node] = comp_idx
+
+    assignment: Dict[int, bool] = {}
+    for var in range(1, num_vars + 1):
+        pos_node = 2 * (var - 1)
+        neg_n = pos_node + 1
+        if comp_map.get(pos_node) == comp_map.get(neg_n):
+            return None
+        assignment[var] = comp_map[pos_node] < comp_map[neg_n]
+
+    return assignment
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -3859,3 +3894,7 @@ if __name__ == "__main__":
     boruvka_edges = [(0, 1, 10), (0, 2, 6), (0, 3, 5), (1, 3, 15), (2, 3, 4)]
     b_wt, b_edges = boruvka_mst(4, boruvka_edges)
     print(f"Boruvka MST Weight: {b_wt}, Edges: {b_edges}")
+    print("\n=== Iteration 89: 2-SAT Solver ===")
+    sat_clauses = [(1, 2), (-1, 2), (-1, -2)]
+    sat_solution = solve_2sat(2, sat_clauses)
+    print("2-SAT solution:", sat_solution)
