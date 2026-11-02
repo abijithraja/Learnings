@@ -107,6 +107,7 @@ Part 104: Bidirectional Dijkstra Algorithm
 Part 105: Edmonds' Blossom Algorithm for General Matching
 Part 106: Booth's Lexicographically Minimal String Rotation
 Part 107: Duval's Algorithm for Lyndon Factorization
+Part 108: Hopcroft's DFA State Minimization Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4313,6 +4314,47 @@ def duvals_lyndon_factorization(s: str) -> List[str]:
     return factors
 
 
+def hopcrofts_dfa_minimization(
+    states: Set[int],
+    alphabet: Set[str],
+    transitions: Dict[Tuple[int, str], int],
+    start: int,
+    accept: Set[int]
+) -> List[Set[int]]:
+    """Minimize a DFA into equivalent state equivalence classes in O(k * n log n) using Hopcroft's algorithm."""
+    P: List[Set[int]] = [accept, states - accept]
+    P = [p for p in P if p]
+    W: List[Set[int]] = [set(accept)] if len(accept) <= len(states) / 2 else [states - accept]
+
+    inv: Dict[Tuple[int, str], Set[int]] = {}
+    for (u, c), v in transitions.items():
+        inv.setdefault((v, c), set()).add(u)
+
+    while W:
+        A = W.pop()
+        for c in alphabet:
+            X = set()
+            for a in A:
+                X |= inv.get((a, c), set())
+
+            new_P = []
+            for Y in P:
+                inter = Y & X
+                diff = Y - X
+                if inter and diff:
+                    new_P.extend([inter, diff])
+                    if Y in W:
+                        W.remove(Y)
+                        W.extend([inter, diff])
+                    else:
+                        W.append(inter if len(inter) <= len(diff) else diff)
+                else:
+                    new_P.append(Y)
+            P = new_P
+
+    return P
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4927,3 +4969,14 @@ if __name__ == "__main__":
     print("\n=== Iteration 107: Duval's Lyndon Factorization ===")
     lyndon_text = "abacaba"
     print(f"Lyndon factorization of '{lyndon_text}':", duvals_lyndon_factorization(lyndon_text))
+    print("\n=== Iteration 108: Hopcroft's DFA Minimization ===")
+    dfa_states = {0, 1, 2, 3}
+    dfa_alpha = {'a', 'b'}
+    dfa_trans = {
+        (0, 'a'): 1, (0, 'b'): 2,
+        (1, 'a'): 1, (1, 'b'): 3,
+        (2, 'a'): 1, (2, 'b'): 2,
+        (3, 'a'): 1, (3, 'b'): 3
+    }
+    dfa_min = hopcrofts_dfa_minimization(dfa_states, dfa_alpha, dfa_trans, 0, {3})
+    print("Minimized DFA Equivalence Classes:", dfa_min)
