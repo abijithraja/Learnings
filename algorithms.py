@@ -101,6 +101,7 @@ Part 98: Leftist Heap Priority Queue
 Part 99: Binomial Heap Priority Queue
 Part 100: Persistent Segment Tree
 Part 101: Li Chao Segment Tree for Dynamic Line Container
+Part 102: Range-Update Range-Query Fenwick Tree
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4062,6 +4063,40 @@ class LiChaoTreeMin:
         return _query(self.root, self.x_min, self.x_max)
 
 
+class RangeFenwickTree:
+    """Binary Indexed Tree supporting both range addition updates and range sum queries in O(log n)."""
+    def __init__(self, size: int):
+        self.n = size
+        self.tree_d = [0] * (size + 1)
+        self.tree_di = [0] * (size + 1)
+
+    def _update(self, tree: List[int], idx: int, delta: int):
+        while idx <= self.n:
+            tree[idx] += delta
+            idx += idx & (-idx)
+
+    def _query(self, tree: List[int], idx: int) -> int:
+        s = 0
+        while idx > 0:
+            s += tree[idx]
+            idx -= idx & (-idx)
+        return s
+
+    def update_range(self, l: int, r: int, delta: int):
+        """Add delta to all elements in range [l, r] (1-indexed)."""
+        self._update(self.tree_d, l, delta)
+        self._update(self.tree_d, r + 1, -delta)
+        self._update(self.tree_di, l, delta * (l - 1))
+        self._update(self.tree_di, r + 1, -delta * r)
+
+    def prefix_sum(self, idx: int) -> int:
+        return self._query(self.tree_d, idx) * idx - self._query(self.tree_di, idx)
+
+    def query_range(self, l: int, r: int) -> int:
+        """Query sum in range [l, r] (1-indexed)."""
+        return self.prefix_sum(r) - self.prefix_sum(l - 1)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4648,3 +4683,8 @@ if __name__ == "__main__":
     lct_min.add_line(1.0, 20.0)
     print("Li Chao Min at x=5:", lct_min.query(5))
     print("Li Chao Min at x=15:", lct_min.query(15))
+    print("\n=== Iteration 102: Range-Update Range-Query Fenwick Tree ===")
+    r_bit = RangeFenwickTree(6)
+    r_bit.update_range(2, 5, 3)
+    print("Sum [2, 4]:", r_bit.query_range(2, 4))
+    print("Sum [1, 6]:", r_bit.query_range(1, 6))
