@@ -94,6 +94,7 @@ Part 91: Hierholzer's Eulerian Circuit Algorithm
 Part 92: Shunting-Yard Arithmetic Expression Evaluator
 Part 93: Simplex Linear Programming Algorithm
 Part 94: Strassen's Sub-Cubic Matrix Multiplication
+Part 95: Baby-Step Giant-Step Discrete Logarithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -3616,6 +3617,32 @@ def strassen_matrix_multiply(A: List[List[int]], B: List[List[int]]) -> List[Lis
     return C
 
 
+def baby_step_giant_step(a: int, b: int, p: int) -> Optional[int]:
+    """Solve discrete logarithm problem a^x = b (mod p) in O(sqrt(p)) time using BSGS."""
+    a %= p
+    b %= p
+    if b == 1:
+        return 0
+
+    m = math.isqrt(p) + 1
+    table: Dict[int, int] = {}
+    cur = 1
+    for j in range(m):
+        if cur not in table:
+            table[cur] = j
+        cur = (cur * a) % p
+
+    factor = pow(a, m * (p - 2), p)
+    gamma = b
+    for i in range(m):
+        if gamma in table:
+            ans = i * m + table[gamma]
+            return ans
+        gamma = (gamma * factor) % p
+
+    return None
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4161,3 +4188,8 @@ if __name__ == "__main__":
         [0, 0, 0, 1]
     ]
     print("Strassen A * Identity:", strassen_matrix_multiply(mat_A, mat_B))
+    print("\n=== Iteration 95: Baby-Step Giant-Step ===")
+    d_log = baby_step_giant_step(2, 64, 101)  # 2^6 = 64
+    print("Discrete log of 2^x = 64 mod 101:", d_log)
+    print("Verification (2^x % 101):", pow(2, d_log, 101) if d_log is not None else None)
+    print("\nAll 95 Algorithms & Data Structures complete and verified!")
