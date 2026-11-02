@@ -102,6 +102,7 @@ Part 99: Binomial Heap Priority Queue
 Part 100: Persistent Segment Tree
 Part 101: Li Chao Segment Tree for Dynamic Line Container
 Part 102: Range-Update Range-Query Fenwick Tree
+Part 103: Centroid Decomposition of Trees
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4097,6 +4098,41 @@ class RangeFenwickTree:
         return self.prefix_sum(r) - self.prefix_sum(l - 1)
 
 
+class CentroidDecomposition:
+    """Divide-and-conquer tree decomposition into a centroid tree of depth O(log n)."""
+    def __init__(self, n: int, adj: Dict[int, List[int]]):
+        self.n = n
+        self.adj = adj
+        self.subtree_size = [0] * n
+        self.removed = [False] * n
+        self.centroid_parent = [-1] * n
+        self.root = self._decompose(0)
+
+    def _get_sizes(self, u: int, p: int = -1) -> int:
+        self.subtree_size[u] = 1
+        for v in self.adj.get(u, []):
+            if v != p and not self.removed[v]:
+                self.subtree_size[u] += self._get_sizes(v, u)
+        return self.subtree_size[u]
+
+    def _find_centroid(self, u: int, p: int, total_size: int) -> int:
+        for v in self.adj.get(u, []):
+            if v != p and not self.removed[v]:
+                if self.subtree_size[v] > total_size // 2:
+                    return self._find_centroid(v, u, total_size)
+        return u
+
+    def _decompose(self, entry: int) -> int:
+        sz = self._get_sizes(entry)
+        centroid = self._find_centroid(entry, -1, sz)
+        self.removed[centroid] = True
+        for v in self.adj.get(centroid, []):
+            if not self.removed[v]:
+                sub_c = self._decompose(v)
+                self.centroid_parent[sub_c] = centroid
+        return centroid
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -4688,3 +4724,8 @@ if __name__ == "__main__":
     r_bit.update_range(2, 5, 3)
     print("Sum [2, 4]:", r_bit.query_range(2, 4))
     print("Sum [1, 6]:", r_bit.query_range(1, 6))
+    print("\n=== Iteration 103: Centroid Decomposition ===")
+    cd_adj = {0: [1], 1: [0, 2], 2: [1, 3, 4], 3: [2], 4: [2]}
+    cd = CentroidDecomposition(5, cd_adj)
+    print("Centroid Tree Root:", cd.root)
+    print("Centroid Parents:", cd.centroid_parent)
