@@ -110,6 +110,7 @@ Part 107: Duval's Algorithm for Lyndon Factorization
 Part 108: Hopcroft's DFA State Minimization Algorithm
 Part 109: Sutherland-Hodgman Polygon Clipping
 Part 110: Bentley-Ottmann Sweep-Line Segment Intersection
+Part 111: Berlekamp-Massey Algorithm for Linear Recurrence
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4433,6 +4434,44 @@ def bentley_ottmann_segment_intersections(
     return sorted(intersections)
 
 
+def berlekamp_massey(sequence: List[int], mod: Optional[int] = None) -> List[int]:
+    """Find the minimal linear recurrence polynomial for a sequence using Berlekamp-Massey."""
+    n = len(sequence)
+    c = [1]
+    b = [1]
+    l = 0
+    m = 1
+
+    for i in range(n):
+        d = sequence[i]
+        for j in range(1, l + 1):
+            term = c[j] * sequence[i - j]
+            d = (d + term) % mod if mod else (d + term)
+
+        if (d % mod == 0 if mod else d == 0):
+            m += 1
+        else:
+            t = list(c)
+            if mod:
+                factor = (d * pow(b[0], mod - 2, mod)) % mod
+            else:
+                factor = d / b[0]
+            shifted_b = [0] * m + [b[j] * factor for j in range(len(b))]
+            while len(c) < len(shifted_b):
+                c.append(0)
+            for j in range(len(shifted_b)):
+                c[j] = (c[j] - shifted_b[j]) % mod if mod else (c[j] - shifted_b[j])
+
+            if 2 * l <= i:
+                l = i + 1 - l
+                b = t
+                m = 1
+            else:
+                m += 1
+
+    return [int(x) for x in c]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5070,3 +5109,6 @@ if __name__ == "__main__":
         ((2.0, 0.0), (2.0, 4.0))
     ]
     print("Found intersection points:", bentley_ottmann_segment_intersections(test_segs))
+    print("\n=== Iteration 111: Berlekamp-Massey ===")
+    fib_seq = [1, 1, 2, 3, 5, 8, 13, 21]
+    print("Minimal recurrence for Fibonacci:", berlekamp_massey(fib_seq))
