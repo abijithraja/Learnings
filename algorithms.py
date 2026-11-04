@@ -112,6 +112,7 @@ Part 109: Sutherland-Hodgman Polygon Clipping
 Part 110: Bentley-Ottmann Sweep-Line Segment Intersection
 Part 111: Berlekamp-Massey Algorithm for Linear Recurrence
 Part 112: Pollard's p - 1 Integer Factorization
+Part 113: Compact Suffix Tree for Linear-Time Substring Queries
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4484,6 +4485,72 @@ def pollards_p_minus_1(n: int, b_limit: int = 100) -> Optional[int]:
     return None
 
 
+class SuffixTreeNode:
+    def __init__(self, start: int = -1, end: Optional[int] = None):
+        self.children: Dict[str, 'SuffixTreeNode'] = {}
+        self.start = start
+        self.end = end
+        self.suffix_link: Optional['SuffixTreeNode'] = None
+        self.suffix_index = -1
+
+
+class CompactSuffixTree:
+    """Explicit Suffix Tree storing suffixes and enabling O(m) substring search."""
+    def __init__(self, text: str):
+        self.text = text
+        self.root = SuffixTreeNode()
+        self._build()
+
+    def _build(self):
+        n = len(self.text)
+        for i in range(n):
+            curr = self.root
+            j = i
+            while j < n:
+                ch = self.text[j]
+                if ch not in curr.children:
+                    leaf = SuffixTreeNode(j, n)
+                    leaf.suffix_index = i
+                    curr.children[ch] = leaf
+                    break
+                child = curr.children[ch]
+                edge_len = child.end - child.start
+                k = 0
+                while k < edge_len and j + k < n and self.text[child.start + k] == self.text[j + k]:
+                    k += 1
+                if k == edge_len:
+                    j += k
+                    curr = child
+                else:
+                    split = SuffixTreeNode(child.start, child.start + k)
+                    curr.children[ch] = split
+                    child.start += k
+                    split.children[self.text[child.start]] = child
+                    leaf = SuffixTreeNode(j + k, n)
+                    leaf.suffix_index = i
+                    split.children[self.text[j + k]] = leaf
+                    break
+
+    def contains(self, pattern: str) -> bool:
+        curr = self.root
+        i = 0
+        m = len(pattern)
+        while i < m:
+            ch = pattern[i]
+            if ch not in curr.children:
+                return False
+            child = curr.children[ch]
+            edge_len = child.end - child.start
+            k = 0
+            while k < edge_len and i + k < m:
+                if self.text[child.start + k] != pattern[i + k]:
+                    return False
+                k += 1
+            i += k
+            curr = child
+        return True
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5128,4 +5195,8 @@ if __name__ == "__main__":
     fact_num = 13927  # 107 * 1301 (107 - 1 = 106 = 2 * 53)
     factor = pollards_p_minus_1(fact_num, b_limit=60)
     print(f"Non-trivial factor of {fact_num}: {factor} (co-factor: {fact_num // factor if factor else None})")
-    print("\nAll 112 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 113: Compact Suffix Tree ===")
+    st_tree = CompactSuffixTree("banana$")
+    print("Contains 'nan':", st_tree.contains("nan"))
+    print("Contains 'ana':", st_tree.contains("ana"))
+    print("Contains 'apple':", st_tree.contains("apple"))
