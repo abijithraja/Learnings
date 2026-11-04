@@ -114,6 +114,7 @@ Part 111: Berlekamp-Massey Algorithm for Linear Recurrence
 Part 112: Pollard's p - 1 Integer Factorization
 Part 113: Compact Suffix Tree for Linear-Time Substring Queries
 Part 114: Bidirectional A* Pathfinding on 2D Grids
+Part 115: Gomory-Hu Cut Tree Representation
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4633,6 +4634,41 @@ def bidirectional_a_star_grid(
     return path_f + path_b
 
 
+def gomory_hu_tree(
+    n: int, capacity_matrix: List[List[int]]
+) -> List[Tuple[int, int, int]]:
+    """Construct Gomory-Hu Cut Tree representing all-pairs min-cuts using V-1 max-flow calls."""
+    parent = [0] * n
+    weight = [0] * n
+
+    for i in range(1, n):
+        s = i
+        t = parent[i]
+
+        cap_copy = [row[:] for row in capacity_matrix]
+        flow_val = edmonds_karp_max_flow(cap_copy, s, t)
+        weight[i] = flow_val
+
+        reachable = [False] * n
+        q = deque([s])
+        reachable[s] = True
+        while q:
+            u = q.popleft()
+            for v in range(n):
+                if not reachable[v] and cap_copy[u][v] > 0:
+                    reachable[v] = True
+                    q.append(v)
+
+        for j in range(i + 1, n):
+            if parent[j] == t and reachable[j]:
+                parent[j] = s
+
+    cut_edges = []
+    for i in range(1, n):
+        cut_edges.append((parent[i], i, weight[i]))
+    return cut_edges
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5291,3 +5327,11 @@ if __name__ == "__main__":
     ]
     bi_path = bidirectional_a_star_grid((0, 0), (3, 3), test_grid)
     print("Bidirectional A* path found:", bi_path)
+    print("\n=== Iteration 115: Gomory-Hu Cut Tree ===")
+    gh_cap = [
+        [0, 2, 3, 0],
+        [2, 0, 1, 5],
+        [3, 1, 0, 2],
+        [0, 5, 2, 0]
+    ]
+    print("Gomory-Hu Cut Tree Edges:", gomory_hu_tree(4, gh_cap))
