@@ -117,6 +117,7 @@ Part 114: Bidirectional A* Pathfinding on 2D Grids
 Part 115: Gomory-Hu Cut Tree Representation
 Part 116: Knuth's Algorithm X (Dancing Links Exact Cover)
 Part 117: Hirschberg's Space-Efficient Longest Common Subsequence
+Part 118: Welzl's Smallest Enclosing Circle Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4822,6 +4823,49 @@ def hirschbergs_linear_space_lcs(s1: str, s2: str) -> str:
     return rec_lcs(s1, s2)
 
 
+def welzls_smallest_enclosing_circle(
+    points: List[Tuple[float, float]]
+) -> Tuple[Tuple[float, float], float]:
+    """Compute smallest enclosing disk in expected linear O(n) time using Welzl's algorithm."""
+    import random
+    pts = list(points)
+    random.Random(42).shuffle(pts)
+
+    def dist(p1, p2):
+        return math.hypot(p1[0] - p2[0], p1[1] - p2[1])
+
+    def circle_from_2(p1, p2):
+        center = ((p1[0] + p2[0]) / 2.0, (p1[1] + p2[1]) / 2.0)
+        return center, dist(p1, p2) / 2.0
+
+    def circle_from_3(a, b, c):
+        d = 2 * (a[0] * (b[1] - c[1]) + b[0] * (c[1] - a[1]) + c[0] * (a[1] - b[1]))
+        if abs(d) < 1e-9:
+            return circle_from_2(a, b)
+        ux = ((a[0]**2 + a[1]**2) * (b[1] - c[1]) + (b[0]**2 + b[1]**2) * (c[1] - a[1]) + (c[0]**2 + c[1]**2) * (a[1] - b[1])) / d
+        uy = ((a[0]**2 + a[1]**2) * (c[0] - b[0]) + (b[0]**2 + b[1]**2) * (a[0] - c[0]) + (c[0]**2 + c[1]**2) * (b[0] - a[0])) / d
+        center = (ux, uy)
+        return center, dist(center, a)
+
+    def is_inside(c, p):
+        return dist(c[0], p) <= c[1] + 1e-9
+
+    def welzl(p_list, r_list, n):
+        if n == 0 or len(r_list) == 3:
+            if len(r_list) == 0: return (0.0, 0.0), 0.0
+            if len(r_list) == 1: return r_list[0], 0.0
+            if len(r_list) == 2: return circle_from_2(r_list[0], r_list[1])
+            return circle_from_3(r_list[0], r_list[1], r_list[2])
+
+        p = p_list[n - 1]
+        c = welzl(p_list, r_list, n - 1)
+        if is_inside(c, p):
+            return c
+        return welzl(p_list, r_list + [p], n - 1)
+
+    return welzl(pts, [], len(pts))
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5501,3 +5545,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 117: Hirschberg's Linear Space LCS ===")
     s_a, s_b = "AGGTAB", "GXTXAYB"
     print(f"Hirschberg LCS of '{s_a}' and '{s_b}':", hirschbergs_linear_space_lcs(s_a, s_b))
+    print("\n=== Iteration 118: Welzl's Smallest Enclosing Circle ===")
+    circle_pts = [(0.0, 0.0), (0.0, 2.0), (2.0, 0.0), (2.0, 2.0)]
+    c_center, c_radius = welzls_smallest_enclosing_circle(circle_pts)
+    print(f"Center: {c_center}, Radius: {c_radius:.4f}")
