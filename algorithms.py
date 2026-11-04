@@ -116,6 +116,7 @@ Part 113: Compact Suffix Tree for Linear-Time Substring Queries
 Part 114: Bidirectional A* Pathfinding on 2D Grids
 Part 115: Gomory-Hu Cut Tree Representation
 Part 116: Knuth's Algorithm X (Dancing Links Exact Cover)
+Part 117: Hirschberg's Space-Efficient Longest Common Subsequence
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4780,6 +4781,47 @@ class DancingLinksExactCover:
         return None
 
 
+def hirschbergs_linear_space_lcs(s1: str, s2: str) -> str:
+    """Compute Longest Common Subsequence using Hirschberg's divide-and-conquer in O(min(m, n)) space."""
+    def lcs_lengths(x: str, y: str) -> List[int]:
+        m, n = len(x), len(y)
+        prev = [0] * (n + 1)
+        for i in range(1, m + 1):
+            curr = [0] * (n + 1)
+            for j in range(1, n + 1):
+                if x[i - 1] == y[j - 1]:
+                    curr[j] = prev[j - 1] + 1
+                else:
+                    curr[j] = max(prev[j], curr[j - 1])
+            prev = curr
+        return prev
+
+    def rec_lcs(x: str, y: str) -> str:
+        if not x:
+            return ""
+        if len(x) == 1:
+            return x if x in y else ""
+
+        mid = len(x) // 2
+        x_left = x[:mid]
+        x_right = x[mid:]
+
+        l1 = lcs_lengths(x_left, y)
+        l2 = lcs_lengths(x_right[::-1], y[::-1])
+
+        split_j = 0
+        max_len = -1
+        n = len(y)
+        for j in range(n + 1):
+            if l1[j] + l2[n - j] > max_len:
+                max_len = l1[j] + l2[n - j]
+                split_j = j
+
+        return rec_lcs(x_left, y[:split_j]) + rec_lcs(x_right, y[split_j:])
+
+    return rec_lcs(s1, s2)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5456,3 +5498,6 @@ if __name__ == "__main__":
     dlx.add_row(4, [1, 6])
     dlx.add_row(5, [3, 4, 6])
     print("Exact Cover Selected Rows:", dlx.search())
+    print("\n=== Iteration 117: Hirschberg's Linear Space LCS ===")
+    s_a, s_b = "AGGTAB", "GXTXAYB"
+    print(f"Hirschberg LCS of '{s_a}' and '{s_b}':", hirschbergs_linear_space_lcs(s_a, s_b))
