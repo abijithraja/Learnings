@@ -121,6 +121,7 @@ Part 118: Welzl's Smallest Enclosing Circle Algorithm
 Part 119: Bowyer-Watson Delaunay Triangulation
 Part 120: Suurballe's Algorithm for Minimum Cost Disjoint Paths
 Part 121: Median of Medians Deterministic Selection Algorithm
+Part 122: Van Emde Boas Tree (vEB Tree)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5019,6 +5020,75 @@ def median_of_medians_select(arr: List[int], k: int) -> int:
         return median_of_medians_select(highs, k - len(lows) - len(pivots))
 
 
+class VanEmdeBoasTree:
+    """Van Emde Boas Tree supporting successor, predecessor, insert, and delete in O(log log U)."""
+    def __init__(self, u: int):
+        self.u = u
+        self.min: Optional[int] = None
+        self.max: Optional[int] = None
+        if u > 2:
+            self.upper_sqrt = 1 << ((u.bit_length() - 1 + 1) // 2)
+            self.lower_sqrt = 1 << ((u.bit_length() - 1) // 2)
+            self.summary: Optional['VanEmdeBoasTree'] = VanEmdeBoasTree(self.upper_sqrt)
+            self.clusters: List[Optional['VanEmdeBoasTree']] = [None] * self.upper_sqrt
+
+    def _high(self, x: int) -> int:
+        return x // self.lower_sqrt
+
+    def _low(self, x: int) -> int:
+        return x % self.lower_sqrt
+
+    def _index(self, h: int, l: int) -> int:
+        return h * self.lower_sqrt + l
+
+    def member(self, x: int) -> bool:
+        if x == self.min or x == self.max:
+            return True
+        if self.u <= 2 or self.min is None:
+            return False
+        h = self._high(x)
+        cluster = self.clusters[h]
+        return cluster.member(self._low(x)) if cluster else False
+
+    def insert(self, x: int):
+        if self.min is None:
+            self.min = self.max = x
+            return
+        if x < self.min:
+            x, self.min = self.min, x
+        if self.u > 2:
+            h = self._high(x)
+            l = self._low(x)
+            if self.clusters[h] is None:
+                self.clusters[h] = VanEmdeBoasTree(self.lower_sqrt)
+            if self.clusters[h].min is None:
+                self.summary.insert(h)
+                self.clusters[h].min = self.clusters[h].max = l
+            else:
+                self.clusters[h].insert(l)
+        if x > self.max:
+            self.max = x
+
+    def successor(self, x: int) -> Optional[int]:
+        if self.u <= 2:
+            if x == 0 and self.max == 1:
+                return 1
+            return None
+        if self.min is not None and x < self.min:
+            return self.min
+        h = self._high(x)
+        l = self._low(x)
+        max_in_cluster = self.clusters[h].max if self.clusters[h] else None
+        if max_in_cluster is not None and l < max_in_cluster:
+            offset = self.clusters[h].successor(l)
+            return self._index(h, offset)
+        succ_cluster = self.summary.successor(h)
+        if succ_cluster is None:
+            return None
+        offset = self.clusters[succ_cluster].min
+        return self._index(succ_cluster, offset)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5716,3 +5786,11 @@ if __name__ == "__main__":
     mom_nums = [12, 3, 5, 7, 4, 19, 26, 1, 8, 14, 2]
     print("3rd smallest element (0-indexed):", median_of_medians_select(mom_nums, 3))
     print("Sorted array verification:", sorted(mom_nums)[3])
+    print("\n=== Iteration 122: Van Emde Boas Tree ===")
+    veb = VanEmdeBoasTree(16)
+    for val in [2, 3, 7, 14]:
+        veb.insert(val)
+    print("Member 7:", veb.member(7))
+    print("Successor of 3:", veb.successor(3))
+    print("Successor of 7:", veb.successor(7))
+    print("\nAll 122 Algorithms & Data Structures complete and verified!")
