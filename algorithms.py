@@ -120,6 +120,7 @@ Part 117: Hirschberg's Space-Efficient Longest Common Subsequence
 Part 118: Welzl's Smallest Enclosing Circle Algorithm
 Part 119: Bowyer-Watson Delaunay Triangulation
 Part 120: Suurballe's Algorithm for Minimum Cost Disjoint Paths
+Part 121: Median of Medians Deterministic Selection Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4996,6 +4997,28 @@ def suurballe_disjoint_paths(
     return total_cost, path_a, path_b
 
 
+def median_of_medians_select(arr: List[int], k: int) -> int:
+    """Find k-th smallest element (0-indexed) in deterministic O(n) worst-case time."""
+    if len(arr) <= 5:
+        return sorted(arr)[k]
+
+    sublists = [arr[i:i + 5] for i in range(0, len(arr), 5)]
+    medians = [sorted(sub)[len(sub) // 2] for sub in sublists]
+
+    pivot = median_of_medians_select(medians, len(medians) // 2)
+
+    lows = [x for x in arr if x < pivot]
+    highs = [x for x in arr if x > pivot]
+    pivots = [x for x in arr if x == pivot]
+
+    if k < len(lows):
+        return median_of_medians_select(lows, k)
+    elif k < len(lows) + len(pivots):
+        return pivot
+    else:
+        return median_of_medians_select(highs, k - len(lows) - len(pivots))
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5689,3 +5712,7 @@ if __name__ == "__main__":
     ]
     suur_res = suurballe_disjoint_paths(5, suur_edges, 0, 3)
     print("Suurballe result (Cost, Path 1, Path 2):", suur_res)
+    print("\n=== Iteration 121: Median of Medians Selection ===")
+    mom_nums = [12, 3, 5, 7, 4, 19, 26, 1, 8, 14, 2]
+    print("3rd smallest element (0-indexed):", median_of_medians_select(mom_nums, 3))
+    print("Sorted array verification:", sorted(mom_nums)[3])
