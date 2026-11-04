@@ -118,6 +118,7 @@ Part 115: Gomory-Hu Cut Tree Representation
 Part 116: Knuth's Algorithm X (Dancing Links Exact Cover)
 Part 117: Hirschberg's Space-Efficient Longest Common Subsequence
 Part 118: Welzl's Smallest Enclosing Circle Algorithm
+Part 119: Bowyer-Watson Delaunay Triangulation
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4866,6 +4867,58 @@ def welzls_smallest_enclosing_circle(
     return welzl(pts, [], len(pts))
 
 
+def bowyer_watson_delaunay(points: List[Tuple[float, float]]) -> List[Tuple[int, int, int]]:
+    """Compute 2D Delaunay Triangulation using Bowyer-Watson incremental algorithm."""
+    if len(points) < 3:
+        return []
+
+    min_x = min(p[0] for p in points) - 100
+    max_x = max(p[0] for p in points) + 100
+    min_y = min(p[1] for p in points) - 100
+    max_y = max(p[1] for p in points) + 100
+
+    pts = list(points) + [
+        (min_x - 1000, min_y - 1000),
+        (max_x + 1000, min_y - 1000),
+        ((min_x + max_x) / 2.0, max_y + 1000)
+    ]
+    st1, st2, st3 = len(pts) - 3, len(pts) - 2, len(pts) - 1
+    triangles: List[Tuple[int, int, int]] = [(st1, st2, st3)]
+
+    def circumcircle_contains(tri: Tuple[int, int, int], p: Tuple[float, float]) -> bool:
+        a, b, c = pts[tri[0]], pts[tri[1]], pts[tri[2]]
+        d = 2 * (a[0] * (b[1] - c[1]) + b[0] * (c[1] - a[1]) + c[0] * (a[1] - b[1]))
+        if abs(d) < 1e-9:
+            return False
+        ux = ((a[0]**2 + a[1]**2) * (b[1] - c[1]) + (b[0]**2 + b[1]**2) * (c[1] - a[1]) + (c[0]**2 + c[1]**2) * (a[1] - b[1])) / d
+        uy = ((a[0]**2 + a[1]**2) * (c[0] - b[0]) + (b[0]**2 + b[1]**2) * (a[0] - c[0]) + (c[0]**2 + c[1]**2) * (b[0] - a[0])) / d
+        radius = math.hypot(ux - a[0], uy - a[1])
+        return math.hypot(ux - p[0], uy - p[1]) <= radius
+
+    for idx in range(len(points)):
+        p = pts[idx]
+        bad_triangles = [tri for tri in triangles if circumcircle_contains(tri, p)]
+        polygon_edges = []
+        for tri in bad_triangles:
+            edges = [(tri[0], tri[1]), (tri[1], tri[2]), (tri[2], tri[0])]
+            for edge in edges:
+                rev_edge = (edge[1], edge[0])
+                shared = any(rev_edge in [(other[0], other[1]), (other[1], other[2]), (other[2], other[0])]
+                             for other in bad_triangles if other != tri)
+                if not shared:
+                    polygon_edges.append(edge)
+
+        triangles = [tri for tri in triangles if tri not in bad_triangles]
+        for e in polygon_edges:
+            triangles.append((e[0], e[1], idx))
+
+    res = []
+    for tri in triangles:
+        if st1 not in tri and st2 not in tri and st3 not in tri:
+            res.append(tri)
+    return res
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5549,3 +5602,6 @@ if __name__ == "__main__":
     circle_pts = [(0.0, 0.0), (0.0, 2.0), (2.0, 0.0), (2.0, 2.0)]
     c_center, c_radius = welzls_smallest_enclosing_circle(circle_pts)
     print(f"Center: {c_center}, Radius: {c_radius:.4f}")
+    print("\n=== Iteration 119: Bowyer-Watson Delaunay Triangulation ===")
+    del_pts = [(0.0, 0.0), (2.0, 0.0), (1.0, 2.0), (1.0, 1.0)]
+    print("Delaunay Triangles:", bowyer_watson_delaunay(del_pts))
