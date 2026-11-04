@@ -115,6 +115,7 @@ Part 112: Pollard's p - 1 Integer Factorization
 Part 113: Compact Suffix Tree for Linear-Time Substring Queries
 Part 114: Bidirectional A* Pathfinding on 2D Grids
 Part 115: Gomory-Hu Cut Tree Representation
+Part 116: Knuth's Algorithm X (Dancing Links Exact Cover)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4669,6 +4670,116 @@ def gomory_hu_tree(
     return cut_edges
 
 
+class DLXNode:
+    def __init__(self, row: int = -1, col: int = -1):
+        self.left = self
+        self.right = self
+        self.up = self
+        self.down = self
+        self.column: Optional['DLXNode'] = None
+        self.row = row
+        self.col = col
+        self.size = 0
+
+
+class DancingLinksExactCover:
+    """Knuth's Algorithm X using Dancing Links (DLX) for solving exact cover problems."""
+    def __init__(self, num_cols: int):
+        self.header = DLXNode()
+        self.cols: List[DLXNode] = []
+        for c in range(num_cols):
+            col_node = DLXNode(-1, c)
+            col_node.column = col_node
+            self._link_horizontal(self.header.left, col_node)
+            self.cols.append(col_node)
+        self.solution: List[int] = []
+
+    def _link_horizontal(self, prev: DLXNode, node: DLXNode):
+        node.left = prev
+        node.right = prev.right
+        prev.right.left = node
+        prev.right = node
+
+    def _link_vertical(self, prev: DLXNode, node: DLXNode):
+        node.up = prev
+        node.down = prev.down
+        prev.down.up = node
+        prev.down = node
+
+    def add_row(self, row_idx: int, ones: List[int]):
+        first = None
+        for c in ones:
+            col_node = self.cols[c]
+            new_node = DLXNode(row_idx, c)
+            new_node.column = col_node
+            col_node.size += 1
+            self._link_vertical(col_node.up, new_node)
+            if first is None:
+                first = new_node
+            else:
+                self._link_horizontal(first.left, new_node)
+
+    def _cover(self, col: DLXNode):
+        col.right.left = col.left
+        col.left.right = col.right
+        i = col.down
+        while i != col:
+            j = i.right
+            while j != i:
+                j.down.up = j.up
+                j.up.down = j.down
+                j.column.size -= 1
+                j = j.right
+            i = i.down
+
+    def _uncover(self, col: DLXNode):
+        i = col.up
+        while i != col:
+            j = i.left
+            while j != i:
+                j.column.size += 1
+                j.down.up = j
+                j.up.down = j
+                j = j.left
+            i = i.up
+        col.right.left = col
+        col.left.right = col
+
+    def search(self) -> Optional[List[int]]:
+        if self.header.right == self.header:
+            return list(self.solution)
+
+        best_col = self.header.right
+        curr = best_col.right
+        while curr != self.header:
+            if curr.size < best_col.size:
+                best_col = curr
+            curr = curr.right
+
+        self._cover(best_col)
+        row = best_col.down
+        while row != best_col:
+            self.solution.append(row.row)
+            j = row.right
+            while j != row:
+                self._cover(j.column)
+                j = j.right
+
+            res = self.search()
+            if res is not None:
+                return res
+
+            self.solution.pop()
+            j = row.left
+            while j != row:
+                self._uncover(j.column)
+                j = j.left
+            row = row.down
+
+        self._uncover(best_col)
+        return None
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5335,3 +5446,13 @@ if __name__ == "__main__":
         [0, 5, 2, 0]
     ]
     print("Gomory-Hu Cut Tree Edges:", gomory_hu_tree(4, gh_cap))
+    print("\n=== Iteration 116: Dancing Links Exact Cover ===")
+    dlx = DancingLinksExactCover(7)
+    # 6 rows representing subsets
+    dlx.add_row(0, [2, 4, 5])
+    dlx.add_row(1, [0, 3, 6])
+    dlx.add_row(2, [1, 2, 5])
+    dlx.add_row(3, [0, 3])
+    dlx.add_row(4, [1, 6])
+    dlx.add_row(5, [3, 4, 6])
+    print("Exact Cover Selected Rows:", dlx.search())
