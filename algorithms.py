@@ -113,6 +113,7 @@ Part 110: Bentley-Ottmann Sweep-Line Segment Intersection
 Part 111: Berlekamp-Massey Algorithm for Linear Recurrence
 Part 112: Pollard's p - 1 Integer Factorization
 Part 113: Compact Suffix Tree for Linear-Time Substring Queries
+Part 114: Bidirectional A* Pathfinding on 2D Grids
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4551,6 +4552,87 @@ class CompactSuffixTree:
         return True
 
 
+def bidirectional_a_star_grid(
+    start: Tuple[int, int], goal: Tuple[int, int], grid: List[List[int]]
+) -> Optional[List[Tuple[int, int]]]:
+    """Bidirectional A* pathfinding on a 2D grid with obstacles."""
+    if start == goal:
+        return [start]
+    rows, cols = len(grid), len(grid[0])
+
+    def h(p1: Tuple[int, int], p2: Tuple[int, int]) -> float:
+        return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
+
+    g_f: Dict[Tuple[int, int], float] = {start: 0.0}
+    parent_f: Dict[Tuple[int, int], Optional[Tuple[int, int]]] = {start: None}
+    pq_f: List[Tuple[float, Tuple[int, int]]] = [(h(start, goal), start)]
+
+    g_b: Dict[Tuple[int, int], float] = {goal: 0.0}
+    parent_b: Dict[Tuple[int, int], Optional[Tuple[int, int]]] = {goal: None}
+    pq_b: List[Tuple[float, Tuple[int, int]]] = [(h(goal, start), goal)]
+
+    visited_f: Set[Tuple[int, int]] = set()
+    visited_b: Set[Tuple[int, int]] = set()
+    best_dist = float('inf')
+    meet_node: Optional[Tuple[int, int]] = None
+
+    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+
+    while pq_f and pq_b:
+        _, u_f = heapq.heappop(pq_f)
+        if u_f not in visited_f:
+            visited_f.add(u_f)
+            for dr, dc in directions:
+                nr, nc = u_f[0] + dr, u_f[1] + dc
+                if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 0:
+                    nxt = (nr, nc)
+                    new_g = g_f[u_f] + 1.0
+                    if new_g < g_f.get(nxt, float('inf')):
+                        g_f[nxt] = new_g
+                        parent_f[nxt] = u_f
+                        heapq.heappush(pq_f, (new_g + h(nxt, goal), nxt))
+                    if nxt in g_b and new_g + g_b[nxt] < best_dist:
+                        best_dist = new_g + g_b[nxt]
+                        meet_node = nxt
+
+        _, u_b = heapq.heappop(pq_b)
+        if u_b not in visited_b:
+            visited_b.add(u_b)
+            for dr, dc in directions:
+                nr, nc = u_b[0] + dr, u_b[1] + dc
+                if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 0:
+                    nxt = (nr, nc)
+                    new_g = g_b[u_b] + 1.0
+                    if new_g < g_b.get(nxt, float('inf')):
+                        g_b[nxt] = new_g
+                        parent_b[nxt] = u_b
+                        heapq.heappush(pq_b, (new_g + h(nxt, start), nxt))
+                    if nxt in g_f and new_g + g_f[nxt] < best_dist:
+                        best_dist = new_g + g_f[nxt]
+                        meet_node = nxt
+
+        if pq_f and pq_b and pq_f[0][0] + pq_b[0][0] >= best_dist:
+            break
+
+    if meet_node is None:
+        return None
+
+    path_f = []
+    curr = meet_node
+    while curr:
+        path_f.append(curr)
+        curr = parent_f[curr]
+    path_f.reverse()
+
+    path_b = []
+    curr = parent_b[meet_node]
+    while curr:
+        path_b.append(curr)
+        curr = parent_b[curr]
+
+    return path_f + path_b
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5200,3 +5282,12 @@ if __name__ == "__main__":
     print("Contains 'nan':", st_tree.contains("nan"))
     print("Contains 'ana':", st_tree.contains("ana"))
     print("Contains 'apple':", st_tree.contains("apple"))
+    print("\n=== Iteration 114: Bidirectional A* Search ===")
+    test_grid = [
+        [0, 0, 0, 0],
+        [1, 1, 0, 1],
+        [0, 0, 0, 0],
+        [0, 1, 1, 0]
+    ]
+    bi_path = bidirectional_a_star_grid((0, 0), (3, 3), test_grid)
+    print("Bidirectional A* path found:", bi_path)
