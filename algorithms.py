@@ -119,6 +119,7 @@ Part 116: Knuth's Algorithm X (Dancing Links Exact Cover)
 Part 117: Hirschberg's Space-Efficient Longest Common Subsequence
 Part 118: Welzl's Smallest Enclosing Circle Algorithm
 Part 119: Bowyer-Watson Delaunay Triangulation
+Part 120: Suurballe's Algorithm for Minimum Cost Disjoint Paths
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -4919,6 +4920,82 @@ def bowyer_watson_delaunay(points: List[Tuple[float, float]]) -> List[Tuple[int,
     return res
 
 
+def suurballe_disjoint_paths(
+    n: int, edges: List[Tuple[int, int, float]], src: int, dst: int
+) -> Optional[Tuple[float, List[int], List[int]]]:
+    """Find two edge-disjoint paths from src to dst with minimal total edge weight."""
+    adj: Dict[int, List[Tuple[int, float]]] = {i: [] for i in range(n)}
+    for u, v, w in edges:
+        adj[u].append((v, w))
+
+    def dijkstra_p(graph, s):
+        dist = [float('inf')] * n
+        parent = [-1] * n
+        dist[s] = 0.0
+        pq = [(0.0, s)]
+        while pq:
+            d, u = heapq.heappop(pq)
+            if d > dist[u]: continue
+            for v, w in graph.get(u, []):
+                if dist[u] + w < dist[v]:
+                    dist[v] = dist[u] + w
+                    parent[v] = u
+                    heapq.heappush(pq, (dist[v], v))
+        return dist, parent
+
+    dist1, parent1 = dijkstra_p(adj, src)
+    if dist1[dst] == float('inf'):
+        return None
+
+    p1_edges = set()
+    curr = dst
+    while curr != src:
+        prev = parent1[curr]
+        p1_edges.add((prev, curr))
+        curr = prev
+
+    adj2: Dict[int, List[Tuple[int, float]]] = {i: [] for i in range(n)}
+    for u, v, w in edges:
+        if (u, v) in p1_edges:
+            adj2[v].append((u, 0.0))
+        else:
+            reduced_w = w - dist1[v] + dist1[u]
+            adj2[u].append((v, max(0.0, reduced_w)))
+
+    dist2, parent2 = dijkstra_p(adj2, src)
+    if dist2[dst] == float('inf'):
+        return None
+
+    p2_edges = set()
+    curr = dst
+    while curr != src:
+        prev = parent2[curr]
+        if (curr, prev) in p1_edges:
+            p1_edges.remove((curr, prev))
+        else:
+            p2_edges.add((prev, curr))
+        curr = prev
+
+    all_edges = p1_edges | p2_edges
+    path_graph: Dict[int, List[int]] = {i: [] for i in range(n)}
+    for u, v in all_edges:
+        path_graph[u].append(v)
+
+    def extract_path():
+        path = [src]
+        c = src
+        while c != dst and path_graph[c]:
+            nxt = path_graph[c].pop()
+            path.append(nxt)
+            c = nxt
+        return path
+
+    path_a = extract_path()
+    path_b = extract_path()
+    total_cost = sum(w for u, v, w in edges if (u, v) in (set(zip(path_a[:-1], path_a[1:])) | set(zip(path_b[:-1], path_b[1:]))))
+    return total_cost, path_a, path_b
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5605,3 +5682,10 @@ if __name__ == "__main__":
     print("\n=== Iteration 119: Bowyer-Watson Delaunay Triangulation ===")
     del_pts = [(0.0, 0.0), (2.0, 0.0), (1.0, 2.0), (1.0, 1.0)]
     print("Delaunay Triangles:", bowyer_watson_delaunay(del_pts))
+    print("\n=== Iteration 120: Suurballe's Disjoint Paths ===")
+    suur_edges = [
+        (0, 1, 1.0), (1, 2, 1.0), (2, 3, 1.0),
+        (0, 4, 2.0), (4, 3, 2.0), (1, 4, 1.0)
+    ]
+    suur_res = suurballe_disjoint_paths(5, suur_edges, 0, 3)
+    print("Suurballe result (Cost, Path 1, Path 2):", suur_res)
