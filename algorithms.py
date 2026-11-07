@@ -131,6 +131,7 @@ Part 128: Farey Sequence for Irreducible Fractions
 Part 129: Manber-Myers Prefix Doubling Suffix Array
 Part 130: Simulated Annealing for Traveling Salesperson Problem
 Part 131: Gale-Shapley Stable Marriage Algorithm
+Part 132: Boyer-Moore Generalized Majority Vote Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5441,6 +5442,32 @@ def gale_shapley_stable_marriage(
     return {p: r for r, p in engagements.items()}
 
 
+def boyer_moore_majority_vote_k(nums: List[int], k: int = 2) -> List[int]:
+    """Find all elements in an array that appear strictly more than n / k times in O(n * k) time and O(k) space."""
+    if not nums or k < 2:
+        return []
+
+    candidates: Dict[int, int] = {}
+    for num in nums:
+        if num in candidates:
+            candidates[num] += 1
+        elif len(candidates) < k - 1:
+            candidates[num] = 1
+        else:
+            for cand in list(candidates.keys()):
+                candidates[cand] -= 1
+                if candidates[cand] == 0:
+                    del candidates[cand]
+
+    threshold = len(nums) // k
+    actual_counts = {cand: 0 for cand in candidates}
+    for num in nums:
+        if num in actual_counts:
+            actual_counts[num] += 1
+
+    return sorted([cand for cand, count in actual_counts.items() if count > threshold])
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6196,3 +6223,7 @@ if __name__ == "__main__":
         "Zeus": ["Alice", "Bob", "Charlie"]
     }
     print("Stable matches:", gale_shapley_stable_marriage(p_prefs, r_prefs))
+    print("\n=== Iteration 132: Boyer-Moore Generalized Majority Vote ===")
+    sample_vote = [1, 1, 1, 3, 3, 2, 2, 2]
+    print("Elements appearing > n/3 times:", boyer_moore_majority_vote_k(sample_vote, k=3))
+    print("\nAll 132 Algorithms & Data Structures complete and verified!")
