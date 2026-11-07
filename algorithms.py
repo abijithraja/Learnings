@@ -125,6 +125,7 @@ Part 122: Van Emde Boas Tree (vEB Tree)
 Part 123: Min-Cost Max-Flow (Successive Shortest Path with SPFA)
 Part 124: Lengauer-Tarjan Dominator Tree
 Part 125: Tarjan's Offline Lowest Common Ancestor
+Part 126: Karger's Randomized Minimum Cut Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5257,6 +5258,47 @@ def tarjan_offline_lca(
     return results
 
 
+def karger_min_cut(n: int, edge_list: List[Tuple[int, int]], trials: int = 40) -> Tuple[int, List[Tuple[int, int]]]:
+    """Find a global minimum cut in an undirected multigraph using Karger's randomized contraction."""
+    import random
+    best_cut = float('inf')
+    best_edges: List[Tuple[int, int]] = []
+    rng = random.Random(42)
+
+    for _ in range(trials):
+        parent = list(range(n))
+        def find(i: int) -> int:
+            if parent[i] == i:
+                return i
+            parent[i] = find(parent[i])
+            return parent[i]
+
+        def union(i: int, j: int):
+            root_i = find(i)
+            root_j = find(j)
+            if root_i != root_j:
+                parent[root_i] = root_j
+
+        edges = list(edge_list)
+        vertices_remaining = n
+        while vertices_remaining > 2:
+            u, v = rng.choice(edges)
+            ru, rv = find(u), find(v)
+            if ru != rv:
+                union(ru, rv)
+                vertices_remaining -= 1
+
+        cut = []
+        for u, v in edge_list:
+            if find(u) != find(v):
+                cut.append((u, v))
+        if len(cut) < best_cut:
+            best_cut = len(cut)
+            best_edges = cut
+
+    return best_cut, best_edges
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5978,3 +6020,7 @@ if __name__ == "__main__":
     t_adj = {0: [1, 2], 1: [3, 4], 2: [5], 3: [], 4: [], 5: []}
     t_queries = [(3, 4), (3, 5), (1, 4)]
     print("Offline LCA Results:", tarjan_offline_lca(6, t_adj, t_queries, 0))
+    print("\n=== Iteration 126: Karger's Randomized Min-Cut ===")
+    karger_graph_edges = [(0, 1), (0, 2), (1, 2), (1, 3), (2, 3), (3, 4), (4, 5), (3, 5)]
+    min_cut_size, cut_edges = karger_min_cut(6, karger_graph_edges)
+    print(f"Karger Min-Cut Size: {min_cut_size}, Cut Edges: {cut_edges}")
