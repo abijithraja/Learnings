@@ -127,6 +127,7 @@ Part 124: Lengauer-Tarjan Dominator Tree
 Part 125: Tarjan's Offline Lowest Common Ancestor
 Part 126: Karger's Randomized Minimum Cut Algorithm
 Part 127: Fast Walsh-Hadamard Transform (FWHT)
+Part 128: Farey Sequence for Irreducible Fractions
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5331,6 +5332,17 @@ def fwht_xor_convolution(a: List[int], b: List[int]) -> List[int]:
     return fc
 
 
+def farey_sequence(n: int) -> List[Tuple[int, int]]:
+    """Generate the irreducible Farey sequence of order n in ascending sorted order."""
+    seq = [(0, 1)]
+    a, b, c, d = 0, 1, 1, n
+    while c <= n:
+        k = (n + b) // d
+        a, b, c, d = c, d, k * c - a, k * d - b
+        seq.append((a, b))
+    return seq
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6060,3 +6072,5 @@ if __name__ == "__main__":
     p_a = [1, 2, 3, 4]
     p_b = [5, 6, 7, 8]
     print("FWHT XOR Convolution:", fwht_xor_convolution(p_a, p_b))
+    print("\n=== Iteration 128: Farey Sequence ===")
+    print("Farey sequence of order 5:", farey_sequence(5))
