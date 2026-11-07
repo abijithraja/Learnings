@@ -126,6 +126,7 @@ Part 123: Min-Cost Max-Flow (Successive Shortest Path with SPFA)
 Part 124: Lengauer-Tarjan Dominator Tree
 Part 125: Tarjan's Offline Lowest Common Ancestor
 Part 126: Karger's Randomized Minimum Cut Algorithm
+Part 127: Fast Walsh-Hadamard Transform (FWHT)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5299,6 +5300,37 @@ def karger_min_cut(n: int, edge_list: List[Tuple[int, int]], trials: int = 40) -
     return best_cut, best_edges
 
 
+def fwht_xor_convolution(a: List[int], b: List[int]) -> List[int]:
+    """Compute bitwise XOR convolution of two sequences using Fast Walsh-Hadamard Transform in O(N log N)."""
+    n = 1
+    target = max(len(a), len(b))
+    while n < target:
+        n <<= 1
+
+    fa = a + [0] * (n - len(a))
+    fb = b + [0] * (n - len(b))
+
+    def fwht(arr: List[int], invert: bool = False):
+        step = 1
+        while step < len(arr):
+            for i in range(0, len(arr), step * 2):
+                for j in range(step):
+                    u = arr[i + j]
+                    v = arr[i + j + step]
+                    arr[i + j] = u + v
+                    arr[i + j + step] = u - v
+            step *= 2
+        if invert:
+            for i in range(len(arr)):
+                arr[i] //= len(arr)
+
+    fwht(fa, invert=False)
+    fwht(fb, invert=False)
+    fc = [fa[i] * fb[i] for i in range(n)]
+    fwht(fc, invert=True)
+    return fc
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6024,3 +6056,7 @@ if __name__ == "__main__":
     karger_graph_edges = [(0, 1), (0, 2), (1, 2), (1, 3), (2, 3), (3, 4), (4, 5), (3, 5)]
     min_cut_size, cut_edges = karger_min_cut(6, karger_graph_edges)
     print(f"Karger Min-Cut Size: {min_cut_size}, Cut Edges: {cut_edges}")
+    print("\n=== Iteration 127: Fast Walsh-Hadamard Transform ===")
+    p_a = [1, 2, 3, 4]
+    p_b = [5, 6, 7, 8]
+    print("FWHT XOR Convolution:", fwht_xor_convolution(p_a, p_b))
