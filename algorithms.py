@@ -128,6 +128,7 @@ Part 125: Tarjan's Offline Lowest Common Ancestor
 Part 126: Karger's Randomized Minimum Cut Algorithm
 Part 127: Fast Walsh-Hadamard Transform (FWHT)
 Part 128: Farey Sequence for Irreducible Fractions
+Part 129: Manber-Myers Prefix Doubling Suffix Array
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5343,6 +5344,30 @@ def farey_sequence(n: int) -> List[Tuple[int, int]]:
     return seq
 
 
+def suffix_array_manber_myers(s: str) -> List[int]:
+    """Construct Suffix Array in O(n log^2 n) using prefix doubling (Manber-Myers)."""
+    n = len(s)
+    k = 1
+    rank = [ord(c) for c in s]
+    sa = list(range(n))
+
+    while k < n:
+        def key_func(i: int):
+            next_rank = rank[i + k] if i + k < n else -1
+            return (rank[i], next_rank)
+
+        sa.sort(key=key_func)
+        temp_rank = [0] * n
+        for i in range(1, n):
+            prev_pair = key_func(sa[i - 1])
+            curr_pair = key_func(sa[i])
+            temp_rank[sa[i]] = temp_rank[sa[i - 1]] + (1 if curr_pair > prev_pair else 0)
+        rank = temp_rank
+        k *= 2
+
+    return sa
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6074,3 +6099,6 @@ if __name__ == "__main__":
     print("FWHT XOR Convolution:", fwht_xor_convolution(p_a, p_b))
     print("\n=== Iteration 128: Farey Sequence ===")
     print("Farey sequence of order 5:", farey_sequence(5))
+    print("\n=== Iteration 129: Manber-Myers Suffix Array ===")
+    sample_sa_str = "banana"
+    print(f"Manber-Myers Suffix Array for '{sample_sa_str}':", suffix_array_manber_myers(sample_sa_str))
