@@ -130,6 +130,7 @@ Part 127: Fast Walsh-Hadamard Transform (FWHT)
 Part 128: Farey Sequence for Irreducible Fractions
 Part 129: Manber-Myers Prefix Doubling Suffix Array
 Part 130: Simulated Annealing for Traveling Salesperson Problem
+Part 131: Gale-Shapley Stable Marriage Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5408,6 +5409,38 @@ def simulated_annealing_tsp(
     return best_cost, best_tour
 
 
+def gale_shapley_stable_marriage(
+    proposer_prefs: Dict[str, List[str]], receiver_prefs: Dict[str, List[str]]
+) -> Dict[str, str]:
+    """Find a stable matching between two sets using the Gale-Shapley algorithm."""
+    proposers = list(proposer_prefs.keys())
+    free_proposers = deque(proposers)
+    proposals_made: Dict[str, int] = {p: 0 for p in proposers}
+    engagements: Dict[str, str] = {}
+
+    ranking: Dict[str, Dict[str, int]] = {}
+    for r, prefs in receiver_prefs.items():
+        ranking[r] = {p: idx for idx, p in enumerate(prefs)}
+
+    while free_proposers:
+        p = free_proposers.popleft()
+        idx = proposals_made[p]
+        proposals_made[p] += 1
+        r = proposer_prefs[p][idx]
+
+        if r not in engagements:
+            engagements[r] = p
+        else:
+            current_partner = engagements[r]
+            if ranking[r][p] < ranking[r][current_partner]:
+                engagements[r] = p
+                free_proposers.append(current_partner)
+            else:
+                free_proposers.append(p)
+
+    return {p: r for r, p in engagements.items()}
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6151,3 +6184,15 @@ if __name__ == "__main__":
     ]
     sa_cost, sa_tour = simulated_annealing_tsp(tsp_dist)
     print(f"Annealing best tour: {sa_tour} with cost: {sa_cost}")
+    print("\n=== Iteration 131: Gale-Shapley Stable Marriage ===")
+    p_prefs = {
+        "Alice": ["Xavier", "Yancey", "Zeus"],
+        "Bob": ["Yancey", "Xavier", "Zeus"],
+        "Charlie": ["Xavier", "Yancey", "Zeus"]
+    }
+    r_prefs = {
+        "Xavier": ["Bob", "Alice", "Charlie"],
+        "Yancey": ["Alice", "Bob", "Charlie"],
+        "Zeus": ["Alice", "Bob", "Charlie"]
+    }
+    print("Stable matches:", gale_shapley_stable_marriage(p_prefs, r_prefs))
