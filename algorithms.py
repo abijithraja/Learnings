@@ -122,6 +122,7 @@ Part 119: Bowyer-Watson Delaunay Triangulation
 Part 120: Suurballe's Algorithm for Minimum Cost Disjoint Paths
 Part 121: Median of Medians Deterministic Selection Algorithm
 Part 122: Van Emde Boas Tree (vEB Tree)
+Part 123: Min-Cost Max-Flow (Successive Shortest Path with SPFA)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5089,6 +5090,64 @@ class VanEmdeBoasTree:
         return self._index(succ_cluster, offset)
 
 
+def min_cost_max_flow(n: int, edges: List[Tuple[int, int, int, float]], s: int, t: int) -> Tuple[int, float]:
+    """Successive Shortest Path algorithm for Min-Cost Max-Flow using SPFA."""
+    cap = [[0] * n for _ in range(n)]
+    cost = [[0.0] * n for _ in range(n)]
+    adj: Dict[int, List[int]] = {i: [] for i in range(n)}
+
+    for u, v, c, w in edges:
+        cap[u][v] += c
+        cost[u][v] = w
+        cost[v][u] = -w
+        adj[u].append(v)
+        adj[v].append(u)
+
+    total_flow = 0
+    total_cost = 0.0
+
+    while True:
+        dist = [float('inf')] * n
+        parent = [-1] * n
+        in_queue = [False] * n
+        dist[s] = 0.0
+        q = deque([s])
+        in_queue[s] = True
+
+        while q:
+            u = q.popleft()
+            in_queue[u] = False
+            for v in adj[u]:
+                if cap[u][v] > 0 and dist[u] + cost[u][v] < dist[v]:
+                    dist[v] = dist[u] + cost[u][v]
+                    parent[v] = u
+                    if not in_queue[v]:
+                        q.append(v)
+                        in_queue[v] = True
+
+        if dist[t] == float('inf'):
+            break
+
+        push_flow = float('inf')
+        curr = t
+        while curr != s:
+            prev = parent[curr]
+            push_flow = min(push_flow, cap[prev][curr])
+            curr = prev
+
+        curr = t
+        while curr != s:
+            prev = parent[curr]
+            cap[prev][curr] -= int(push_flow)
+            cap[curr][prev] += int(push_flow)
+            total_cost += push_flow * cost[prev][curr]
+            curr = prev
+
+        total_flow += int(push_flow)
+
+    return total_flow, total_cost
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5793,4 +5852,13 @@ if __name__ == "__main__":
     print("Member 7:", veb.member(7))
     print("Successor of 3:", veb.successor(3))
     print("Successor of 7:", veb.successor(7))
-    print("\nAll 122 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 123: Min-Cost Max-Flow ===")
+    mcmf_edges = [
+        (0, 1, 3, 1.0),
+        (0, 2, 2, 2.0),
+        (1, 2, 1, 1.0),
+        (1, 3, 2, 3.0),
+        (2, 3, 3, 1.0)
+    ]
+    flow, cost = min_cost_max_flow(4, mcmf_edges, 0, 3)
+    print(f"MCMF Flow: {flow}, Cost: {cost}")
