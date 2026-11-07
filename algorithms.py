@@ -124,6 +124,7 @@ Part 121: Median of Medians Deterministic Selection Algorithm
 Part 122: Van Emde Boas Tree (vEB Tree)
 Part 123: Min-Cost Max-Flow (Successive Shortest Path with SPFA)
 Part 124: Lengauer-Tarjan Dominator Tree
+Part 125: Tarjan's Offline Lowest Common Ancestor
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5213,6 +5214,49 @@ def lengauer_tarjan_dominators(n: int, adj: Dict[int, List[int]], root: int = 0)
     return [idom[i] for i in range(n)]
 
 
+def tarjan_offline_lca(
+    n: int, tree_adj: Dict[int, List[int]], queries: List[Tuple[int, int]], root: int = 0
+) -> Dict[Tuple[int, int], int]:
+    """Answer batch LCA queries offline in O(V + Q * alpha(V)) using Disjoint Set Union."""
+    parent = list(range(n))
+    ancestor = list(range(n))
+    visited = [False] * n
+
+    def find(i: int) -> int:
+        if parent[i] == i:
+            return i
+        parent[i] = find(parent[i])
+        return parent[i]
+
+    def union(i: int, j: int):
+        root_i = find(i)
+        root_j = find(j)
+        if root_i != root_j:
+            parent[root_i] = root_j
+
+    q_map: Dict[int, List[Tuple[int, Tuple[int, int]]]] = {i: [] for i in range(n)}
+    for q in queries:
+        u, v = q
+        q_map[u].append((v, q))
+        q_map[v].append((u, q))
+
+    results: Dict[Tuple[int, int], int] = {}
+
+    def dfs(u: int):
+        ancestor[find(u)] = u
+        for v in tree_adj.get(u, []):
+            dfs(v)
+            union(v, u)
+            ancestor[find(u)] = u
+        visited[u] = True
+        for other, orig_query in q_map[u]:
+            if visited[other]:
+                results[orig_query] = ancestor[find(other)]
+
+    dfs(root)
+    return results
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5930,3 +5974,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 124: Lengauer-Tarjan Dominator Tree ===")
     cfg_adj = {0: [1, 2], 1: [3], 2: [3], 3: []}
     print("Immediate Dominators (idom):", lengauer_tarjan_dominators(4, cfg_adj, 0))
+    print("\n=== Iteration 125: Tarjan's Offline LCA ===")
+    t_adj = {0: [1, 2], 1: [3, 4], 2: [5], 3: [], 4: [], 5: []}
+    t_queries = [(3, 4), (3, 5), (1, 4)]
+    print("Offline LCA Results:", tarjan_offline_lca(6, t_adj, t_queries, 0))
