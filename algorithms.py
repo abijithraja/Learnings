@@ -123,6 +123,7 @@ Part 120: Suurballe's Algorithm for Minimum Cost Disjoint Paths
 Part 121: Median of Medians Deterministic Selection Algorithm
 Part 122: Van Emde Boas Tree (vEB Tree)
 Part 123: Min-Cost Max-Flow (Successive Shortest Path with SPFA)
+Part 124: Lengauer-Tarjan Dominator Tree
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5148,6 +5149,70 @@ def min_cost_max_flow(n: int, edges: List[Tuple[int, int, int, float]], s: int, 
     return total_flow, total_cost
 
 
+def lengauer_tarjan_dominators(n: int, adj: Dict[int, List[int]], root: int = 0) -> List[int]:
+    """Compute immediate dominator for each node in a directed control-flow graph."""
+    semi = [-1] * (n + 1)
+    idom = [-1] * (n + 1)
+    vertex = [-1] * (n + 1)
+    parent = [-1] * (n + 1)
+    ancestor = [-1] * (n + 1)
+    best = list(range(n + 1))
+    bucket: Dict[int, List[int]] = {i: [] for i in range(n + 1)}
+    pred: Dict[int, List[int]] = {i: [] for i in range(n + 1)}
+    dfs_time = 0
+
+    for u in adj:
+        for v in adj[u]:
+            pred[v].append(u)
+
+    def dfs(u: int):
+        nonlocal dfs_time
+        dfs_time += 1
+        semi[u] = dfs_time
+        vertex[dfs_time] = u
+        for v in adj.get(u, []):
+            if semi[v] == -1:
+                parent[v] = u
+                dfs(v)
+
+    dfs(root)
+
+    def _compress(v: int):
+        if ancestor[ancestor[v]] != -1:
+            _compress(ancestor[v])
+            if semi[best[ancestor[v]]] < semi[best[v]]:
+                best[v] = best[ancestor[v]]
+            ancestor[v] = ancestor[ancestor[v]]
+
+    def _eval(v: int) -> int:
+        if ancestor[v] == -1:
+            return v
+        _compress(v)
+        return best[v]
+
+    for i in range(dfs_time, 1, -1):
+        w = vertex[i]
+        for v in pred[w]:
+            if semi[v] != -1:
+                u = _eval(v)
+                if semi[u] < semi[w]:
+                    semi[w] = semi[u]
+        bucket[vertex[semi[w]]].append(w)
+        ancestor[w] = parent[w]
+        for v in bucket[parent[w]]:
+            u = _eval(v)
+            idom[v] = u if semi[u] < semi[v] else parent[w]
+        bucket[parent[w]].clear()
+
+    for i in range(2, dfs_time + 1):
+        w = vertex[i]
+        if idom[w] != vertex[semi[w]]:
+            idom[w] = idom[idom[w]]
+
+    idom[root] = root
+    return [idom[i] for i in range(n)]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -5862,3 +5927,6 @@ if __name__ == "__main__":
     ]
     flow, cost = min_cost_max_flow(4, mcmf_edges, 0, 3)
     print(f"MCMF Flow: {flow}, Cost: {cost}")
+    print("\n=== Iteration 124: Lengauer-Tarjan Dominator Tree ===")
+    cfg_adj = {0: [1, 2], 1: [3], 2: [3], 3: []}
+    print("Immediate Dominators (idom):", lengauer_tarjan_dominators(4, cfg_adj, 0))
