@@ -129,6 +129,7 @@ Part 126: Karger's Randomized Minimum Cut Algorithm
 Part 127: Fast Walsh-Hadamard Transform (FWHT)
 Part 128: Farey Sequence for Irreducible Fractions
 Part 129: Manber-Myers Prefix Doubling Suffix Array
+Part 130: Simulated Annealing for Traveling Salesperson Problem
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5368,6 +5369,45 @@ def suffix_array_manber_myers(s: str) -> List[int]:
     return sa
 
 
+def simulated_annealing_tsp(
+    dist_matrix: List[List[float]], initial_temp: float = 1000.0, cooling_rate: float = 0.995, iterations: int = 2000
+) -> Tuple[float, List[int]]:
+    """Simulated Annealing metaheuristic for Traveling Salesperson Problem."""
+    import random
+    n = len(dist_matrix)
+    rng = random.Random(1337)
+    curr_tour = list(range(n))
+    rng.shuffle(curr_tour)
+
+    def tour_cost(tour: List[int]) -> float:
+        cost = 0.0
+        for i in range(n):
+            cost += dist_matrix[tour[i]][tour[(i + 1) % n]]
+        return cost
+
+    curr_cost = tour_cost(curr_tour)
+    best_tour = list(curr_tour)
+    best_cost = curr_cost
+    temp = initial_temp
+
+    for _ in range(iterations):
+        i, j = sorted(rng.sample(range(n), 2))
+        new_tour = curr_tour[:i] + curr_tour[i:j + 1][::-1] + curr_tour[j + 1:]
+        new_cost = tour_cost(new_tour)
+        delta = new_cost - curr_cost
+
+        if delta < 0 or rng.random() < math.exp(-delta / max(1e-9, temp)):
+            curr_tour = new_tour
+            curr_cost = new_cost
+            if curr_cost < best_cost:
+                best_cost = curr_cost
+                best_tour = list(curr_tour)
+
+        temp *= cooling_rate
+
+    return best_cost, best_tour
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6102,3 +6142,12 @@ if __name__ == "__main__":
     print("\n=== Iteration 129: Manber-Myers Suffix Array ===")
     sample_sa_str = "banana"
     print(f"Manber-Myers Suffix Array for '{sample_sa_str}':", suffix_array_manber_myers(sample_sa_str))
+    print("\n=== Iteration 130: Simulated Annealing TSP ===")
+    tsp_dist = [
+        [0.0, 10.0, 15.0, 20.0],
+        [10.0, 0.0, 35.0, 25.0],
+        [15.0, 35.0, 0.0, 30.0],
+        [20.0, 25.0, 30.0, 0.0]
+    ]
+    sa_cost, sa_tour = simulated_annealing_tsp(tsp_dist)
+    print(f"Annealing best tour: {sa_tour} with cost: {sa_cost}")
