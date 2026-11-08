@@ -140,6 +140,7 @@ Part 137: Karatsuba Fast Integer Multiplication
 Part 138: Shamos-Hoey Simple Polygon Verification
 Part 139: Rotating Calipers for Convex Polygon Diameter
 Part 140: Point in Polygon (Ray Casting Algorithm)
+Part 141: Knuth-Plass Line Breaking Algorithm (TeX-Style Paragraph Layout)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5694,6 +5695,38 @@ def point_in_polygon(point: Tuple[float, float], polygon: List[Tuple[float, floa
     return inside
 
 
+def knuth_plass_line_break(words: List[str], line_width: int) -> List[str]:
+    """Break words into balanced lines minimizing raggedness penalty (TeX style)."""
+    n = len(words)
+    lengths = [len(w) for w in words]
+    dp = [float('inf')] * (n + 1)
+    parent = [-1] * (n + 1)
+    dp[0] = 0
+
+    for i in range(n):
+        if dp[i] == float('inf'):
+            continue
+        cur_len = 0
+        for j in range(i + 1, n + 1):
+            cur_len += lengths[j - 1] + (1 if j > i + 1 else 0)
+            if cur_len > line_width:
+                break
+            slack = line_width - cur_len
+            cost = slack ** 3 if j < n else 0
+            if dp[i] + cost < dp[j]:
+                dp[j] = dp[i] + cost
+                parent[j] = i
+
+    lines = []
+    curr = n
+    while curr > 0:
+        prev = parent[curr]
+        lines.append(" ".join(words[prev:curr]))
+        curr = prev
+
+    return lines[::-1]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6480,3 +6513,8 @@ if __name__ == "__main__":
     sample_poly = [(0.0, 0.0), (5.0, 0.0), (5.0, 5.0), (0.0, 5.0)]
     print("Is (2, 2) inside?:", point_in_polygon((2.0, 2.0), sample_poly))
     print("Is (6, 2) inside?:", point_in_polygon((6.0, 2.0), sample_poly))
+    print("\n=== Iteration 141: Knuth-Plass Line Breaking ===")
+    passage = ["Antigravity", "algorithms", "provide", "optimal", "text", "justification", "using", "dynamic", "programming."]
+    print("Knuth-Plass Paragraph Lines:")
+    for line in knuth_plass_line_break(passage, 20):
+        print(f"  |{line}|")
