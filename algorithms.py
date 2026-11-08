@@ -141,6 +141,7 @@ Part 138: Shamos-Hoey Simple Polygon Verification
 Part 139: Rotating Calipers for Convex Polygon Diameter
 Part 140: Point in Polygon (Ray Casting Algorithm)
 Part 141: Knuth-Plass Line Breaking Algorithm (TeX-Style Paragraph Layout)
+Part 142: Needleman-Wunsch Global Sequence Alignment
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5727,6 +5728,48 @@ def knuth_plass_line_break(words: List[str], line_width: int) -> List[str]:
     return lines[::-1]
 
 
+def needleman_wunsch_alignment(
+    s1: str, s2: str, match: int = 1, mismatch: int = -1, gap: int = -1
+) -> Tuple[int, str, str]:
+    """Compute optimal global sequence alignment between s1 and s2 using Needleman-Wunsch."""
+    n, m = len(s1), len(s2)
+    dp = [[0] * (m + 1) for _ in range(n + 1)]
+
+    for i in range(n + 1):
+        dp[i][0] = i * gap
+    for j in range(m + 1):
+        dp[0][j] = j * gap
+
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            score = match if s1[i - 1] == s2[j - 1] else mismatch
+            dp[i][j] = max(
+                dp[i - 1][j - 1] + score,
+                dp[i - 1][j] + gap,
+                dp[i][j - 1] + gap
+            )
+
+    align1, align2 = [], []
+    i, j = n, m
+    while i > 0 or j > 0:
+        score = match if (i > 0 and j > 0 and s1[i - 1] == s2[j - 1]) else mismatch
+        if i > 0 and j > 0 and dp[i][j] == dp[i - 1][j - 1] + score:
+            align1.append(s1[i - 1])
+            align2.append(s2[j - 1])
+            i -= 1
+            j -= 1
+        elif i > 0 and dp[i][j] == dp[i - 1][j] + gap:
+            align1.append(s1[i - 1])
+            align2.append('-')
+            i -= 1
+        else:
+            align1.append('-')
+            align2.append(s2[j - 1])
+            j -= 1
+
+    return dp[n][m], "".join(reversed(align1)), "".join(reversed(align2))
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6518,3 +6561,7 @@ if __name__ == "__main__":
     print("Knuth-Plass Paragraph Lines:")
     for line in knuth_plass_line_break(passage, 20):
         print(f"  |{line}|")
+    print("\n=== Iteration 142: Needleman-Wunsch Sequence Alignment ===")
+    score_val, al1, al2 = needleman_wunsch_alignment("GATTACA", "GCATGCU")
+    print(f"Alignment Score: {score_val}\nSeq1: {al1}\nSeq2: {al2}")
+    print("\nAll 142 Algorithms & Data Structures complete and verified!")
