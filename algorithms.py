@@ -135,6 +135,7 @@ Part 132: Boyer-Moore Generalized Majority Vote Algorithm
 Part 133: 2-Edge-Connected Components (Bridge-Blocks Decomposition)
 Part 134: Block-Cut Tree (Biconnected Components Decomposition)
 Part 135: Floyd's Cycle-Finding Algorithm (Tortoise and Hare)
+Part 136: Brent's Cycle-Finding Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5569,6 +5570,33 @@ def floyds_cycle_finding(f: Any, x0: Any) -> Tuple[int, int]:
     return lam, mu
 
 
+def brents_cycle_finding(f: Any, x0: Any) -> Tuple[int, int]:
+    """Find cycle length (lambda) and index of cycle start (mu) using Brent's powers-of-two algorithm."""
+    power = lam = 1
+    tortoise = x0
+    hare = f(x0)
+
+    while tortoise != hare:
+        if power == lam:
+            tortoise = hare
+            power *= 2
+            lam = 0
+        hare = f(hare)
+        lam += 1
+
+    tortoise = hare = x0
+    for _ in range(lam):
+        hare = f(hare)
+
+    mu = 0
+    while tortoise != hare:
+        tortoise = f(tortoise)
+        hare = f(hare)
+        mu += 1
+
+    return lam, mu
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6337,3 +6365,6 @@ if __name__ == "__main__":
     f_cycle = lambda x: (x * x + 1) % 255
     fl_period, fl_start = floyds_cycle_finding(f_cycle, 3)
     print(f"Floyd: cycle period = {fl_period}, cycle start = {fl_start}")
+    print("\n=== Iteration 136: Brent's Cycle-Finding Algorithm ===")
+    br_period, br_start = brents_cycle_finding(f_cycle, 3)
+    print(f"Brent: cycle period = {br_period}, cycle start = {br_start}")
