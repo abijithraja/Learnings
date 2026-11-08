@@ -136,6 +136,7 @@ Part 133: 2-Edge-Connected Components (Bridge-Blocks Decomposition)
 Part 134: Block-Cut Tree (Biconnected Components Decomposition)
 Part 135: Floyd's Cycle-Finding Algorithm (Tortoise and Hare)
 Part 136: Brent's Cycle-Finding Algorithm
+Part 137: Karatsuba Fast Integer Multiplication
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5597,6 +5598,25 @@ def brents_cycle_finding(f: Any, x0: Any) -> Tuple[int, int]:
     return lam, mu
 
 
+def karatsuba_multiply(x: int, y: int) -> int:
+    """Multiply two integers using Karatsuba's sub-quadratic divide-and-conquer in O(n^1.585)."""
+    if x < 10 or y < 10:
+        return x * y
+
+    n = max(len(str(abs(x))), len(str(abs(y))))
+    m = n // 2
+    base = 10 ** m
+
+    high_x, low_x = divmod(x, base)
+    high_y, low_y = divmod(y, base)
+
+    z0 = karatsuba_multiply(low_x, low_y)
+    z1 = karatsuba_multiply(low_x + high_x, low_y + high_y)
+    z2 = karatsuba_multiply(high_x, high_y)
+
+    return (z2 * (10 ** (2 * m))) + ((z1 - z2 - z0) * base) + z0
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6368,3 +6388,6 @@ if __name__ == "__main__":
     print("\n=== Iteration 136: Brent's Cycle-Finding Algorithm ===")
     br_period, br_start = brents_cycle_finding(f_cycle, 3)
     print(f"Brent: cycle period = {br_period}, cycle start = {br_start}")
+    print("\n=== Iteration 137: Karatsuba Multiplication ===")
+    k_x, k_y = 12345678, 87654321
+    print(f"Karatsuba: {k_x} * {k_y} = {karatsuba_multiply(k_x, k_y)}")
