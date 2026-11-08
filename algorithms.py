@@ -137,6 +137,7 @@ Part 134: Block-Cut Tree (Biconnected Components Decomposition)
 Part 135: Floyd's Cycle-Finding Algorithm (Tortoise and Hare)
 Part 136: Brent's Cycle-Finding Algorithm
 Part 137: Karatsuba Fast Integer Multiplication
+Part 138: Shamos-Hoey Simple Polygon Verification
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5617,6 +5618,30 @@ def karatsuba_multiply(x: int, y: int) -> int:
     return (z2 * (10 ** (2 * m))) + ((z1 - z2 - z0) * base) + z0
 
 
+def is_simple_polygon(polygon: List[Tuple[float, float]]) -> bool:
+    """Verify if a 2D polygon is simple (no self-intersecting non-adjacent edges)."""
+    n = len(polygon)
+    if n < 3:
+        return False
+
+    def ccw(a, b, c):
+        return (c[1] - a[1]) * (b[0] - a[0]) > (b[1] - a[1]) * (c[0] - a[0])
+
+    def segments_intersect(p1, p2, p3, p4):
+        return (ccw(p1, p3, p4) != ccw(p2, p3, p4)) and (ccw(p1, p2, p3) != ccw(p1, p2, p4))
+
+    edges = [(polygon[i], polygon[(i + 1) % n]) for i in range(n)]
+
+    for i in range(n):
+        for j in range(i + 2, n):
+            if i == 0 and j == n - 1:
+                continue
+            if segments_intersect(edges[i][0], edges[i][1], edges[j][0], edges[j][1]):
+                return False
+
+    return True
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6391,3 +6416,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 137: Karatsuba Multiplication ===")
     k_x, k_y = 12345678, 87654321
     print(f"Karatsuba: {k_x} * {k_y} = {karatsuba_multiply(k_x, k_y)}")
+    print("\n=== Iteration 138: Shamos-Hoey Simple Polygon Verification ===")
+    poly_simple = [(0.0, 0.0), (4.0, 0.0), (4.0, 4.0), (0.0, 4.0)]
+    poly_complex = [(0.0, 0.0), (4.0, 4.0), (4.0, 0.0), (0.0, 4.0)]
+    print("Is square simple?:", is_simple_polygon(poly_simple))
+    print("Is hourglass simple?:", is_simple_polygon(poly_complex))
