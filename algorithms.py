@@ -132,6 +132,7 @@ Part 129: Manber-Myers Prefix Doubling Suffix Array
 Part 130: Simulated Annealing for Traveling Salesperson Problem
 Part 131: Gale-Shapley Stable Marriage Algorithm
 Part 132: Boyer-Moore Generalized Majority Vote Algorithm
+Part 133: 2-Edge-Connected Components (Bridge-Blocks Decomposition)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5468,6 +5469,36 @@ def boyer_moore_majority_vote_k(nums: List[int], k: int = 2) -> List[int]:
     return sorted([cand for cand, count in actual_counts.items() if count > threshold])
 
 
+def two_edge_connected_components(n: int, edges: List[Tuple[int, int]]) -> List[List[int]]:
+    """Decompose an undirected graph into 2-edge-connected components by removing bridges."""
+    adj: Dict[int, List[int]] = {i: [] for i in range(n)}
+    for u, v in edges:
+        adj[u].append(v)
+        adj[v].append(u)
+
+    bridges, _ = find_bridges_and_articulation_points(n, adj)
+    bridge_set = set(bridges) | {(v, u) for u, v in bridges}
+
+    visited = [False] * n
+    components: List[List[int]] = []
+
+    for i in range(n):
+        if not visited[i]:
+            comp = []
+            q = deque([i])
+            visited[i] = True
+            while q:
+                u = q.popleft()
+                comp.append(u)
+                for v in adj[u]:
+                    if not visited[v] and (u, v) not in bridge_set:
+                        visited[v] = True
+                        q.append(v)
+            components.append(sorted(comp))
+
+    return sorted(components)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6226,4 +6257,6 @@ if __name__ == "__main__":
     print("\n=== Iteration 132: Boyer-Moore Generalized Majority Vote ===")
     sample_vote = [1, 1, 1, 3, 3, 2, 2, 2]
     print("Elements appearing > n/3 times:", boyer_moore_majority_vote_k(sample_vote, k=3))
-    print("\nAll 132 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 133: 2-Edge-Connected Components ===")
+    two_ecc_edges = [(0, 1), (1, 2), (2, 0), (2, 3), (3, 4), (4, 5), (5, 3)]
+    print("2-ECC Components:", two_edge_connected_components(6, two_ecc_edges))
