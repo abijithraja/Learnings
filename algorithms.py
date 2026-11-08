@@ -139,6 +139,7 @@ Part 136: Brent's Cycle-Finding Algorithm
 Part 137: Karatsuba Fast Integer Multiplication
 Part 138: Shamos-Hoey Simple Polygon Verification
 Part 139: Rotating Calipers for Convex Polygon Diameter
+Part 140: Point in Polygon (Ray Casting Algorithm)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5672,6 +5673,27 @@ def rotating_calipers_diameter(convex_hull_pts: List[Tuple[float, float]]) -> fl
     return math.sqrt(max_dist_sq)
 
 
+def point_in_polygon(point: Tuple[float, float], polygon: List[Tuple[float, float]]) -> bool:
+    """Determine whether a point lies inside an arbitrary 2D polygon using ray casting."""
+    x, y = point
+    n = len(polygon)
+    inside = False
+
+    p1x, p1y = polygon[0]
+    for i in range(1, n + 1):
+        p2x, p2y = polygon[i % n]
+        if y > min(p1y, p2y):
+            if y <= max(p1y, p2y):
+                if x <= max(p1x, p2x):
+                    if p1y != p2y:
+                        x_inters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                    if p1x == p2x or x <= x_inters:
+                        inside = not inside
+        p1x, p1y = p2x, p2y
+
+    return inside
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6454,3 +6476,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 139: Rotating Calipers Polygon Diameter ===")
     caliper_hull = [(0.0, 0.0), (5.0, 0.0), (6.0, 3.0), (3.0, 7.0), (0.0, 4.0)]
     print(f"Convex Polygon Diameter: {rotating_calipers_diameter(caliper_hull):.4f}")
+    print("\n=== Iteration 140: Point in Polygon (Ray Casting) ===")
+    sample_poly = [(0.0, 0.0), (5.0, 0.0), (5.0, 5.0), (0.0, 5.0)]
+    print("Is (2, 2) inside?:", point_in_polygon((2.0, 2.0), sample_poly))
+    print("Is (6, 2) inside?:", point_in_polygon((6.0, 2.0), sample_poly))
