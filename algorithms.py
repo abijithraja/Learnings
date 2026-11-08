@@ -138,6 +138,7 @@ Part 135: Floyd's Cycle-Finding Algorithm (Tortoise and Hare)
 Part 136: Brent's Cycle-Finding Algorithm
 Part 137: Karatsuba Fast Integer Multiplication
 Part 138: Shamos-Hoey Simple Polygon Verification
+Part 139: Rotating Calipers for Convex Polygon Diameter
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5642,6 +5643,35 @@ def is_simple_polygon(polygon: List[Tuple[float, float]]) -> bool:
     return True
 
 
+def rotating_calipers_diameter(convex_hull_pts: List[Tuple[float, float]]) -> float:
+    """Compute the diameter (maximum Euclidean distance) of a convex polygon in O(n) using rotating calipers."""
+    n = len(convex_hull_pts)
+    if n < 2:
+        return 0.0
+    if n == 2:
+        return math.hypot(convex_hull_pts[0][0] - convex_hull_pts[1][0], convex_hull_pts[0][1] - convex_hull_pts[1][1])
+
+    def dist_sq(p1, p2):
+        return (p1[0] - p2[0])**2 + (p1[1] - p2[1])**2
+
+    def area_2(a, b, c):
+        return abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]))
+
+    k = 1
+    while area_2(convex_hull_pts[n - 1], convex_hull_pts[0], convex_hull_pts[(k + 1) % n]) > area_2(convex_hull_pts[n - 1], convex_hull_pts[0], convex_hull_pts[k]):
+        k += 1
+
+    max_dist_sq = 0.0
+    j = k
+    for i in range(n):
+        i_next = (i + 1) % n
+        while area_2(convex_hull_pts[i], convex_hull_pts[i_next], convex_hull_pts[(j + 1) % n]) > area_2(convex_hull_pts[i], convex_hull_pts[i_next], convex_hull_pts[j]):
+            j = (j + 1) % n
+        max_dist_sq = max(max_dist_sq, dist_sq(convex_hull_pts[i], convex_hull_pts[j]), dist_sq(convex_hull_pts[i_next], convex_hull_pts[j]))
+
+    return math.sqrt(max_dist_sq)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6421,3 +6451,6 @@ if __name__ == "__main__":
     poly_complex = [(0.0, 0.0), (4.0, 4.0), (4.0, 0.0), (0.0, 4.0)]
     print("Is square simple?:", is_simple_polygon(poly_simple))
     print("Is hourglass simple?:", is_simple_polygon(poly_complex))
+    print("\n=== Iteration 139: Rotating Calipers Polygon Diameter ===")
+    caliper_hull = [(0.0, 0.0), (5.0, 0.0), (6.0, 3.0), (3.0, 7.0), (0.0, 4.0)]
+    print(f"Convex Polygon Diameter: {rotating_calipers_diameter(caliper_hull):.4f}")
