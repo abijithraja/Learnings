@@ -134,6 +134,7 @@ Part 131: Gale-Shapley Stable Marriage Algorithm
 Part 132: Boyer-Moore Generalized Majority Vote Algorithm
 Part 133: 2-Edge-Connected Components (Bridge-Blocks Decomposition)
 Part 134: Block-Cut Tree (Biconnected Components Decomposition)
+Part 135: Floyd's Cycle-Finding Algorithm (Tortoise and Hare)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5544,6 +5545,30 @@ def biconnected_components(n: int, edges: List[Tuple[int, int]]) -> List[List[Tu
     return blocks
 
 
+def floyds_cycle_finding(f: Any, x0: Any) -> Tuple[int, int]:
+    """Find cycle length (lambda) and index of cycle start (mu) using Floyd's Tortoise and Hare."""
+    tortoise = f(x0)
+    hare = f(f(x0))
+    while tortoise != hare:
+        tortoise = f(tortoise)
+        hare = f(f(hare))
+
+    mu = 0
+    tortoise = x0
+    while tortoise != hare:
+        tortoise = f(tortoise)
+        hare = f(hare)
+        mu += 1
+
+    lam = 1
+    hare = f(tortoise)
+    while tortoise != hare:
+        hare = f(hare)
+        lam += 1
+
+    return lam, mu
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6308,3 +6333,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 134: Block-Cut Tree (Biconnected Components) ===")
     bcc_edges = [(0, 1), (1, 2), (2, 0), (1, 3), (3, 4), (4, 5), (5, 3)]
     print("Biconnected Components (Blocks):", biconnected_components(6, bcc_edges))
+    print("\n=== Iteration 135: Floyd's Cycle-Finding Algorithm ===")
+    f_cycle = lambda x: (x * x + 1) % 255
+    fl_period, fl_start = floyds_cycle_finding(f_cycle, 3)
+    print(f"Floyd: cycle period = {fl_period}, cycle start = {fl_start}")
