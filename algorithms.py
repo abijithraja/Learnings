@@ -133,6 +133,7 @@ Part 130: Simulated Annealing for Traveling Salesperson Problem
 Part 131: Gale-Shapley Stable Marriage Algorithm
 Part 132: Boyer-Moore Generalized Majority Vote Algorithm
 Part 133: 2-Edge-Connected Components (Bridge-Blocks Decomposition)
+Part 134: Block-Cut Tree (Biconnected Components Decomposition)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5499,6 +5500,50 @@ def two_edge_connected_components(n: int, edges: List[Tuple[int, int]]) -> List[
     return sorted(components)
 
 
+def biconnected_components(n: int, edges: List[Tuple[int, int]]) -> List[List[Tuple[int, int]]]:
+    """Find all biconnected components (blocks) of edges in an undirected graph."""
+    adj: Dict[int, List[int]] = {i: [] for i in range(n)}
+    for u, v in edges:
+        adj[u].append(v)
+        adj[v].append(u)
+
+    tin = [-1] * n
+    low = [-1] * n
+    timer = 0
+    stack: List[Tuple[int, int]] = []
+    blocks: List[List[Tuple[int, int]]] = []
+
+    def dfs(u: int, p: int = -1):
+        nonlocal timer
+        timer += 1
+        tin[u] = low[u] = timer
+        for v in adj[u]:
+            if v == p:
+                continue
+            if tin[v] != -1:
+                low[u] = min(low[u], tin[v])
+                if tin[v] < tin[u]:
+                    stack.append((u, v))
+            else:
+                stack.append((u, v))
+                dfs(v, u)
+                low[u] = min(low[u], low[v])
+                if low[v] >= tin[u]:
+                    block = []
+                    while True:
+                        edge = stack.pop()
+                        block.append(edge)
+                        if edge == (u, v):
+                            break
+                    blocks.append(block)
+
+    for i in range(n):
+        if tin[i] == -1:
+            dfs(i)
+
+    return blocks
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6260,3 +6305,6 @@ if __name__ == "__main__":
     print("\n=== Iteration 133: 2-Edge-Connected Components ===")
     two_ecc_edges = [(0, 1), (1, 2), (2, 0), (2, 3), (3, 4), (4, 5), (5, 3)]
     print("2-ECC Components:", two_edge_connected_components(6, two_ecc_edges))
+    print("\n=== Iteration 134: Block-Cut Tree (Biconnected Components) ===")
+    bcc_edges = [(0, 1), (1, 2), (2, 0), (1, 3), (3, 4), (4, 5), (5, 3)]
+    print("Biconnected Components (Blocks):", biconnected_components(6, bcc_edges))
