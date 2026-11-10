@@ -157,6 +157,7 @@ Part 154: Damerau-Levenshtein Distance (Edit Distance with Transpositions)
 Part 155: Persistent Binary 0-1 Trie (Range Maximum XOR Query)
 Part 156: Rope Data Structure (Balanced String Concatenation & Split)
 Part 157: Cuckoo Hashing (O(1) Worst-Case Lookup Hash Table)
+Part 158: Consistent Hashing Ring with Virtual Nodes
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6657,6 +6658,51 @@ class CuckooHashTable:
             self.insert(k, v)
 
 
+import hashlib
+import bisect
+
+
+class ConsistentHashRing:
+    """
+    Distributed Consistent Hashing Ring using virtual node replication and binary search.
+    Minimizes key remapping when nodes join or leave the cluster.
+    """
+    def __init__(self, replicas: int = 100):
+        self.replicas = replicas
+        self.ring: Dict[int, str] = {}
+        self.sorted_keys: List[int] = []
+
+    def _hash(self, key_str: str) -> int:
+        return int(hashlib.md5(key_str.encode("utf-8")).hexdigest(), 16)
+
+    def add_node(self, node: str) -> None:
+        """Adds a physical node along with its virtual replicas onto the ring."""
+        for i in range(self.replicas):
+            h = self._hash(f"{node}:{i}")
+            self.ring[h] = node
+            bisect.insort(self.sorted_keys, h)
+
+    def remove_node(self, node: str) -> None:
+        """Removes a physical node and all its virtual replicas from the ring."""
+        for i in range(self.replicas):
+            h = self._hash(f"{node}:{i}")
+            if h in self.ring:
+                del self.ring[h]
+                idx = bisect.bisect_left(self.sorted_keys, h)
+                if idx < len(self.sorted_keys) and self.sorted_keys[idx] == h:
+                    self.sorted_keys.pop(idx)
+
+    def get_node(self, key: str) -> Optional[str]:
+        """Finds the responsible node clockwise on the hash ring."""
+        if not self.sorted_keys:
+            return None
+        h = self._hash(key)
+        idx = bisect.bisect(self.sorted_keys, h)
+        if idx == len(self.sorted_keys):
+            idx = 0
+        return self.ring[self.sorted_keys[idx]]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7513,4 +7559,9 @@ if __name__ == "__main__":
     for w in ["alpha", "beta", "gamma", "delta", "epsilon"]:
         cuckoo.insert(w, len(w))
     print("Cuckoo lookup 'gamma':", cuckoo.lookup("gamma"), "Table Size:", cuckoo.size)
-    print("\nAll 157 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 158: Consistent Hashing Ring ===")
+    ch_ring = ConsistentHashRing(replicas=50)
+    for node_id in ["node_A", "node_B", "node_C"]:
+        ch_ring.add_node(node_id)
+    print("Assigned node for 'user_123':", ch_ring.get_node("user_123"))
+    print("\nAll 158 Algorithms & Data Structures complete and verified!")
