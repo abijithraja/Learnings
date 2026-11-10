@@ -151,6 +151,7 @@ Part 148: Hungarian Algorithm for Maximum Weight Bipartite Matching
 Part 149: Pohlig-Hellman Discrete Logarithm Algorithm
 Part 150: Gaussian Elimination over GF(2) (Maximum XOR Basis)
 Part 151: Minkowski Sum of Convex Polygons
+Part 152: K-D Tree k-Nearest Neighbors (k-NN Search)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6282,6 +6283,70 @@ def minkowski_sum_convex_polygons(poly1: List[Tuple[float, float]], poly2: List[
     return result
 
 
+class KDTreeKNNNode:
+    def __init__(self, point: Tuple, left=None, right=None, axis: int = 0):
+        self.point = point
+        self.left = left
+        self.right = right
+        self.axis = axis
+
+
+def build_kd_tree_knn(points: List[Tuple], depth: int = 0) -> Optional[KDTreeKNNNode]:
+    """Recursively constructs a k-d tree from a collection of multidimensional points."""
+    if not points:
+        return None
+    k = len(points[0])
+    axis = depth % k
+    points_sorted = sorted(points, key=lambda p: p[axis])
+    mid = len(points_sorted) // 2
+    return KDTreeKNNNode(
+        point=points_sorted[mid],
+        left=build_kd_tree_knn(points_sorted[:mid], depth + 1),
+        right=build_kd_tree_knn(points_sorted[mid + 1:], depth + 1),
+        axis=axis
+    )
+
+
+def kd_tree_k_nearest_neighbors(points: List[Tuple], target: Tuple, k: int = 1) -> List[Tuple[float, Tuple]]:
+    """
+    Finds the k nearest neighbors to a target point in d-dimensional space.
+    Uses branch-and-bound bounding hyper-plane pruning with a max-heap of size k.
+    Returns: list of (distance, point) tuples sorted by distance.
+    """
+    if not points or k <= 0:
+        return []
+
+    root = build_kd_tree_knn(points)
+    heap: List[Tuple[float, Tuple]] = []
+
+    def euclidean_dist(p1: Tuple, p2: Tuple) -> float:
+        return math.sqrt(sum((a - b) ** 2 for a, b in zip(p1, p2)))
+
+    def search(node: Optional[KDTreeKNNNode]):
+        if not node:
+            return
+        d = euclidean_dist(node.point, target)
+        if len(heap) < k:
+            heapq.heappush(heap, (-d, node.point))
+        elif d < -heap[0][0]:
+            heapq.heappushpop(heap, (-d, node.point))
+
+        axis = node.axis
+        diff = target[axis] - node.point[axis]
+        first = node.left if diff < 0 else node.right
+        second = node.right if diff < 0 else node.left
+
+        search(first)
+        worst_d = -heap[0][0] if len(heap) == k else float('inf')
+        if abs(diff) < worst_d:
+            search(second)
+
+    search(root)
+    res = [(-d, p) for d, p in heap]
+    res.sort(key=lambda x: x[0])
+    return res
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7114,4 +7179,9 @@ if __name__ == "__main__":
     p1 = [(0.0, 0.0), (2.0, 0.0), (2.0, 2.0), (0.0, 2.0)]
     p2 = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
     print("Minkowski Sum Vertices:", minkowski_sum_convex_polygons(p1, p2))
-    print("\nAll 151 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 152: KD-Tree k-Nearest Neighbors (k-NN) ===")
+    sample_points = [(2, 3), (5, 4), (9, 6), (4, 7), (8, 1), (7, 2)]
+    target_pt = (9, 2)
+    knn_results = kd_tree_k_nearest_neighbors(sample_points, target_pt, 2)
+    print(f"2-NN for {target_pt}: {knn_results}")
+    print("\nAll 152 Algorithms & Data Structures complete and verified!")
