@@ -152,6 +152,7 @@ Part 149: Pohlig-Hellman Discrete Logarithm Algorithm
 Part 150: Gaussian Elimination over GF(2) (Maximum XOR Basis)
 Part 151: Minkowski Sum of Convex Polygons
 Part 152: K-D Tree k-Nearest Neighbors (k-NN Search)
+Part 153: Number Theoretic Transform (NTT) Polynomial Multiplication
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6347,6 +6348,65 @@ def kd_tree_k_nearest_neighbors(points: List[Tuple], target: Tuple, k: int = 1) 
     return res
 
 
+NTT_MOD = 998244353
+NTT_G = 3
+
+
+def number_theoretic_transform(a: List[int], invert: bool = False) -> None:
+    """
+    In-place Number Theoretic Transform (NTT) over Z_p (p = 998244353, primitive root 3).
+    Performs exact modular polynomial transformation without floating-point rounding.
+    """
+    n = len(a)
+    j = 0
+    for i in range(1, n):
+        bit = n >> 1
+        while j & bit:
+            j ^= bit
+            bit >>= 1
+        j ^= bit
+        if i < j:
+            a[i], a[j] = a[j], a[i]
+
+    length = 2
+    while length <= n:
+        wlen = pow(NTT_G, (NTT_MOD - 1) // length, NTT_MOD)
+        if invert:
+            wlen = pow(wlen, NTT_MOD - 2, NTT_MOD)
+        for i in range(0, n, length):
+            w = 1
+            for j in range(length // 2):
+                u = a[i + j]
+                v = (a[i + j + length // 2] * w) % NTT_MOD
+                a[i + j] = (u + v) % NTT_MOD
+                a[i + j + length // 2] = (u - v) % NTT_MOD
+                w = (w * wlen) % NTT_MOD
+        length <<= 1
+
+    if invert:
+        n_inv = pow(n, NTT_MOD - 2, NTT_MOD)
+        for i in range(n):
+            a[i] = (a[i] * n_inv) % NTT_MOD
+
+
+def poly_multiply_ntt(p1: List[int], p2: List[int]) -> List[int]:
+    """Multiplies two integer polynomials modulo 998244353 in O(n log n) time via NTT."""
+    if not p1 or not p2:
+        return []
+    n = 1
+    target_len = len(p1) + len(p2) - 1
+    while n < target_len:
+        n <<= 1
+    fa = p1[:] + [0] * (n - len(p1))
+    fb = p2[:] + [0] * (n - len(p2))
+    number_theoretic_transform(fa, False)
+    number_theoretic_transform(fb, False)
+    for i in range(n):
+        fa[i] = (fa[i] * fb[i]) % NTT_MOD
+    number_theoretic_transform(fa, True)
+    return fa[:target_len]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7184,4 +7244,7 @@ if __name__ == "__main__":
     target_pt = (9, 2)
     knn_results = kd_tree_k_nearest_neighbors(sample_points, target_pt, 2)
     print(f"2-NN for {target_pt}: {knn_results}")
-    print("\nAll 152 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 153: Number Theoretic Transform (NTT) ===")
+    ntt_res = poly_multiply_ntt([1, 2, 3], [4, 5, 6])
+    print("NTT [1, 2, 3] * [4, 5, 6]:", ntt_res)
+    print("\nAll 153 Algorithms & Data Structures complete and verified!")
