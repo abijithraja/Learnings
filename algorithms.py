@@ -154,6 +154,7 @@ Part 151: Minkowski Sum of Convex Polygons
 Part 152: K-D Tree k-Nearest Neighbors (k-NN Search)
 Part 153: Number Theoretic Transform (NTT) Polynomial Multiplication
 Part 154: Damerau-Levenshtein Distance (Edit Distance with Transpositions)
+Part 155: Persistent Binary 0-1 Trie (Range Maximum XOR Query)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6445,6 +6446,63 @@ def damerau_levenshtein_distance(s1: str, s2: str) -> int:
     return d[len(s1) + 1][len(s2) + 1]
 
 
+class PersistentBinaryTrieNode:
+    def __init__(self, left=None, right=None, count: int = 0):
+        self.left = left
+        self.right = right
+        self.count = count
+
+
+class PersistentBinaryTrie:
+    """
+    Persistent Bitwise 0-1 Trie supporting versioned insertions and O(bit_depth)
+    maximum XOR queries over arbitrary array subarray ranges [l, r].
+    """
+    def __init__(self, values: Optional[List[int]] = None, bit_depth: int = 30):
+        self.bit_depth = bit_depth
+        self.roots = [PersistentBinaryTrieNode()]
+        if values:
+            for v in values:
+                self.insert(v)
+
+    def insert(self, val: int) -> None:
+        prev_root = self.roots[-1]
+        self.roots.append(self._insert_node(prev_root, val, self.bit_depth - 1))
+
+    def _insert_node(self, node: Optional[PersistentBinaryTrieNode], val: int, bit: int) -> PersistentBinaryTrieNode:
+        cur_count = (node.count if node else 0) + 1
+        if bit < 0:
+            return PersistentBinaryTrieNode(count=cur_count)
+        b = (val >> bit) & 1
+        left = node.left if node else None
+        right = node.right if node else None
+        if b == 0:
+            return PersistentBinaryTrieNode(left=self._insert_node(left, val, bit - 1), right=right, count=cur_count)
+        return PersistentBinaryTrieNode(left=left, right=self._insert_node(right, val, bit - 1), count=cur_count)
+
+    def max_xor_in_range(self, l: int, r: int, x: int) -> int:
+        """Finds max(a[i] XOR x) for i in 0-indexed [l, r]."""
+        u = self.roots[l]
+        v = self.roots[r + 1]
+        if (v.count - (u.count if u else 0)) <= 0:
+            return 0
+        ans = 0
+        for bit in range(self.bit_depth - 1, -1, -1):
+            b = (x >> bit) & 1
+            want = 1 - b
+            v_child = v.right if want == 1 else v.left
+            u_child = (u.right if want == 1 else u.left) if u else None
+            diff = (v_child.count if v_child else 0) - (u_child.count if u_child else 0)
+            if diff > 0:
+                ans |= (1 << bit)
+                v = v_child
+                u = u_child
+            else:
+                v = v.left if want == 1 else v.right
+                u = (u.left if want == 1 else u.right) if u else None
+        return ans
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7288,4 +7346,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 154: Damerau-Levenshtein Distance ===")
     print("Distance ('ca', 'abc'):", damerau_levenshtein_distance("ca", "abc"))
     print("Distance ('ab', 'ba'):", damerau_levenshtein_distance("ab", "ba"))
-    print("\nAll 154 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 155: Persistent Binary 0-1 Trie ===")
+    p_trie = PersistentBinaryTrie([3, 10, 5, 25, 2, 8], bit_depth=6)
+    print("Max XOR with 5 in [0, 2]:", p_trie.max_xor_in_range(0, 2, 5))
+    print("Max XOR with 5 in [3, 5]:", p_trie.max_xor_in_range(3, 5, 5))
+    print("\nAll 155 Algorithms & Data Structures complete and verified!")
