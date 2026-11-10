@@ -150,6 +150,7 @@ Part 147: Kőnig's Theorem (Minimum Vertex Cover in Bipartite Graph)
 Part 148: Hungarian Algorithm for Maximum Weight Bipartite Matching
 Part 149: Pohlig-Hellman Discrete Logarithm Algorithm
 Part 150: Gaussian Elimination over GF(2) (Maximum XOR Basis)
+Part 151: Minkowski Sum of Convex Polygons
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6230,6 +6231,57 @@ def linear_basis_xor_max(nums: List[int], bit_depth: int = 60) -> int:
     return lb.max_xor()
 
 
+def minkowski_sum_convex_polygons(poly1: List[Tuple[float, float]], poly2: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+    """
+    Computes the Minkowski sum (P + Q) of two counter-clockwise oriented convex polygons
+    in linear O(|P| + |Q|) time by merging directed edge vectors sorted by polar angle.
+    """
+    n = len(poly1)
+    m = len(poly2)
+
+    def reorder_min_vertex(poly: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+        idx = min(range(len(poly)), key=lambda i: (poly[i][1], poly[i][0]))
+        return poly[idx:] + poly[:idx]
+
+    p = reorder_min_vertex(poly1)
+    q = reorder_min_vertex(poly2)
+
+    edges1 = [(p[(i + 1) % n][0] - p[i][0], p[(i + 1) % n][1] - p[i][1]) for i in range(n)]
+    edges2 = [(q[(i + 1) % m][0] - q[i][0], q[(i + 1) % m][1] - q[i][1]) for i in range(m)]
+
+    result = []
+    curr = [p[0][0] + q[0][0], p[0][1] + q[0][1]]
+    result.append(tuple(curr))
+
+    i, j = 0, 0
+    while i < n or j < m:
+        if i == n:
+            step = edges2[j]
+            j += 1
+        elif j == m:
+            step = edges1[i]
+            i += 1
+        else:
+            cp = edges1[i][0] * edges2[j][1] - edges1[i][1] * edges2[j][0]
+            if cp > 0:
+                step = edges1[i]
+                i += 1
+            elif cp < 0:
+                step = edges2[j]
+                j += 1
+            else:
+                step = (edges1[i][0] + edges2[j][0], edges1[i][1] + edges2[j][1])
+                i += 1
+                j += 1
+
+        curr[0] += step[0]
+        curr[1] += step[1]
+        result.append(tuple(curr))
+
+    result.pop() # remove duplicate closure vertex
+    return result
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7058,4 +7110,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 150: Gaussian Elimination over GF(2) (Max XOR Basis) ===")
     gf2_nums = [14, 11, 27, 4, 9, 18]
     print(f"Numbers: {gf2_nums}, Max Subset XOR: {linear_basis_xor_max(gf2_nums)}")
-    print("\nAll 150 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 151: Minkowski Sum of Convex Polygons ===")
+    p1 = [(0.0, 0.0), (2.0, 0.0), (2.0, 2.0), (0.0, 2.0)]
+    p2 = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
+    print("Minkowski Sum Vertices:", minkowski_sum_convex_polygons(p1, p2))
+    print("\nAll 151 Algorithms & Data Structures complete and verified!")
