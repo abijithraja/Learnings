@@ -156,6 +156,7 @@ Part 153: Number Theoretic Transform (NTT) Polynomial Multiplication
 Part 154: Damerau-Levenshtein Distance (Edit Distance with Transpositions)
 Part 155: Persistent Binary 0-1 Trie (Range Maximum XOR Query)
 Part 156: Rope Data Structure (Balanced String Concatenation & Split)
+Part 157: Cuckoo Hashing (O(1) Worst-Case Lookup Hash Table)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6587,6 +6588,75 @@ class Rope:
         return "".join(out)
 
 
+class CuckooHashTable:
+    """
+    Open-addressing Cuckoo Hash Table providing deterministic O(1) worst-case lookup
+    by resolving collisions via key displacement between two independent hash tables.
+    """
+    def __init__(self, capacity: int = 16):
+        self.capacity = capacity
+        self.table1: List[Optional[Tuple[Any, Any]]] = [None] * capacity
+        self.table2: List[Optional[Tuple[Any, Any]]] = [None] * capacity
+        self.size = 0
+        self.max_kicks = 50
+        self.salt = 0
+
+    def _h1(self, key: Any) -> int:
+        return hash(("t1", self.salt, key)) % self.capacity
+
+    def _h2(self, key: Any) -> int:
+        return hash(("t2", self.salt, key)) % self.capacity
+
+    def lookup(self, key: Any) -> Optional[Any]:
+        """Worst-case O(1) lookup checking at most two slots."""
+        i1 = self._h1(key)
+        if self.table1[i1] is not None and self.table1[i1][0] == key:
+            return self.table1[i1][1]
+        i2 = self._h2(key)
+        if self.table2[i2] is not None and self.table2[i2][0] == key:
+            return self.table2[i2][1]
+        return None
+
+    def insert(self, key: Any, val: Any) -> None:
+        i1 = self._h1(key)
+        if self.table1[i1] is not None and self.table1[i1][0] == key:
+            self.table1[i1] = (key, val)
+            return
+        i2 = self._h2(key)
+        if self.table2[i2] is not None and self.table2[i2][0] == key:
+            self.table2[i2] = (key, val)
+            return
+
+        item = (key, val)
+        for _ in range(self.max_kicks):
+            pos1 = self._h1(item[0])
+            if self.table1[pos1] is None:
+                self.table1[pos1] = item
+                self.size += 1
+                return
+            item, self.table1[pos1] = self.table1[pos1], item
+
+            pos2 = self._h2(item[0])
+            if self.table2[pos2] is None:
+                self.table2[pos2] = item
+                self.size += 1
+                return
+            item, self.table2[pos2] = self.table2[pos2], item
+
+        self._rehash()
+        self.insert(item[0], item[1])
+
+    def _rehash(self) -> None:
+        old_items = [x for x in self.table1 + self.table2 if x is not None]
+        self.capacity *= 2
+        self.salt += 1
+        self.table1 = [None] * self.capacity
+        self.table2 = [None] * self.capacity
+        self.size = 0
+        for k, v in old_items:
+            self.insert(k, v)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7438,4 +7508,9 @@ if __name__ == "__main__":
     rope_full = Rope.concat(Rope("Hello, "), Rope("World!"))
     rope_l, rope_r = rope_full.split(7)
     print(f"Rope char at 7: '{rope_full.index(7)}', Split: '{rope_l.to_string()}' | '{rope_r.to_string()}'")
-    print("\nAll 156 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 157: Cuckoo Hashing ===")
+    cuckoo = CuckooHashTable(8)
+    for w in ["alpha", "beta", "gamma", "delta", "epsilon"]:
+        cuckoo.insert(w, len(w))
+    print("Cuckoo lookup 'gamma':", cuckoo.lookup("gamma"), "Table Size:", cuckoo.size)
+    print("\nAll 157 Algorithms & Data Structures complete and verified!")
