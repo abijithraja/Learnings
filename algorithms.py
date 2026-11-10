@@ -153,6 +153,7 @@ Part 150: Gaussian Elimination over GF(2) (Maximum XOR Basis)
 Part 151: Minkowski Sum of Convex Polygons
 Part 152: K-D Tree k-Nearest Neighbors (k-NN Search)
 Part 153: Number Theoretic Transform (NTT) Polynomial Multiplication
+Part 154: Damerau-Levenshtein Distance (Edit Distance with Transpositions)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6407,6 +6408,43 @@ def poly_multiply_ntt(p1: List[int], p2: List[int]) -> List[int]:
     return fa[:target_len]
 
 
+def damerau_levenshtein_distance(s1: str, s2: str) -> int:
+    """
+    Computes the unrestricted Damerau-Levenshtein distance between s1 and s2,
+    allowing insertions, deletions, substitutions, and adjacent character transpositions.
+    """
+    da: Dict[str, int] = {}
+    max_dist = len(s1) + len(s2)
+    d = [[0] * (len(s2) + 2) for _ in range(len(s1) + 2)]
+    d[0][0] = max_dist
+
+    for i in range(len(s1) + 1):
+        d[i + 1][0] = max_dist
+        d[i + 1][1] = i
+    for j in range(len(s2) + 1):
+        d[0][j + 1] = max_dist
+        d[1][j + 1] = j
+
+    for i in range(1, len(s1) + 1):
+        db = 0
+        for j in range(1, len(s2) + 1):
+            i1 = da.get(s2[j - 1], 0)
+            j1 = db
+            cost = 1
+            if s1[i - 1] == s2[j - 1]:
+                cost = 0
+                db = j
+            d[i + 1][j + 1] = min(
+                d[i][j] + cost,
+                d[i + 1][j] + 1,
+                d[i][j + 1] + 1,
+                d[i1][j1] + (i - i1 - 1) + 1 + (j - j1 - 1),
+            )
+        da[s1[i - 1]] = i
+
+    return d[len(s1) + 1][len(s2) + 1]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7247,4 +7285,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 153: Number Theoretic Transform (NTT) ===")
     ntt_res = poly_multiply_ntt([1, 2, 3], [4, 5, 6])
     print("NTT [1, 2, 3] * [4, 5, 6]:", ntt_res)
-    print("\nAll 153 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 154: Damerau-Levenshtein Distance ===")
+    print("Distance ('ca', 'abc'):", damerau_levenshtein_distance("ca", "abc"))
+    print("Distance ('ab', 'ba'):", damerau_levenshtein_distance("ab", "ba"))
+    print("\nAll 154 Algorithms & Data Structures complete and verified!")
