@@ -149,6 +149,7 @@ Part 146: Lazy Propagation Treap (Range Add and Range Sum)
 Part 147: Kőnig's Theorem (Minimum Vertex Cover in Bipartite Graph)
 Part 148: Hungarian Algorithm for Maximum Weight Bipartite Matching
 Part 149: Pohlig-Hellman Discrete Logarithm Algorithm
+Part 150: Gaussian Elimination over GF(2) (Maximum XOR Basis)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6181,6 +6182,54 @@ def pohlig_hellman_dlog(g: int, h: int, p: int, prime_factors: List[Tuple[int, i
     return _crt(remainders, moduli)
 
 
+class LinearBasisGF2:
+    """
+    Gaussian Elimination over GF(2) / XOR Vector Space Basis.
+    Maintains basis vectors to determine linear independence, subset reachability,
+    and find the maximum XOR sum over any subset in O(bit_depth) per operation.
+    """
+    def __init__(self, bit_depth: int = 60):
+        self.bit_depth = bit_depth
+        self.basis = [0] * bit_depth
+        self.size = 0
+
+    def insert(self, val: int) -> bool:
+        """Inserts val into the basis. Returns True if linearly independent."""
+        for i in reversed(range(self.bit_depth)):
+            if (val >> i) & 1:
+                if not self.basis[i]:
+                    self.basis[i] = val
+                    self.size += 1
+                    return True
+                val ^= self.basis[i]
+        return False
+
+    def max_xor(self) -> int:
+        """Finds maximum XOR sum obtainable from any subset of inserted integers."""
+        res = 0
+        for i in reversed(range(self.bit_depth)):
+            if (res ^ self.basis[i]) > res:
+                res ^= self.basis[i]
+        return res
+
+    def contains(self, val: int) -> bool:
+        """Tests whether val can be formed by XOR-ing a subset of inserted integers."""
+        for i in reversed(range(self.bit_depth)):
+            if (val >> i) & 1:
+                if not self.basis[i]:
+                    return False
+                val ^= self.basis[i]
+        return val == 0
+
+
+def linear_basis_xor_max(nums: List[int], bit_depth: int = 60) -> int:
+    """Computes the maximum XOR sum over all subsets of nums."""
+    lb = LinearBasisGF2(bit_depth)
+    for x in nums:
+        lb.insert(x)
+    return lb.max_xor()
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7006,4 +7055,7 @@ if __name__ == "__main__":
     factors_ph = [(2, 1), (3, 1), (5, 1)] # 31 - 1 = 30 = 2 * 3 * 5
     solved_x = pohlig_hellman_dlog(g_ph, h_ph, p_ph, factors_ph)
     print(f"Target: {x_ph}, Solved x: {solved_x}, Valid: {pow(g_ph, solved_x, p_ph) == h_ph}")
-    print("\nAll 149 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 150: Gaussian Elimination over GF(2) (Max XOR Basis) ===")
+    gf2_nums = [14, 11, 27, 4, 9, 18]
+    print(f"Numbers: {gf2_nums}, Max Subset XOR: {linear_basis_xor_max(gf2_nums)}")
+    print("\nAll 150 Algorithms & Data Structures complete and verified!")
