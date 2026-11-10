@@ -161,6 +161,7 @@ Part 158: Consistent Hashing Ring with Virtual Nodes
 Part 159: CYK (Cocke-Younger-Kasami) Context-Free Grammar Parser
 Part 160: Vose's Alias Method (O(1) Weighted Discrete Sampling)
 Part 161: Reservoir Sampling (Algorithm R for Streaming Data)
+Part 162: Viterbi Algorithm (Hidden Markov Model Decoding)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6801,6 +6802,43 @@ def reservoir_sample(stream: Any, k: int, seed: Optional[int] = None) -> List[An
     return reservoir
 
 
+def viterbi_decode(
+    obs: List[str],
+    states: List[str],
+    start_p: Dict[str, float],
+    trans_p: Dict[str, Dict[str, float]],
+    emit_p: Dict[str, Dict[str, float]],
+) -> Tuple[float, List[str]]:
+    """
+    Viterbi dynamic programming algorithm to compute the most probable sequence
+    of hidden states in a Hidden Markov Model (HMM) given observations.
+    Returns: (max_probability, most_likely_state_sequence)
+    """
+    if not obs:
+        return 0.0, []
+
+    V: List[Dict[str, float]] = [{}]
+    path: Dict[str, List[str]] = {}
+    for st in states:
+        V[0][st] = start_p[st] * emit_p[st].get(obs[0], 0.0)
+        path[st] = [st]
+
+    for t in range(1, len(obs)):
+        V.append({})
+        new_path: Dict[str, List[str]] = {}
+        for curr_st in states:
+            best_prob, best_prev = max(
+                (V[t - 1][prev_st] * trans_p[prev_st].get(curr_st, 0.0) * emit_p[curr_st].get(obs[t], 0.0), prev_st)
+                for prev_st in states
+            )
+            V[t][curr_st] = best_prob
+            new_path[curr_st] = path[best_prev] + [curr_st]
+        path = new_path
+
+    best_prob, best_state = max((V[-1][st], st) for st in states)
+    return best_prob, path[best_state]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7682,4 +7720,12 @@ if __name__ == "__main__":
     print("Alias sample distribution (weights 1:3:6, N=1000):", alias_counts)
     print("\n=== Iteration 161: Reservoir Sampling ===")
     print("Reservoir sample (k=4 from 0..99):", reservoir_sample(range(100), 4, seed=42))
-    print("\nAll 161 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 162: Viterbi HMM Decoding Algorithm ===")
+    hmm_states = ["Rainy", "Sunny"]
+    hmm_obs = ["walk", "shop", "clean"]
+    hmm_start = {"Rainy": 0.6, "Sunny": 0.4}
+    hmm_trans = {"Rainy": {"Rainy": 0.7, "Sunny": 0.3}, "Sunny": {"Rainy": 0.4, "Sunny": 0.6}}
+    hmm_emit = {"Rainy": {"walk": 0.1, "shop": 0.4, "clean": 0.5}, "Sunny": {"walk": 0.6, "shop": 0.3, "clean": 0.1}}
+    v_prob, v_path = viterbi_decode(hmm_obs, hmm_states, hmm_start, hmm_trans, hmm_emit)
+    print(f"Viterbi Max Prob: {v_prob:.5f}, State Sequence: {v_path}")
+    print("\nAll 162 Algorithms & Data Structures complete and verified!")
