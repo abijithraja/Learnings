@@ -142,6 +142,7 @@ Part 139: Rotating Calipers for Convex Polygon Diameter
 Part 140: Point in Polygon (Ray Casting Algorithm)
 Part 141: Knuth-Plass Line Breaking Algorithm (TeX-Style Paragraph Layout)
 Part 142: Needleman-Wunsch Global Sequence Alignment
+Part 143: Smith-Waterman Local Sequence Alignment
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5770,6 +5771,52 @@ def needleman_wunsch_alignment(
     return dp[n][m], "".join(reversed(align1)), "".join(reversed(align2))
 
 
+def smith_waterman_local_alignment(s1: str, s2: str, match: int = 2, mismatch: int = -1, gap: int = -1):
+    """
+    Smith-Waterman algorithm for optimal local sequence alignment between s1 and s2.
+    Unlike global alignment, negative values are bounded below by 0.
+    Returns: (max_score, aligned_s1, aligned_s2)
+    """
+    n, m = len(s1), len(s2)
+    dp = [[0] * (m + 1) for _ in range(n + 1)]
+    max_score = 0
+    max_pos = (0, 0)
+
+    for i in range(1, n + 1):
+        for j in range(1, m + 1):
+            diag = dp[i - 1][j - 1] + (match if s1[i - 1] == s2[j - 1] else mismatch)
+            up = dp[i - 1][j] + gap
+            left = dp[i][j - 1] + gap
+            val = max(0, diag, up, left)
+            dp[i][j] = val
+            if val > max_score:
+                max_score = val
+                max_pos = (i, j)
+
+    # Traceback from maximum scoring cell until score 0 is reached
+    i, j = max_pos
+    al1, al2 = [], []
+    while i > 0 and j > 0 and dp[i][j] > 0:
+        score = match if s1[i - 1] == s2[j - 1] else mismatch
+        if dp[i][j] == dp[i - 1][j - 1] + score:
+            al1.append(s1[i - 1])
+            al2.append(s2[j - 1])
+            i -= 1
+            j -= 1
+        elif dp[i][j] == dp[i - 1][j] + gap:
+            al1.append(s1[i - 1])
+            al2.append('-')
+            i -= 1
+        elif dp[i][j] == dp[i][j - 1] + gap:
+            al1.append('-')
+            al2.append(s2[j - 1])
+            j -= 1
+        else:
+            break
+
+    return max_score, "".join(reversed(al1)), "".join(reversed(al2))
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6564,4 +6611,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 142: Needleman-Wunsch Sequence Alignment ===")
     score_val, al1, al2 = needleman_wunsch_alignment("GATTACA", "GCATGCU")
     print(f"Alignment Score: {score_val}\nSeq1: {al1}\nSeq2: {al2}")
-    print("\nAll 142 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 143: Smith-Waterman Local Sequence Alignment ===")
+    sw_score, sw_al1, sw_al2 = smith_waterman_local_alignment("ACACACTA", "AGCACACA")
+    print(f"Local Alignment Score: {sw_score}\nSeq1: {sw_al1}\nSeq2: {sw_al2}")
+    print("\nAll 143 Algorithms & Data Structures complete and verified!")
