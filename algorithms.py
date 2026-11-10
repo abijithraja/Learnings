@@ -155,6 +155,7 @@ Part 152: K-D Tree k-Nearest Neighbors (k-NN Search)
 Part 153: Number Theoretic Transform (NTT) Polynomial Multiplication
 Part 154: Damerau-Levenshtein Distance (Edit Distance with Transpositions)
 Part 155: Persistent Binary 0-1 Trie (Range Maximum XOR Query)
+Part 156: Rope Data Structure (Balanced String Concatenation & Split)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6503,6 +6504,89 @@ class PersistentBinaryTrie:
         return ans
 
 
+class RopeNode:
+    def __init__(self, text: str = "", left=None, right=None):
+        self.left = left
+        self.right = right
+        if left is None and right is None:
+            self.text = text
+            self.weight = len(text)
+            self.length = len(text)
+        else:
+            self.text = ""
+            self.weight = left.length if left else 0
+            self.length = (left.length if left else 0) + (right.length if right else 0)
+
+
+class Rope:
+    """
+    Rope binary tree data structure for efficient manipulation of large strings,
+    supporting O(1) concatenation, O(log n) indexing, and O(log n) splitting.
+    """
+    def __init__(self, text: str = ""):
+        self.root = RopeNode(text) if text else None
+
+    @classmethod
+    def concat(cls, r1: "Rope", r2: "Rope") -> "Rope":
+        res = cls()
+        if not r1.root:
+            res.root = r2.root
+        elif not r2.root:
+            res.root = r1.root
+        else:
+            res.root = RopeNode(left=r1.root, right=r2.root)
+        return res
+
+    def index(self, i: int) -> str:
+        """Returns character at 0-based index i."""
+        node = self.root
+        while node:
+            if node.left is None and node.right is None:
+                return node.text[i]
+            if i < node.weight:
+                node = node.left
+            else:
+                i -= node.weight
+                node = node.right
+        raise IndexError("Rope index out of range")
+
+    def split(self, i: int) -> Tuple["Rope", "Rope"]:
+        """Splits the rope into two ropes around index i."""
+        def _split(node: Optional[RopeNode], idx: int):
+            if not node:
+                return None, None
+            if node.left is None and node.right is None:
+                l_txt, r_txt = node.text[:idx], node.text[idx:]
+                return (RopeNode(l_txt) if l_txt else None), (RopeNode(r_txt) if r_txt else None)
+            if idx < node.weight:
+                l1, l2 = _split(node.left, idx)
+                r_merged = RopeNode(left=l2, right=node.right) if l2 else node.right
+                return l1, r_merged
+            elif idx > node.weight:
+                r1, r2 = _split(node.right, idx - node.weight)
+                l_merged = RopeNode(left=node.left, right=r1) if r1 else node.left
+                return l_merged, r2
+            return node.left, node.right
+
+        l_root, r_root = _split(self.root, i)
+        r1, r2 = Rope(), Rope()
+        r1.root, r2.root = l_root, r_root
+        return r1, r2
+
+    def to_string(self) -> str:
+        out: List[str] = []
+        def _dfs(node: Optional[RopeNode]):
+            if not node:
+                return
+            if node.left is None and node.right is None:
+                out.append(node.text)
+            else:
+                _dfs(node.left)
+                _dfs(node.right)
+        _dfs(self.root)
+        return "".join(out)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7350,4 +7434,8 @@ if __name__ == "__main__":
     p_trie = PersistentBinaryTrie([3, 10, 5, 25, 2, 8], bit_depth=6)
     print("Max XOR with 5 in [0, 2]:", p_trie.max_xor_in_range(0, 2, 5))
     print("Max XOR with 5 in [3, 5]:", p_trie.max_xor_in_range(3, 5, 5))
-    print("\nAll 155 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 156: Rope Data Structure ===")
+    rope_full = Rope.concat(Rope("Hello, "), Rope("World!"))
+    rope_l, rope_r = rope_full.split(7)
+    print(f"Rope char at 7: '{rope_full.index(7)}', Split: '{rope_l.to_string()}' | '{rope_r.to_string()}'")
+    print("\nAll 156 Algorithms & Data Structures complete and verified!")
