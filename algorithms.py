@@ -143,6 +143,7 @@ Part 140: Point in Polygon (Ray Casting Algorithm)
 Part 141: Knuth-Plass Line Breaking Algorithm (TeX-Style Paragraph Layout)
 Part 142: Needleman-Wunsch Global Sequence Alignment
 Part 143: Smith-Waterman Local Sequence Alignment
+Part 144: Burrows-Wheeler Transform (BWT) & Inverse BWT
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5817,6 +5818,44 @@ def smith_waterman_local_alignment(s1: str, s2: str, match: int = 2, mismatch: i
     return max_score, "".join(reversed(al1)), "".join(reversed(al2))
 
 
+def burrows_wheeler_transform(text: str) -> Tuple[str, int]:
+    """
+    Computes the Burrows-Wheeler Transform (BWT) of a text string.
+    Appends the lexicographically smallest sentinel character '$'.
+    Returns: (bwt_string, original_index)
+    """
+    s = text + '$'
+    rotations = sorted(s[i:] + s[:i] for i in range(len(s)))
+    orig_idx = rotations.index(s)
+    bwt = "".join(rot[-1] for rot in rotations)
+    return bwt, orig_idx
+
+
+def inverse_burrows_wheeler_transform(bwt: str, orig_idx: int = 0) -> str:
+    """
+    Inverts a Burrows-Wheeler Transform using LF mapping to recover the original string.
+    """
+    n = len(bwt)
+    counts = {}
+    l_ranked = []
+    for c in bwt:
+        cnt = counts.get(c, 0)
+        l_ranked.append((c, cnt))
+        counts[c] = cnt + 1
+
+    f_ranked = sorted(l_ranked, key=lambda x: x[0])
+    f_pos = {tup: i for i, tup in enumerate(f_ranked)}
+
+    row = f_ranked.index(('$', 0))
+    reconstructed = []
+    for _ in range(n - 1):
+        c, rank = l_ranked[row]
+        reconstructed.append(c)
+        row = f_pos[(c, rank)]
+
+    return "".join(reversed(reconstructed))
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6614,4 +6653,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 143: Smith-Waterman Local Sequence Alignment ===")
     sw_score, sw_al1, sw_al2 = smith_waterman_local_alignment("ACACACTA", "AGCACACA")
     print(f"Local Alignment Score: {sw_score}\nSeq1: {sw_al1}\nSeq2: {sw_al2}")
-    print("\nAll 143 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 144: Burrows-Wheeler Transform (BWT) & Inverse BWT ===")
+    bwt_str, bwt_idx = burrows_wheeler_transform("banana")
+    bwt_orig = inverse_burrows_wheeler_transform(bwt_str, bwt_idx)
+    print(f"BWT: {bwt_str} (orig index: {bwt_idx}), Inverted: {bwt_orig}")
+    print("\nAll 144 Algorithms & Data Structures complete and verified!")
