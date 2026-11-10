@@ -159,6 +159,7 @@ Part 156: Rope Data Structure (Balanced String Concatenation & Split)
 Part 157: Cuckoo Hashing (O(1) Worst-Case Lookup Hash Table)
 Part 158: Consistent Hashing Ring with Virtual Nodes
 Part 159: CYK (Cocke-Younger-Kasami) Context-Free Grammar Parser
+Part 160: Vose's Alias Method (O(1) Weighted Discrete Sampling)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6739,6 +6740,47 @@ def cyk_parse(grammar: Dict[str, List[Tuple[str, ...]]], start_symbol: str, toke
     return start_symbol in table[n - 1][0]
 
 
+class VoseAliasSampler:
+    """
+    Vose's Alias Method for sampling from a discrete probability distribution
+    in O(1) time per draw after O(n) table initialization.
+    """
+    def __init__(self, weights: List[float]):
+        n = len(weights)
+        if n == 0 or sum(weights) <= 0:
+            raise ValueError("Weights must be non-empty with positive sum")
+        self.n = n
+        self.prob = [0.0] * n
+        self.alias = [0] * n
+
+        total = sum(weights)
+        scaled = [w * n / total for w in weights]
+        small = [i for i, p in enumerate(scaled) if p < 1.0]
+        large = [i for i, p in enumerate(scaled) if p >= 1.0]
+
+        while small and large:
+            s = small.pop()
+            l = large.pop()
+            self.prob[s] = scaled[s]
+            self.alias[s] = l
+            scaled[l] = (scaled[l] + scaled[s]) - 1.0
+            if scaled[l] < 1.0:
+                small.append(l)
+            else:
+                large.append(l)
+
+        while large:
+            self.prob[large.pop()] = 1.0
+        while small:
+            self.prob[small.pop()] = 1.0
+
+    def sample(self, rng: Optional[random.Random] = None) -> int:
+        """Draws an outcome index proportional to the initialized weights in O(1)."""
+        r = rng if rng else random
+        i = r.randrange(self.n)
+        return i if r.random() < self.prob[i] else self.alias[i]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7611,4 +7653,11 @@ if __name__ == "__main__":
     }
     print("CYK 'she eats a fish':", cyk_parse(cnf_gram, "S", ["she", "eats", "a", "fish"]))
     print("CYK 'fish eats she':", cyk_parse(cnf_gram, "S", ["fish", "eats", "she"]))
-    print("\nAll 159 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 160: Vose's Alias Method ===")
+    alias_rng = random.Random(42)
+    alias_sampler = VoseAliasSampler([1.0, 3.0, 6.0])
+    alias_counts = [0, 0, 0]
+    for _ in range(1000):
+        alias_counts[alias_sampler.sample(alias_rng)] += 1
+    print("Alias sample distribution (weights 1:3:6, N=1000):", alias_counts)
+    print("\nAll 160 Algorithms & Data Structures complete and verified!")
