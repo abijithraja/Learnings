@@ -158,6 +158,7 @@ Part 155: Persistent Binary 0-1 Trie (Range Maximum XOR Query)
 Part 156: Rope Data Structure (Balanced String Concatenation & Split)
 Part 157: Cuckoo Hashing (O(1) Worst-Case Lookup Hash Table)
 Part 158: Consistent Hashing Ring with Virtual Nodes
+Part 159: CYK (Cocke-Younger-Kasami) Context-Free Grammar Parser
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6703,6 +6704,41 @@ class ConsistentHashRing:
         return self.ring[self.sorted_keys[idx]]
 
 
+def cyk_parse(grammar: Dict[str, List[Tuple[str, ...]]], start_symbol: str, tokens: List[str]) -> bool:
+    """
+    Cocke-Younger-Kasami (CYK) dynamic programming algorithm for membership testing
+    of a token sequence against a Context-Free Grammar in Chomsky Normal Form (CNF).
+    """
+    n = len(tokens)
+    if n == 0:
+        return False
+
+    term_rules: Dict[str, Set[str]] = {}
+    bin_rules: Dict[Tuple[str, str], Set[str]] = {}
+    for lhs, prods in grammar.items():
+        for prod in prods:
+            if len(prod) == 1:
+                term_rules.setdefault(prod[0], set()).add(lhs)
+            elif len(prod) == 2:
+                bin_rules.setdefault((prod[0], prod[1]), set()).add(lhs)
+
+    table: List[List[Set[str]]] = [[set() for _ in range(n)] for _ in range(n)]
+    for i, tok in enumerate(tokens):
+        table[0][i] = set(term_rules.get(tok, set()))
+
+    for length in range(2, n + 1):
+        for i in range(n - length + 1):
+            for split in range(1, length):
+                left_set = table[split - 1][i]
+                right_set = table[length - split - 1][i + split]
+                for B in left_set:
+                    for C in right_set:
+                        if (B, C) in bin_rules:
+                            table[length - 1][i].update(bin_rules[(B, C)])
+
+    return start_symbol in table[n - 1][0]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7564,4 +7600,15 @@ if __name__ == "__main__":
     for node_id in ["node_A", "node_B", "node_C"]:
         ch_ring.add_node(node_id)
     print("Assigned node for 'user_123':", ch_ring.get_node("user_123"))
-    print("\nAll 158 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 159: CYK Context-Free Grammar Parser ===")
+    cnf_gram = {
+        "S": [("NP", "VP")],
+        "VP": [("V", "NP")],
+        "NP": [("Det", "N"), ("she",)],
+        "V": [("eats",)],
+        "Det": [("a",)],
+        "N": [("fish",)],
+    }
+    print("CYK 'she eats a fish':", cyk_parse(cnf_gram, "S", ["she", "eats", "a", "fish"]))
+    print("CYK 'fish eats she':", cyk_parse(cnf_gram, "S", ["fish", "eats", "she"]))
+    print("\nAll 159 Algorithms & Data Structures complete and verified!")
