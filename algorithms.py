@@ -147,6 +147,7 @@ Part 144: Burrows-Wheeler Transform (BWT) & Inverse BWT
 Part 145: FM-Index Pattern Search (Backward Search)
 Part 146: Lazy Propagation Treap (Range Add and Range Sum)
 Part 147: Kőnig's Theorem (Minimum Vertex Cover in Bipartite Graph)
+Part 148: Hungarian Algorithm for Maximum Weight Bipartite Matching
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6054,6 +6055,71 @@ def konig_minimum_vertex_cover(n_left: int, n_right: int, adj: List[List[int]]) 
     return cover_left, cover_right
 
 
+def hungarian_max_weight_matching(cost_matrix: List[List[int]]) -> Tuple[int, List[int]]:
+    """
+    Kuhn-Munkres (Hungarian) algorithm for maximum weight bipartite matching on an n x m matrix (n <= m).
+    Returns: (max_total_weight, matching) where matching[i] is the matched right-side column for row i.
+    """
+    n = len(cost_matrix)
+    m = len(cost_matrix[0])
+    if n > m:
+        raise ValueError("Number of rows (workers) must not exceed columns (jobs)")
+
+    u = [0] * (n + 1)
+    v = [0] * (m + 1)
+    p = [0] * (m + 1)
+    way = [0] * (m + 1)
+    INF = float('inf')
+
+    for i in range(1, n + 1):
+        p[0] = i
+        j0 = 0
+        minv = [INF] * (m + 1)
+        used = [False] * (m + 1)
+
+        while True:
+            used[j0] = True
+            i0 = p[j0]
+            delta = INF
+            j1 = 0
+
+            for j in range(1, m + 1):
+                if not used[j]:
+                    cur = -cost_matrix[i0 - 1][j - 1] - u[i0] - v[j]
+                    if cur < minv[j]:
+                        minv[j] = cur
+                        way[j] = j0
+                    if minv[j] < delta:
+                        delta = minv[j]
+                        j1 = j
+
+            for j in range(m + 1):
+                if used[j]:
+                    u[p[j]] += delta
+                    v[j] -= delta
+                else:
+                    minv[j] -= delta
+
+            j0 = j1
+            if p[j0] == 0:
+                break
+
+        while True:
+            j1 = way[j0]
+            p[j0] = p[j1]
+            j0 = j1
+            if j0 == 0:
+                break
+
+    match = [-1] * n
+    for j in range(1, m + 1):
+        if p[j] != 0:
+            match[p[j] - 1] = j - 1
+
+    total_weight = sum(cost_matrix[i][match[i]] for i in range(n) if match[i] != -1)
+    return total_weight, match
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6869,4 +6935,8 @@ if __name__ == "__main__":
     bipartite_adj = [[0, 1], [0], [1, 2], [2]]
     mvc_l, mvc_r = konig_minimum_vertex_cover(4, 3, bipartite_adj)
     print(f"Min Vertex Cover: Left={mvc_l}, Right={mvc_r} (Size: {len(mvc_l) + len(mvc_r)})")
-    print("\nAll 147 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 148: Hungarian Maximum Weight Matching ===")
+    weights_matrix = [[7, 4, 3], [6, 8, 5], [9, 4, 4]]
+    hungarian_weight, hungarian_match = hungarian_max_weight_matching(weights_matrix)
+    print(f"Max Weight: {hungarian_weight}, Matching: {hungarian_match}")
+    print("\nAll 148 Algorithms & Data Structures complete and verified!")
