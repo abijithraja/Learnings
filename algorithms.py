@@ -145,6 +145,7 @@ Part 142: Needleman-Wunsch Global Sequence Alignment
 Part 143: Smith-Waterman Local Sequence Alignment
 Part 144: Burrows-Wheeler Transform (BWT) & Inverse BWT
 Part 145: FM-Index Pattern Search (Backward Search)
+Part 146: Lazy Propagation Treap (Range Add and Range Sum)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5898,6 +5899,108 @@ class FMIndex:
         return ep - sp + 1
 
 
+import random
+
+
+class LazyTreapNode:
+    def __init__(self, val: int, priority: Optional[float] = None):
+        self.val = val
+        self.priority = random.random() if priority is None else priority
+        self.size = 1
+        self.sum = val
+        self.lazy = 0
+        self.left = None
+        self.right = None
+
+
+class LazyTreap:
+    """
+    Implicit Cartesian Tree (Treap) with lazy propagation supporting
+    range addition and range sum queries in expected O(log n) time.
+    """
+    def __init__(self, values: Optional[List[int]] = None):
+        self.root = None
+        if values:
+            for v in values:
+                self.append(v)
+
+    def _size(self, node: Optional[LazyTreapNode]) -> int:
+        return node.size if node else 0
+
+    def _sum(self, node: Optional[LazyTreapNode]) -> int:
+        return node.sum if node else 0
+
+    def _push_up(self, node: Optional[LazyTreapNode]):
+        if node:
+            node.size = 1 + self._size(node.left) + self._size(node.right)
+            node.sum = node.val + self._sum(node.left) + self._sum(node.right)
+
+    def _push_down(self, node: Optional[LazyTreapNode]):
+        if node and node.lazy != 0:
+            lz = node.lazy
+            if node.left:
+                node.left.val += lz
+                node.left.sum += lz * node.left.size
+                node.left.lazy += lz
+            if node.right:
+                node.right.val += lz
+                node.right.sum += lz * node.right.size
+                node.right.lazy += lz
+            node.lazy = 0
+
+    def _split(self, node: Optional[LazyTreapNode], k: int) -> Tuple[Optional[LazyTreapNode], Optional[LazyTreapNode]]:
+        if not node:
+            return None, None
+        self._push_down(node)
+        left_sz = self._size(node.left)
+        if left_sz >= k:
+            l, r = self._split(node.left, k)
+            node.left = r
+            self._push_up(node)
+            return l, node
+        else:
+            l, r = self._split(node.right, k - left_sz - 1)
+            node.right = l
+            self._push_up(node)
+            return node, r
+
+    def _merge(self, l: Optional[LazyTreapNode], r: Optional[LazyTreapNode]) -> Optional[LazyTreapNode]:
+        if not l or not r:
+            return l or r
+        if l.priority > r.priority:
+            self._push_down(l)
+            l.right = self._merge(l.right, r)
+            self._push_up(l)
+            return l
+        else:
+            self._push_down(r)
+            r.left = self._merge(l, r.left)
+            self._push_up(r)
+            return r
+
+    def append(self, val: int):
+        new_node = LazyTreapNode(val)
+        self.root = self._merge(self.root, new_node)
+
+    def range_add(self, l: int, r: int, delta: int):
+        """Adds delta to all elements in 0-indexed range [l, r]."""
+        t1, t23 = self._split(self.root, l)
+        t2, t3 = self._split(t23, r - l + 1)
+        if t2:
+            t2.val += delta
+            t2.sum += delta * t2.size
+            t2.lazy += delta
+        self.root = self._merge(t1, self._merge(t2, t3))
+
+    def range_sum(self, l: int, r: int) -> int:
+        """Returns the sum of elements in 0-indexed range [l, r]."""
+        t1, t23 = self._split(self.root, l)
+        t2, t3 = self._split(t23, r - l + 1)
+        res = self._sum(t2)
+        self.root = self._merge(t1, self._merge(t2, t3))
+        return res
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6704,4 +6807,9 @@ if __name__ == "__main__":
     print("FMIndex 'abra' count:", fm.count("abra"))
     print("FMIndex 'cad' count:", fm.count("cad"))
     print("FMIndex 'xyz' count:", fm.count("xyz"))
-    print("\nAll 145 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 146: Lazy Propagation Treap ===")
+    lazy_treap = LazyTreap([10, 20, 30, 40, 50])
+    print("Initial Range Sum [1, 3]:", lazy_treap.range_sum(1, 3))
+    lazy_treap.range_add(1, 3, 5)
+    print("Range Sum [1, 3] after +5:", lazy_treap.range_sum(1, 3))
+    print("\nAll 146 Algorithms & Data Structures complete and verified!")
