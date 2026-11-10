@@ -148,6 +148,7 @@ Part 145: FM-Index Pattern Search (Backward Search)
 Part 146: Lazy Propagation Treap (Range Add and Range Sum)
 Part 147: Kőnig's Theorem (Minimum Vertex Cover in Bipartite Graph)
 Part 148: Hungarian Algorithm for Maximum Weight Bipartite Matching
+Part 149: Pohlig-Hellman Discrete Logarithm Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6120,6 +6121,66 @@ def hungarian_max_weight_matching(cost_matrix: List[List[int]]) -> Tuple[int, Li
     return total_weight, match
 
 
+def _baby_step_giant_step(g: int, h: int, p: int, order: int) -> Optional[int]:
+    """Solves g^x == h (mod p) where x < order."""
+    m = math.isqrt(order) + 1
+    table = {}
+    cur = 1
+    for j in range(m):
+        table[cur] = j
+        cur = (cur * g) % p
+
+    inv_gm = pow(pow(g, m, p), -1, p)
+    cur = h
+    for i in range(m):
+        if cur in table:
+            return i * m + table[cur]
+        cur = (cur * inv_gm) % p
+    return None
+
+
+def _crt(remainders: List[int], moduli: List[int]) -> int:
+    """Chinese Remainder Theorem solver."""
+    M = 1
+    for m in moduli:
+        M *= m
+    total = 0
+    for r, m in zip(remainders, moduli):
+        Mi = M // m
+        inv = pow(Mi, -1, m)
+        total = (total + r * Mi * inv) % M
+    return total
+
+
+def pohlig_hellman_dlog(g: int, h: int, p: int, prime_factors: List[Tuple[int, int]]) -> int:
+    """
+    Computes discrete logarithm x such that g^x == h (mod p).
+    prime_factors is a list of (q, e) such that p - 1 = prod(q^e).
+    """
+    remainders = []
+    moduli = []
+
+    for q, e in prime_factors:
+        qe = q ** e
+        x_val = 0
+        gamma = pow(g, (p - 1) // q, p)
+
+        for k in range(e):
+            g_inv = pow(g, -x_val, p)
+            hk = (h * g_inv) % p
+            hk = pow(hk, (p - 1) // (q ** (k + 1)), p)
+
+            dk = _baby_step_giant_step(gamma, hk, p, q)
+            if dk is None:
+                raise ValueError("Discrete logarithm subproblem failed")
+            x_val += dk * (q ** k)
+
+        remainders.append(x_val)
+        moduli.append(qe)
+
+    return _crt(remainders, moduli)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6939,4 +7000,10 @@ if __name__ == "__main__":
     weights_matrix = [[7, 4, 3], [6, 8, 5], [9, 4, 4]]
     hungarian_weight, hungarian_match = hungarian_max_weight_matching(weights_matrix)
     print(f"Max Weight: {hungarian_weight}, Matching: {hungarian_match}")
-    print("\nAll 148 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 149: Pohlig-Hellman Discrete Logarithm ===")
+    p_ph, g_ph, x_ph = 31, 3, 17
+    h_ph = pow(g_ph, x_ph, p_ph)
+    factors_ph = [(2, 1), (3, 1), (5, 1)] # 31 - 1 = 30 = 2 * 3 * 5
+    solved_x = pohlig_hellman_dlog(g_ph, h_ph, p_ph, factors_ph)
+    print(f"Target: {x_ph}, Solved x: {solved_x}, Valid: {pow(g_ph, solved_x, p_ph) == h_ph}")
+    print("\nAll 149 Algorithms & Data Structures complete and verified!")
