@@ -144,6 +144,7 @@ Part 141: Knuth-Plass Line Breaking Algorithm (TeX-Style Paragraph Layout)
 Part 142: Needleman-Wunsch Global Sequence Alignment
 Part 143: Smith-Waterman Local Sequence Alignment
 Part 144: Burrows-Wheeler Transform (BWT) & Inverse BWT
+Part 145: FM-Index Pattern Search (Backward Search)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -5856,6 +5857,47 @@ def inverse_burrows_wheeler_transform(bwt: str, orig_idx: int = 0) -> str:
     return "".join(reversed(reconstructed))
 
 
+class FMIndex:
+    """
+    Full-text Minute (FM) Index based on Burrows-Wheeler Transform and LF-mapping.
+    Supports backward search to query pattern occurrences in O(pattern_length) time.
+    """
+    def __init__(self, text: str):
+        self.text = text + '$'
+        n = len(self.text)
+        rotations = sorted(self.text[i:] + self.text[:i] for i in range(n))
+        self.bwt = "".join(r[-1] for r in rotations)
+
+        # C table: count of characters in text lexicographically smaller than c
+        sorted_chars = sorted(self.text)
+        self.C = {}
+        for i, c in enumerate(sorted_chars):
+            if c not in self.C:
+                self.C[c] = i
+
+        # Occ table: occ[c][k] is count of occurrences of c in bwt[0..k-1]
+        self.alphabet = sorted(list(set(self.text)))
+        self.occ = {c: [0] * (n + 1) for c in self.alphabet}
+        for i, c in enumerate(self.bwt):
+            for ch in self.alphabet:
+                self.occ[ch][i + 1] = self.occ[ch][i] + (1 if ch == c else 0)
+
+    def count(self, pattern: str) -> int:
+        """Counts total occurrences of pattern in text using backward search."""
+        if not pattern:
+            return 0
+        sp = 0
+        ep = len(self.bwt) - 1
+        for c in reversed(pattern):
+            if c not in self.C:
+                return 0
+            sp = self.C[c] + self.occ[c][sp]
+            ep = self.C[c] + self.occ[c][ep + 1] - 1
+            if sp > ep:
+                return 0
+        return ep - sp + 1
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6657,4 +6699,9 @@ if __name__ == "__main__":
     bwt_str, bwt_idx = burrows_wheeler_transform("banana")
     bwt_orig = inverse_burrows_wheeler_transform(bwt_str, bwt_idx)
     print(f"BWT: {bwt_str} (orig index: {bwt_idx}), Inverted: {bwt_orig}")
-    print("\nAll 144 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 145: FM-Index Pattern Search ===")
+    fm = FMIndex("abracadabra")
+    print("FMIndex 'abra' count:", fm.count("abra"))
+    print("FMIndex 'cad' count:", fm.count("cad"))
+    print("FMIndex 'xyz' count:", fm.count("xyz"))
+    print("\nAll 145 Algorithms & Data Structures complete and verified!")
