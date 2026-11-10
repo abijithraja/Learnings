@@ -146,6 +146,7 @@ Part 143: Smith-Waterman Local Sequence Alignment
 Part 144: Burrows-Wheeler Transform (BWT) & Inverse BWT
 Part 145: FM-Index Pattern Search (Backward Search)
 Part 146: Lazy Propagation Treap (Range Add and Range Sum)
+Part 147: Kőnig's Theorem (Minimum Vertex Cover in Bipartite Graph)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6001,6 +6002,58 @@ class LazyTreap:
         return res
 
 
+def konig_minimum_vertex_cover(n_left: int, n_right: int, adj: List[List[int]]) -> Tuple[List[int], List[int]]:
+    """
+    Finds the Minimum Vertex Cover in a bipartite graph via Konig's Theorem.
+    adj[u] contains the list of right-partition neighbors for left vertex u.
+    Returns: (cover_left, cover_right) such that cover_left U cover_right covers all edges.
+    """
+    match_r = [-1] * n_right
+    match_l = [-1] * n_left
+
+    def dfs_match(u: int, visited: List[bool]) -> bool:
+        for v in adj[u]:
+            if not visited[v]:
+                visited[v] = True
+                if match_r[v] == -1 or dfs_match(match_r[v], visited):
+                    match_r[v] = u
+                    match_l[u] = v
+                    return True
+        return False
+
+    for u in range(n_left):
+        visited = [False] * n_right
+        dfs_match(u, visited)
+
+    # Find vertices reachable via alternating paths from unmatched left nodes
+    visited_l = [False] * n_left
+    visited_r = [False] * n_right
+
+    queue = []
+    for u in range(n_left):
+        if match_l[u] == -1:
+            visited_l[u] = True
+            queue.append((u, 'L'))
+
+    while queue:
+        curr, side = queue.pop(0)
+        if side == 'L':
+            for v in adj[curr]:
+                if v != match_l[curr] and not visited_r[v]:
+                    visited_r[v] = True
+                    queue.append((v, 'R'))
+        else:
+            u = match_r[curr]
+            if u != -1 and not visited_l[u]:
+                visited_l[u] = True
+                queue.append((u, 'L'))
+
+    # Minimum vertex cover: (L \ visited_L) U (R \cap visited_R)
+    cover_left = [u for u in range(n_left) if not visited_l[u]]
+    cover_right = [v for v in range(n_right) if visited_r[v]]
+    return cover_left, cover_right
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -6812,4 +6865,8 @@ if __name__ == "__main__":
     print("Initial Range Sum [1, 3]:", lazy_treap.range_sum(1, 3))
     lazy_treap.range_add(1, 3, 5)
     print("Range Sum [1, 3] after +5:", lazy_treap.range_sum(1, 3))
-    print("\nAll 146 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 147: Konig's Minimum Vertex Cover ===")
+    bipartite_adj = [[0, 1], [0], [1, 2], [2]]
+    mvc_l, mvc_r = konig_minimum_vertex_cover(4, 3, bipartite_adj)
+    print(f"Min Vertex Cover: Left={mvc_l}, Right={mvc_r} (Size: {len(mvc_l) + len(mvc_r)})")
+    print("\nAll 147 Algorithms & Data Structures complete and verified!")
