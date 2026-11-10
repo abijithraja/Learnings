@@ -160,6 +160,7 @@ Part 157: Cuckoo Hashing (O(1) Worst-Case Lookup Hash Table)
 Part 158: Consistent Hashing Ring with Virtual Nodes
 Part 159: CYK (Cocke-Younger-Kasami) Context-Free Grammar Parser
 Part 160: Vose's Alias Method (O(1) Weighted Discrete Sampling)
+Part 161: Reservoir Sampling (Algorithm R for Streaming Data)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6781,6 +6782,25 @@ class VoseAliasSampler:
         return i if r.random() < self.prob[i] else self.alias[i]
 
 
+def reservoir_sample(stream: Any, k: int, seed: Optional[int] = None) -> List[Any]:
+    """
+    Algorithm R (Reservoir Sampling) for uniformly sampling k items
+    in a single O(n) pass over a stream of unknown total length.
+    """
+    if k <= 0:
+        return []
+    rng = random.Random(seed)
+    reservoir: List[Any] = []
+    for i, item in enumerate(stream):
+        if i < k:
+            reservoir.append(item)
+        else:
+            j = rng.randint(0, i)
+            if j < k:
+                reservoir[j] = item
+    return reservoir
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7660,4 +7680,6 @@ if __name__ == "__main__":
     for _ in range(1000):
         alias_counts[alias_sampler.sample(alias_rng)] += 1
     print("Alias sample distribution (weights 1:3:6, N=1000):", alias_counts)
-    print("\nAll 160 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 161: Reservoir Sampling ===")
+    print("Reservoir sample (k=4 from 0..99):", reservoir_sample(range(100), 4, seed=42))
+    print("\nAll 161 Algorithms & Data Structures complete and verified!")
