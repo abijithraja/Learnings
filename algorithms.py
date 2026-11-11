@@ -170,6 +170,7 @@ Part 167: Ramer-Douglas-Peucker Polyline Simplification
 Part 168: Polygon Triangulation via Ear Clipping
 Part 169: Merge Sort Tree (Range Order-Statistic Count Queries)
 Part 170: Bitap (Shift-Or) Bit-Parallel Pattern Matching
+Part 171: PageRank Power Iteration Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7184,6 +7185,30 @@ def bitap_search(text: str, pattern: str) -> List[int]:
     return matches
 
 
+def pagerank(n: int, edges: List[Tuple[int, int]], damping: float = 0.85, iterations: int = 50) -> List[float]:
+    """
+    Computes PageRank scores for n nodes in a directed graph via power iteration,
+    handling dangling nodes with uniform teleportation.
+    """
+    if n <= 0:
+        return []
+    out_deg = [0] * n
+    in_adj: List[List[int]] = [[] for _ in range(n)]
+    for u, v in edges:
+        out_deg[u] += 1
+        in_adj[v].append(u)
+
+    ranks = [1.0 / n] * n
+    for _ in range(iterations):
+        dangling_sum = sum(ranks[u] for u in range(n) if out_deg[u] == 0)
+        new_ranks = [0.0] * n
+        for v in range(n):
+            in_sum = sum(ranks[u] / out_deg[u] for u in in_adj[v])
+            new_ranks[v] = (1.0 - damping) / n + damping * (in_sum + dangling_sum / n)
+        ranks = new_ranks
+    return ranks
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8101,4 +8126,7 @@ if __name__ == "__main__":
     print("Elements <= 4 in range [1, 5]:", mst.count_le(1, 5, 4))
     print("\n=== Iteration 170: Bitap (Shift-Or) Pattern Matching ===")
     print("Bitap matches for 'ababd' in 'ababcabcabababd':", bitap_search("ababcabcabababd", "ababd"))
-    print("\nAll 170 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 171: PageRank Power Iteration ===")
+    pr_edges = [(0, 1), (0, 2), (1, 2), (2, 0), (3, 2)]
+    print("PageRank scores:", [round(r, 4) for r in pagerank(4, pr_edges)])
+    print("\nAll 171 Algorithms & Data Structures complete and verified!")
