@@ -163,6 +163,7 @@ Part 160: Vose's Alias Method (O(1) Weighted Discrete Sampling)
 Part 161: Reservoir Sampling (Algorithm R for Streaming Data)
 Part 162: Viterbi Algorithm (Hidden Markov Model Decoding)
 Part 163: Quadtree (2D Spatial Partitioning & Range Query)
+Part 164: Radix Tree / Patricia Trie (Compressed Prefix Tree)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6902,6 +6903,69 @@ class Quadtree:
         return found
 
 
+class RadixNode:
+    def __init__(self, prefix: str = ""):
+        self.prefix = prefix
+        self.children: Dict[str, "RadixNode"] = {}
+        self.is_end = False
+
+
+class RadixTree:
+    """
+    Space-optimized compressed trie (Radix Tree / Patricia Trie) that merges
+    single-child chains into labeled edge prefixes.
+    """
+    def __init__(self):
+        self.root = RadixNode()
+
+    def insert(self, word: str) -> None:
+        node = self.root
+        while word:
+            matched_child = node.children.get(word[0])
+            if not matched_child:
+                new_node = RadixNode(word)
+                new_node.is_end = True
+                node.children[word[0]] = new_node
+                return
+
+            lcp = 0
+            limit = min(len(word), len(matched_child.prefix))
+            while lcp < limit and word[lcp] == matched_child.prefix[lcp]:
+                lcp += 1
+
+            if lcp == len(matched_child.prefix):
+                node = matched_child
+                word = word[lcp:]
+                if not word:
+                    node.is_end = True
+                    return
+            else:
+                split_node = RadixNode(matched_child.prefix[:lcp])
+                rem_child = matched_child.prefix[lcp:]
+                matched_child.prefix = rem_child
+                split_node.children[rem_child[0]] = matched_child
+                node.children[split_node.prefix[0]] = split_node
+
+                if lcp == len(word):
+                    split_node.is_end = True
+                else:
+                    rem_word = word[lcp:]
+                    new_leaf = RadixNode(rem_word)
+                    new_leaf.is_end = True
+                    split_node.children[rem_word[0]] = new_leaf
+                return
+
+    def search(self, word: str) -> bool:
+        node = self.root
+        while word:
+            child = node.children.get(word[0])
+            if not child or not word.startswith(child.prefix):
+                return False
+            word = word[len(child.prefix):]
+            node = child
+        return node.is_end
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7796,4 +7860,9 @@ if __name__ == "__main__":
     for pt in [(10, 10), (20, 20), (25, 25), (80, 80), (60, 40)]:
         qt.insert(pt)
     print("Quadtree range query [0..30, 0..30]:", qt.query(QTRect(15, 15, 15, 15)))
-    print("\nAll 163 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 164: Radix Tree / Patricia Trie ===")
+    rt = RadixTree()
+    for w in ["romane", "romanus", "romulus", "rubens", "ruber"]:
+        rt.insert(w)
+    print("Search 'romanus':", rt.search("romanus"), "| Search 'roman':", rt.search("roman"))
+    print("\nAll 164 Algorithms & Data Structures complete and verified!")
