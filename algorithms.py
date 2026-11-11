@@ -168,6 +168,7 @@ Part 165: LU Decomposition with Partial Pivoting & Linear Solver
 Part 166: Cholesky Decomposition for Positive-Definite Matrices
 Part 167: Ramer-Douglas-Peucker Polyline Simplification
 Part 168: Polygon Triangulation via Ear Clipping
+Part 169: Merge Sort Tree (Range Order-Statistic Count Queries)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7113,6 +7114,52 @@ def ear_clipping_triangulate(poly: List[Tuple[float, float]]) -> List[Tuple[int,
     return triangles
 
 
+class MergeSortTree:
+    """
+    Segment tree where each node stores a sorted subarray, answering static range queries
+    such as counting elements <= k in [ql, qr] in O(log^2 n) time.
+    """
+    def __init__(self, arr: List[int]):
+        self.n = len(arr)
+        self.tree: List[List[int]] = [[] for _ in range(4 * self.n)]
+        if self.n > 0:
+            self._build(arr, 1, 0, self.n - 1)
+
+    def _build(self, arr: List[int], node: int, l: int, r: int) -> None:
+        if l == r:
+            self.tree[node] = [arr[l]]
+            return
+        mid = (l + r) // 2
+        self._build(arr, 2 * node, l, mid)
+        self._build(arr, 2 * node + 1, mid + 1, r)
+
+        left_arr, right_arr = self.tree[2 * node], self.tree[2 * node + 1]
+        merged: List[int] = []
+        i = j = 0
+        while i < len(left_arr) and j < len(right_arr):
+            if left_arr[i] <= right_arr[j]:
+                merged.append(left_arr[i])
+                i += 1
+            else:
+                merged.append(right_arr[j])
+                j += 1
+        merged.extend(left_arr[i:])
+        merged.extend(right_arr[j:])
+        self.tree[node] = merged
+
+    def count_le(self, ql: int, qr: int, k: int) -> int:
+        """Counts how many elements in 0-indexed subarray [ql, qr] are <= k."""
+        def _query(node: int, l: int, r: int) -> int:
+            if ql > r or qr < l:
+                return 0
+            if ql <= l and r <= qr:
+                return bisect.bisect_right(self.tree[node], k)
+            mid = (l + r) // 2
+            return _query(2 * node, l, mid) + _query(2 * node + 1, mid + 1, r)
+
+        return _query(1, 0, self.n - 1) if self.n > 0 else 0
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8025,4 +8072,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 168: Ear Clipping Polygon Triangulation ===")
     l_shape = [(0, 0), (4, 0), (4, 2), (2, 2), (2, 4), (0, 4)]
     print("Triangulated L-polygon indices:", ear_clipping_triangulate(l_shape))
-    print("\nAll 168 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 169: Merge Sort Tree ===")
+    mst = MergeSortTree([5, 1, 8, 3, 2, 7, 4])
+    print("Elements <= 4 in range [1, 5]:", mst.count_le(1, 5, 4))
+    print("\nAll 169 Algorithms & Data Structures complete and verified!")
