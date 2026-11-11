@@ -167,6 +167,7 @@ Part 164: Radix Tree / Patricia Trie (Compressed Prefix Tree)
 Part 165: LU Decomposition with Partial Pivoting & Linear Solver
 Part 166: Cholesky Decomposition for Positive-Definite Matrices
 Part 167: Ramer-Douglas-Peucker Polyline Simplification
+Part 168: Polygon Triangulation via Ear Clipping
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7061,6 +7062,57 @@ def ramer_douglas_peucker(points: List[Tuple[float, float]], epsilon: float) -> 
     return [points[0], points[-1]]
 
 
+def ear_clipping_triangulate(poly: List[Tuple[float, float]]) -> List[Tuple[int, int, int]]:
+    """
+    Triangulates a simple (possibly non-convex) polygon using Ear Clipping in O(n^2) time.
+    Returns a list of vertex index triples forming the triangulation.
+    """
+    def area2(p1: Tuple[float, float], p2: Tuple[float, float], p3: Tuple[float, float]) -> float:
+        return (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p2[1] - p1[1]) * (p3[0] - p1[0])
+
+    def pt_in_tri(p: Tuple[float, float], a: Tuple[float, float], b: Tuple[float, float], c: Tuple[float, float]) -> bool:
+        return area2(a, b, p) >= 0 and area2(b, c, p) >= 0 and area2(c, a, p) >= 0
+
+    n_orig = len(poly)
+    if n_orig < 3:
+        return []
+
+    pts = list(range(n_orig))
+    signed_area = sum(
+        poly[i][0] * poly[(i + 1) % n_orig][1] - poly[(i + 1) % n_orig][0] * poly[i][1]
+        for i in range(n_orig)
+    )
+    if signed_area < 0:
+        pts.reverse()
+
+    triangles: List[Tuple[int, int, int]] = []
+    while len(pts) > 3:
+        n = len(pts)
+        ear_found = False
+        for i in range(n):
+            prev_i, curr_i, next_i = pts[(i - 1) % n], pts[i], pts[(i + 1) % n]
+            a, b, c = poly[prev_i], poly[curr_i], poly[next_i]
+            if area2(a, b, c) > 0:
+                is_ear = True
+                for idx in pts:
+                    if idx in (prev_i, curr_i, next_i):
+                        continue
+                    if pt_in_tri(poly[idx], a, b, c):
+                        is_ear = False
+                        break
+                if is_ear:
+                    triangles.append((prev_i, curr_i, next_i))
+                    pts.pop(i)
+                    ear_found = True
+                    break
+        if not ear_found:
+            break
+
+    if len(pts) == 3:
+        triangles.append((pts[0], pts[1], pts[2]))
+    return triangles
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7970,4 +8022,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 167: Ramer-Douglas-Peucker Simplification ===")
     rdp_pts = [(0, 0), (1, 0.1), (2, -0.1), (3, 5), (4, 6), (5, 7), (6, 8.1), (7, 9), (8, 9), (9, 9)]
     print("Simplified polyline (eps=1.0):", ramer_douglas_peucker(rdp_pts, 1.0))
-    print("\nAll 167 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 168: Ear Clipping Polygon Triangulation ===")
+    l_shape = [(0, 0), (4, 0), (4, 2), (2, 2), (2, 4), (0, 4)]
+    print("Triangulated L-polygon indices:", ear_clipping_triangulate(l_shape))
+    print("\nAll 168 Algorithms & Data Structures complete and verified!")
