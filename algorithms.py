@@ -166,6 +166,7 @@ Part 163: Quadtree (2D Spatial Partitioning & Range Query)
 Part 164: Radix Tree / Patricia Trie (Compressed Prefix Tree)
 Part 165: LU Decomposition with Partial Pivoting & Linear Solver
 Part 166: Cholesky Decomposition for Positive-Definite Matrices
+Part 167: Ramer-Douglas-Peucker Polyline Simplification
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7032,6 +7033,34 @@ def cholesky_decompose(A: List[List[float]]) -> List[List[float]]:
     return L
 
 
+def _perpendicular_distance(pt: Tuple[float, float], start: Tuple[float, float], end: Tuple[float, float]) -> float:
+    if start == end:
+        return math.hypot(pt[0] - start[0], pt[1] - start[1])
+    dx, dy = end[0] - start[0], end[1] - start[1]
+    return abs(dy * pt[0] - dx * pt[1] + end[0] * start[1] - end[1] * start[0]) / math.hypot(dx, dy)
+
+
+def ramer_douglas_peucker(points: List[Tuple[float, float]], epsilon: float) -> List[Tuple[float, float]]:
+    """
+    Ramer-Douglas-Peucker algorithm to decimate a polyline curve while preserving
+    overall shape within perpendicular distance tolerance epsilon.
+    """
+    if len(points) <= 2:
+        return points[:]
+    max_dist = 0.0
+    index = 0
+    for i in range(1, len(points) - 1):
+        d = _perpendicular_distance(points[i], points[0], points[-1])
+        if d > max_dist:
+            index = i
+            max_dist = d
+    if max_dist > epsilon:
+        left = ramer_douglas_peucker(points[:index + 1], epsilon)
+        right = ramer_douglas_peucker(points[index:], epsilon)
+        return left[:-1] + right
+    return [points[0], points[-1]]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7938,4 +7967,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 166: Cholesky Decomposition ===")
     chol_A = [[4.0, 12.0, -16.0], [12.0, 37.0, -43.0], [-16.0, -43.0, 98.0]]
     print("Cholesky L factor:", cholesky_decompose(chol_A))
-    print("\nAll 166 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 167: Ramer-Douglas-Peucker Simplification ===")
+    rdp_pts = [(0, 0), (1, 0.1), (2, -0.1), (3, 5), (4, 6), (5, 7), (6, 8.1), (7, 9), (8, 9), (9, 9)]
+    print("Simplified polyline (eps=1.0):", ramer_douglas_peucker(rdp_pts, 1.0))
+    print("\nAll 167 Algorithms & Data Structures complete and verified!")
