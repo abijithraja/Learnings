@@ -164,6 +164,7 @@ Part 161: Reservoir Sampling (Algorithm R for Streaming Data)
 Part 162: Viterbi Algorithm (Hidden Markov Model Decoding)
 Part 163: Quadtree (2D Spatial Partitioning & Range Query)
 Part 164: Radix Tree / Patricia Trie (Compressed Prefix Tree)
+Part 165: LU Decomposition with Partial Pivoting & Linear Solver
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6966,6 +6967,50 @@ class RadixTree:
         return node.is_end
 
 
+def lu_decompose(A: List[List[float]]) -> Tuple[List[int], List[List[float]], List[List[float]]]:
+    """
+    Computes the PA = LU factorization of a square matrix A using partial pivoting.
+    Returns: (permutation_indices, L, U)
+    """
+    n = len(A)
+    U = [row[:] for row in A]
+    L = [[1.0 if i == j else 0.0 for j in range(n)] for i in range(n)]
+    P = list(range(n))
+
+    for k in range(n):
+        pivot = max(range(k, n), key=lambda i: abs(U[i][k]))
+        if abs(U[pivot][k]) < 1e-12:
+            raise ValueError("Matrix is singular to working precision")
+        if pivot != k:
+            U[k], U[pivot] = U[pivot], U[k]
+            P[k], P[pivot] = P[pivot], P[k]
+            for j in range(k):
+                L[k][j], L[pivot][j] = L[pivot][j], L[k][j]
+        for i in range(k + 1, n):
+            factor = U[i][k] / U[k][k]
+            L[i][k] = factor
+            for j in range(k, n):
+                U[i][j] -= factor * U[k][j]
+
+    return P, L, U
+
+
+def lu_solve(A: List[List[float]], b: List[float]) -> List[float]:
+    """Solves the linear system Ax = b via LU decomposition and forward/backward substitution."""
+    n = len(A)
+    P, L, U = lu_decompose(A)
+    pb = [b[P[i]] for i in range(n)]
+
+    y = [0.0] * n
+    for i in range(n):
+        y[i] = pb[i] - sum(L[i][j] * y[j] for j in range(i))
+
+    x = [0.0] * n
+    for i in range(n - 1, -1, -1):
+        x[i] = (y[i] - sum(U[i][j] * x[j] for j in range(i + 1, n))) / U[i][i]
+    return x
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7865,4 +7910,8 @@ if __name__ == "__main__":
     for w in ["romane", "romanus", "romulus", "rubens", "ruber"]:
         rt.insert(w)
     print("Search 'romanus':", rt.search("romanus"), "| Search 'roman':", rt.search("roman"))
-    print("\nAll 164 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 165: LU Decomposition & Linear Solver ===")
+    lu_A = [[2.0, 1.0, -1.0], [-3.0, -1.0, 2.0], [-2.0, 1.0, 2.0]]
+    lu_b = [8.0, -11.0, -3.0]
+    print("LU Solution x:", [round(v, 4) for v in lu_solve(lu_A, lu_b)])
+    print("\nAll 165 Algorithms & Data Structures complete and verified!")
