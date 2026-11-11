@@ -162,6 +162,7 @@ Part 159: CYK (Cocke-Younger-Kasami) Context-Free Grammar Parser
 Part 160: Vose's Alias Method (O(1) Weighted Discrete Sampling)
 Part 161: Reservoir Sampling (Algorithm R for Streaming Data)
 Part 162: Viterbi Algorithm (Hidden Markov Model Decoding)
+Part 163: Quadtree (2D Spatial Partitioning & Range Query)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -6839,6 +6840,68 @@ def viterbi_decode(
     return best_prob, path[best_state]
 
 
+class QTRect:
+    """Axis-aligned bounding rectangle centered at (x, y) with half-dimensions (w, h)."""
+    def __init__(self, x: float, y: float, w: float, h: float):
+        self.x, self.y, self.w, self.h = x, y, w, h
+
+    def contains(self, pt: Tuple[float, float]) -> bool:
+        return (self.x - self.w <= pt[0] <= self.x + self.w and
+                self.y - self.h <= pt[1] <= self.y + self.h)
+
+    def intersects(self, other: "QTRect") -> bool:
+        return not (other.x - other.w > self.x + self.w or
+                    other.x + other.w < self.x - self.w or
+                    other.y - other.h > self.y + self.h or
+                    other.y + other.h < self.y - self.h)
+
+
+class Quadtree:
+    """
+    2D Point Quadtree for spatial partitioning and rectangular range queries.
+    Subdivides space into four quadrants (NW, NE, SW, SE) once capacity is exceeded.
+    """
+    def __init__(self, boundary: QTRect, capacity: int = 4):
+        self.boundary = boundary
+        self.capacity = capacity
+        self.points: List[Tuple[float, float]] = []
+        self.divided = False
+        self.nw = self.ne = self.sw = self.se = None
+
+    def subdivide(self) -> None:
+        x, y, w, h = self.boundary.x, self.boundary.y, self.boundary.w / 2, self.boundary.h / 2
+        self.nw = Quadtree(QTRect(x - w, y + h, w, h), self.capacity)
+        self.ne = Quadtree(QTRect(x + w, y + h, w, h), self.capacity)
+        self.sw = Quadtree(QTRect(x - w, y - h, w, h), self.capacity)
+        self.se = Quadtree(QTRect(x + w, y - h, w, h), self.capacity)
+        self.divided = True
+
+    def insert(self, pt: Tuple[float, float]) -> bool:
+        if not self.boundary.contains(pt):
+            return False
+        if len(self.points) < self.capacity:
+            self.points.append(pt)
+            return True
+        if not self.divided:
+            self.subdivide()
+        return (self.nw.insert(pt) or self.ne.insert(pt) or
+                self.sw.insert(pt) or self.se.insert(pt))
+
+    def query(self, range_rect: QTRect) -> List[Tuple[float, float]]:
+        found: List[Tuple[float, float]] = []
+        if not self.boundary.intersects(range_rect):
+            return found
+        for p in self.points:
+            if range_rect.contains(p):
+                found.append(p)
+        if self.divided:
+            found.extend(self.nw.query(range_rect))
+            found.extend(self.ne.query(range_rect))
+            found.extend(self.sw.query(range_rect))
+            found.extend(self.se.query(range_rect))
+        return found
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7728,4 +7791,9 @@ if __name__ == "__main__":
     hmm_emit = {"Rainy": {"walk": 0.1, "shop": 0.4, "clean": 0.5}, "Sunny": {"walk": 0.6, "shop": 0.3, "clean": 0.1}}
     v_prob, v_path = viterbi_decode(hmm_obs, hmm_states, hmm_start, hmm_trans, hmm_emit)
     print(f"Viterbi Max Prob: {v_prob:.5f}, State Sequence: {v_path}")
-    print("\nAll 162 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 163: 2D Quadtree Spatial Partitioning ===")
+    qt = Quadtree(QTRect(50, 50, 50, 50), capacity=2)
+    for pt in [(10, 10), (20, 20), (25, 25), (80, 80), (60, 40)]:
+        qt.insert(pt)
+    print("Quadtree range query [0..30, 0..30]:", qt.query(QTRect(15, 15, 15, 15)))
+    print("\nAll 163 Algorithms & Data Structures complete and verified!")
