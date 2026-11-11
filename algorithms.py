@@ -165,6 +165,7 @@ Part 162: Viterbi Algorithm (Hidden Markov Model Decoding)
 Part 163: Quadtree (2D Spatial Partitioning & Range Query)
 Part 164: Radix Tree / Patricia Trie (Compressed Prefix Tree)
 Part 165: LU Decomposition with Partial Pivoting & Linear Solver
+Part 166: Cholesky Decomposition for Positive-Definite Matrices
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7011,6 +7012,26 @@ def lu_solve(A: List[List[float]], b: List[float]) -> List[float]:
     return x
 
 
+def cholesky_decompose(A: List[List[float]]) -> List[List[float]]:
+    """
+    Computes the Cholesky factorization A = L * L^T for a symmetric,
+    positive-definite matrix A, returning the lower-triangular factor L.
+    """
+    n = len(A)
+    L = [[0.0] * n for _ in range(n)]
+    for i in range(n):
+        for j in range(i + 1):
+            s = sum(L[i][k] * L[j][k] for k in range(j))
+            if i == j:
+                val = A[i][i] - s
+                if val <= 0:
+                    raise ValueError("Matrix is not positive definite")
+                L[i][j] = math.sqrt(val)
+            else:
+                L[i][j] = (A[i][j] - s) / L[j][j]
+    return L
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -7914,4 +7935,7 @@ if __name__ == "__main__":
     lu_A = [[2.0, 1.0, -1.0], [-3.0, -1.0, 2.0], [-2.0, 1.0, 2.0]]
     lu_b = [8.0, -11.0, -3.0]
     print("LU Solution x:", [round(v, 4) for v in lu_solve(lu_A, lu_b)])
-    print("\nAll 165 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 166: Cholesky Decomposition ===")
+    chol_A = [[4.0, 12.0, -16.0], [12.0, 37.0, -43.0], [-16.0, -43.0, 98.0]]
+    print("Cholesky L factor:", cholesky_decompose(chol_A))
+    print("\nAll 166 Algorithms & Data Structures complete and verified!")
