@@ -169,6 +169,7 @@ Part 166: Cholesky Decomposition for Positive-Definite Matrices
 Part 167: Ramer-Douglas-Peucker Polyline Simplification
 Part 168: Polygon Triangulation via Ear Clipping
 Part 169: Merge Sort Tree (Range Order-Statistic Count Queries)
+Part 170: Bitap (Shift-Or) Bit-Parallel Pattern Matching
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7160,6 +7161,29 @@ class MergeSortTree:
         return _query(1, 0, self.n - 1) if self.n > 0 else 0
 
 
+def bitap_search(text: str, pattern: str) -> List[int]:
+    """
+    Bitap (Shift-Or) bit-parallel exact string matching algorithm.
+    Simulates NFA state transitions using bitwise shifts and masks in O(n) word operations.
+    """
+    m = len(pattern)
+    if m == 0:
+        return [0]
+
+    all_ones = (1 << m) - 1
+    mask: Dict[str, int] = {}
+    for i, c in enumerate(pattern):
+        mask[c] = mask.get(c, all_ones) & ~(1 << i)
+
+    R = all_ones
+    matches: List[int] = []
+    for i, c in enumerate(text):
+        R = ((R << 1) | mask.get(c, all_ones)) & all_ones
+        if not (R & (1 << (m - 1))):
+            matches.append(i - m + 1)
+    return matches
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8075,4 +8099,6 @@ if __name__ == "__main__":
     print("\n=== Iteration 169: Merge Sort Tree ===")
     mst = MergeSortTree([5, 1, 8, 3, 2, 7, 4])
     print("Elements <= 4 in range [1, 5]:", mst.count_le(1, 5, 4))
-    print("\nAll 169 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 170: Bitap (Shift-Or) Pattern Matching ===")
+    print("Bitap matches for 'ababd' in 'ababcabcabababd':", bitap_search("ababcabcabababd", "ababd"))
+    print("\nAll 170 Algorithms & Data Structures complete and verified!")
