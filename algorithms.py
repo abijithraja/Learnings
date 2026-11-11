@@ -171,6 +171,7 @@ Part 168: Polygon Triangulation via Ear Clipping
 Part 169: Merge Sort Tree (Range Order-Statistic Count Queries)
 Part 170: Bitap (Shift-Or) Bit-Parallel Pattern Matching
 Part 171: PageRank Power Iteration Algorithm
+Part 172: Bresenham's Line Drawing Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7209,6 +7210,32 @@ def pagerank(n: int, edges: List[Tuple[int, int]], damping: float = 0.85, iterat
     return ranks
 
 
+def bresenham_line(x0: int, y0: int, x1: int, y1: int) -> List[Tuple[int, int]]:
+    """
+    Bresenham's integer-only line rasterization algorithm generating grid pixels
+    between (x0, y0) and (x1, y1) across all octants.
+    """
+    points: List[Tuple[int, int]] = []
+    dx = abs(x1 - x0)
+    dy = abs(y1 - y0)
+    sx = 1 if x0 < x1 else -1
+    sy = 1 if y0 < y1 else -1
+    err = dx - dy
+
+    while True:
+        points.append((x0, y0))
+        if x0 == x1 and y0 == y1:
+            break
+        e2 = 2 * err
+        if e2 > -dy:
+            err -= dy
+            x0 += sx
+        if e2 < dx:
+            err += dx
+            y0 += sy
+    return points
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8129,4 +8156,6 @@ if __name__ == "__main__":
     print("\n=== Iteration 171: PageRank Power Iteration ===")
     pr_edges = [(0, 1), (0, 2), (1, 2), (2, 0), (3, 2)]
     print("PageRank scores:", [round(r, 4) for r in pagerank(4, pr_edges)])
-    print("\nAll 171 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 172: Bresenham's Line Drawing Algorithm ===")
+    print("Line (0, 1) -> (6, 4):", bresenham_line(0, 1, 6, 4))
+    print("\nAll 172 Algorithms & Data Structures complete and verified!")
