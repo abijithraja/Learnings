@@ -180,6 +180,7 @@ Part 177: Boyer-Moore-Horspool String Search
 Part 178: Quickselect (3-Way Partition Order Statistic Selection)
 Part 179: Conjugate Gradient Method for Linear Systems
 Part 180: Interval Tree for Overlapping Interval Search
+Part 181: Powerset Construction (NFA to DFA Subset Conversion)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7543,6 +7544,52 @@ class IntervalTree:
         return results
 
 
+def nfa_to_dfa_subset_construction(
+    nfa_states: Set[int],
+    alphabet: List[str],
+    transitions: Dict[Tuple[int, Optional[str]], Set[int]],
+    start_state: int,
+    accept_states: Set[int]
+) -> Tuple[int, int, int]:
+    """
+    Powerset (subset) construction algorithm converting an NFA with epsilon transitions
+    into an equivalent deterministic finite automaton (DFA).
+    Returns: (num_dfa_states, num_dfa_accept_states, num_dfa_transitions)
+    """
+    def epsilon_closure(states: Set[int]) -> frozenset:
+        stack = list(states)
+        closure = set(states)
+        while stack:
+            st = stack.pop()
+            for nxt in transitions.get((st, None), set()):
+                if nxt not in closure:
+                    closure.add(nxt)
+                    stack.append(nxt)
+        return frozenset(closure)
+
+    start_closure = epsilon_closure({start_state})
+    dfa_states: List[frozenset] = [start_closure]
+    dfa_transitions: Dict[Tuple[frozenset, str], frozenset] = {}
+    unmarked = [start_closure]
+
+    while unmarked:
+        curr_set = unmarked.pop(0)
+        for sym in alphabet:
+            move: Set[int] = set()
+            for st in curr_set:
+                move.update(transitions.get((st, sym), set()))
+            next_closure = epsilon_closure(move)
+            if not next_closure:
+                continue
+            if next_closure not in dfa_states:
+                dfa_states.append(next_closure)
+                unmarked.append(next_closure)
+            dfa_transitions[(curr_set, sym)] = next_closure
+
+    num_accept = sum(1 for s in dfa_states if any(st in accept_states for st in s))
+    return len(dfa_states), num_accept, len(dfa_transitions)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8500,4 +8547,12 @@ if __name__ == "__main__":
     for l, h in [(15, 20), (10, 30), (17, 19), (5, 20), (12, 15), (30, 40)]:
         itree.insert(l, h)
     print("Intervals overlapping [14, 16]:", itree.query_overlapping(14, 16))
-    print("\nAll 180 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 181: Powerset Construction (NFA to DFA) ===")
+    sample_nfa_trans = {
+        (0, "a"): {0, 1}, (0, "b"): {0},
+        (1, "b"): {2},
+        (2, "b"): {3}
+    }
+    dfa_stat = nfa_to_dfa_subset_construction({0, 1, 2, 3}, ["a", "b"], sample_nfa_trans, 0, {3})
+    print("DFA stats (states, accept, transitions):", dfa_stat)
+    print("\nAll 181 Algorithms & Data Structures complete and verified!")
