@@ -174,6 +174,7 @@ Part 171: PageRank Power Iteration Algorithm
 Part 172: Bresenham's Line Drawing Algorithm
 Part 173: Separating Axis Theorem (SAT) for 2D Convex Polygon Collision
 Part 174: Midpoint Circle Drawing Algorithm (Bresenham Circle)
+Part 175: Scanline Flood Fill Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7291,6 +7292,44 @@ def midpoint_circle(xc: int, yc: int, r: int) -> List[Tuple[int, int]]:
     return sorted(list(points))
 
 
+def scanline_flood_fill(grid: List[List[int]], sr: int, sc: int, new_val: int) -> List[List[int]]:
+    """
+    Scanline Flood Fill algorithm filling contiguous connected regions
+    row by row without deep recursive stack overhead.
+    """
+    rows, cols = len(grid), len(grid[0])
+    orig_val = grid[sr][sc]
+    if orig_val == new_val:
+        return grid
+
+    stack: List[Tuple[int, int]] = [(sr, sc)]
+    while stack:
+        r, c = stack.pop()
+        left = c
+        while left >= 0 and grid[r][left] == orig_val:
+            left -= 1
+        left += 1
+
+        right = c
+        while right < cols and grid[r][right] == orig_val:
+            right += 1
+        right -= 1
+
+        for col in range(left, right + 1):
+            grid[r][col] = new_val
+
+        for nr in (r - 1, r + 1):
+            if 0 <= nr < rows:
+                col = left
+                while col <= right:
+                    if grid[nr][col] == orig_val:
+                        stack.append((nr, col))
+                        while col <= right and grid[nr][col] == orig_val:
+                            col += 1
+                    col += 1
+    return grid
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8222,4 +8261,13 @@ if __name__ == "__main__":
     print("\n=== Iteration 174: Midpoint Circle Drawing Algorithm ===")
     circ_pts = midpoint_circle(0, 0, 3)
     print(f"Midpoint Circle (r=3) pixel count: {len(circ_pts)}")
-    print("\nAll 174 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 175: Scanline Flood Fill ===")
+    fill_grid = [
+        [1, 1, 1, 0, 0],
+        [1, 1, 0, 0, 0],
+        [1, 0, 0, 2, 2],
+        [0, 0, 2, 2, 2]
+    ]
+    scanline_flood_fill(fill_grid, 0, 0, 9)
+    print("Filled row 0:", fill_grid[0])
+    print("\nAll 175 Algorithms & Data Structures complete and verified!")
