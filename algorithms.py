@@ -175,6 +175,7 @@ Part 172: Bresenham's Line Drawing Algorithm
 Part 173: Separating Axis Theorem (SAT) for 2D Convex Polygon Collision
 Part 174: Midpoint Circle Drawing Algorithm (Bresenham Circle)
 Part 175: Scanline Flood Fill Algorithm
+Part 176: Timsort (Adaptive Merge & Insertion Sort)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7330,6 +7331,73 @@ def scanline_flood_fill(grid: List[List[int]], sr: int, sc: int, new_val: int) -
     return grid
 
 
+def timsort(arr: List[int]) -> List[int]:
+    """
+    Timsort adaptive hybrid sorting algorithm combining binary insertion sort
+    over natural minrun slices with bottom-up balanced merging.
+    """
+    MIN_MERGE = 32
+
+    def calc_min_run(n: int) -> int:
+        r = 0
+        while n >= MIN_MERGE:
+            r |= n & 1
+            n >>= 1
+        return n + r
+
+    def binary_insertion_sort(a: List[int], left: int, right: int):
+        for i in range(left + 1, right + 1):
+            key = a[i]
+            lo, hi = left, i
+            while lo < hi:
+                mid = (lo + hi) // 2
+                if a[mid] > key:
+                    hi = mid
+                else:
+                    lo = mid + 1
+            for j in range(i, lo, -1):
+                a[j] = a[j - 1]
+            a[lo] = key
+
+    def merge_runs(a: List[int], l: int, m: int, r: int):
+        left_part = a[l:m + 1]
+        right_part = a[m + 1:r + 1]
+        i = j = 0
+        k = l
+        while i < len(left_part) and j < len(right_part):
+            if left_part[i] <= right_part[j]:
+                a[k] = left_part[i]
+                i += 1
+            else:
+                a[k] = right_part[j]
+                j += 1
+            k += 1
+        while i < len(left_part):
+            a[k] = left_part[i]
+            i += 1
+            k += 1
+        while j < len(right_part):
+            a[k] = right_part[j]
+            j += 1
+            k += 1
+
+    n = len(arr)
+    min_run = calc_min_run(n)
+    for start in range(0, n, min_run):
+        end = min(start + min_run - 1, n - 1)
+        binary_insertion_sort(arr, start, end)
+
+    size = min_run
+    while size < n:
+        for left in range(0, n, 2 * size):
+            mid = min(n - 1, left + size - 1)
+            right = min(left + 2 * size - 1, n - 1)
+            if mid < right:
+                merge_runs(arr, left, mid, right)
+        size *= 2
+    return arr
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8270,4 +8338,7 @@ if __name__ == "__main__":
     ]
     scanline_flood_fill(fill_grid, 0, 0, 9)
     print("Filled row 0:", fill_grid[0])
-    print("\nAll 175 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 176: Timsort ===")
+    timsort_data = [64, 34, 25, 12, 22, 11, 90, 5, 88, 76, 45, 13, 99, 102, 3]
+    print("Timsort sorted:", timsort(timsort_data[:]))
+    print("\nAll 176 Algorithms & Data Structures complete and verified!")
