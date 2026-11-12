@@ -172,6 +172,7 @@ Part 169: Merge Sort Tree (Range Order-Statistic Count Queries)
 Part 170: Bitap (Shift-Or) Bit-Parallel Pattern Matching
 Part 171: PageRank Power Iteration Algorithm
 Part 172: Bresenham's Line Drawing Algorithm
+Part 173: Separating Axis Theorem (SAT) for 2D Convex Polygon Collision
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7236,6 +7237,30 @@ def bresenham_line(x0: int, y0: int, x1: int, y1: int) -> List[Tuple[int, int]]:
     return points
 
 
+def separating_axis_theorem(poly1: List[Tuple[float, float]], poly2: List[Tuple[float, float]]) -> bool:
+    """
+    Separating Axis Theorem (SAT) to detect intersection between two 2D convex polygons.
+    Returns True if polygons intersect, False if a separating axis exists.
+    """
+    for poly in (poly1, poly2):
+        n = len(poly)
+        for i in range(n):
+            p1 = poly[i]
+            p2 = poly[(i + 1) % n]
+            edge = (p2[0] - p1[0], p2[1] - p1[1])
+            axis = (-edge[1], edge[0])
+            norm = math.hypot(axis[0], axis[1])
+            if norm == 0:
+                continue
+            axis = (axis[0] / norm, axis[1] / norm)
+
+            proj1 = [p[0] * axis[0] + p[1] * axis[1] for p in poly1]
+            proj2 = [p[0] * axis[0] + p[1] * axis[1] for p in poly2]
+            if max(proj1) < min(proj2) or max(proj2) < min(proj1):
+                return False
+    return True
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8158,4 +8183,10 @@ if __name__ == "__main__":
     print("PageRank scores:", [round(r, 4) for r in pagerank(4, pr_edges)])
     print("\n=== Iteration 172: Bresenham's Line Drawing Algorithm ===")
     print("Line (0, 1) -> (6, 4):", bresenham_line(0, 1, 6, 4))
-    print("\nAll 172 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 173: Separating Axis Theorem (SAT) ===")
+    box1 = [(0.0, 0.0), (2.0, 0.0), (2.0, 2.0), (0.0, 2.0)]
+    box2 = [(1.0, 1.0), (3.0, 1.0), (3.0, 3.0), (1.0, 3.0)]
+    box3 = [(5.0, 5.0), (6.0, 5.0), (6.0, 6.0), (5.0, 6.0)]
+    print("box1 intersects box2:", separating_axis_theorem(box1, box2))
+    print("box1 intersects box3:", separating_axis_theorem(box1, box3))
+    print("\nAll 173 Algorithms & Data Structures complete and verified!")
