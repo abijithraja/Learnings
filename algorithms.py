@@ -177,6 +177,7 @@ Part 174: Midpoint Circle Drawing Algorithm (Bresenham Circle)
 Part 175: Scanline Flood Fill Algorithm
 Part 176: Timsort (Adaptive Merge & Insertion Sort)
 Part 177: Boyer-Moore-Horspool String Search
+Part 178: Quickselect (3-Way Partition Order Statistic Selection)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7427,6 +7428,42 @@ def horspool_search(text: str, pattern: str) -> List[int]:
     return matches
 
 
+def quickselect(arr: List[int], k: int, rng: Optional[random.Random] = None) -> int:
+    """
+    Finds the k-th smallest element (0-indexed) in expected O(n) time
+    using Dutch National Flag 3-way partitioning.
+    """
+    r = rng if rng else random.Random(42)
+
+    def _select(a: List[int], left: int, right: int, k_idx: int) -> int:
+        if left == right:
+            return a[left]
+        pivot_idx = r.randint(left, right)
+        pivot = a[pivot_idx]
+
+        lt = left
+        gt = right
+        i = left
+        while i <= gt:
+            if a[i] < pivot:
+                a[lt], a[i] = a[i], a[lt]
+                lt += 1
+                i += 1
+            elif a[i] > pivot:
+                a[gt], a[i] = a[i], a[gt]
+                gt -= 1
+            else:
+                i += 1
+
+        if k_idx < lt:
+            return _select(a, left, lt - 1, k_idx)
+        elif k_idx > gt:
+            return _select(a, gt + 1, right, k_idx)
+        return pivot
+
+    return _select(arr[:], 0, len(arr) - 1, k)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8372,4 +8409,7 @@ if __name__ == "__main__":
     print("Timsort sorted:", timsort(timsort_data[:]))
     print("\n=== Iteration 177: Boyer-Moore-Horspool String Search ===")
     print("Horspool matches:", horspool_search("BESS_KNEW_ABOUT_BAOBABS", "BAOBAB"))
-    print("\nAll 177 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 178: Quickselect ===")
+    qs_data = [9, 2, 7, 1, 8, 3, 5, 6, 4, 0]
+    print("4th smallest element:", quickselect(qs_data, 4))
+    print("\nAll 178 Algorithms & Data Structures complete and verified!")
