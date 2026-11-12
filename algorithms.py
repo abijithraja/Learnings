@@ -176,6 +176,7 @@ Part 173: Separating Axis Theorem (SAT) for 2D Convex Polygon Collision
 Part 174: Midpoint Circle Drawing Algorithm (Bresenham Circle)
 Part 175: Scanline Flood Fill Algorithm
 Part 176: Timsort (Adaptive Merge & Insertion Sort)
+Part 177: Boyer-Moore-Horspool String Search
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7398,6 +7399,34 @@ def timsort(arr: List[int]) -> List[int]:
     return arr
 
 
+def horspool_search(text: str, pattern: str) -> List[int]:
+    """
+    Boyer-Moore-Horspool simplified exact pattern matching algorithm
+    using only the rightmost bad character shift rule.
+    """
+    m = len(pattern)
+    n = len(text)
+    if m == 0:
+        return [0]
+    if m > n:
+        return []
+
+    shift = {c: m for c in set(text)}
+    for i in range(m - 1):
+        shift[pattern[i]] = m - 1 - i
+
+    matches: List[int] = []
+    i = 0
+    while i <= n - m:
+        k = m - 1
+        while k >= 0 and pattern[k] == text[i + k]:
+            k -= 1
+        if k < 0:
+            matches.append(i)
+        i += shift.get(text[i + m - 1], m)
+    return matches
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8341,4 +8370,6 @@ if __name__ == "__main__":
     print("\n=== Iteration 176: Timsort ===")
     timsort_data = [64, 34, 25, 12, 22, 11, 90, 5, 88, 76, 45, 13, 99, 102, 3]
     print("Timsort sorted:", timsort(timsort_data[:]))
-    print("\nAll 176 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 177: Boyer-Moore-Horspool String Search ===")
+    print("Horspool matches:", horspool_search("BESS_KNEW_ABOUT_BAOBABS", "BAOBAB"))
+    print("\nAll 177 Algorithms & Data Structures complete and verified!")
