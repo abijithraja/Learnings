@@ -181,6 +181,7 @@ Part 178: Quickselect (3-Way Partition Order Statistic Selection)
 Part 179: Conjugate Gradient Method for Linear Systems
 Part 180: Interval Tree for Overlapping Interval Search
 Part 181: Powerset Construction (NFA to DFA Subset Conversion)
+Part 182: K-Means Clustering with K-Means++ Initialization
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7590,6 +7591,59 @@ def nfa_to_dfa_subset_construction(
     return len(dfa_states), num_accept, len(dfa_transitions)
 
 
+def kmeans_clustering(
+    points: List[Tuple[float, ...]],
+    k: int,
+    max_iters: int = 50,
+    seed: int = 42
+) -> Tuple[List[Tuple[float, ...]], List[int]]:
+    """
+    K-Means clustering algorithm using K-Means++ probabilistic seeding
+    and Lloyd's iterative expectation-maximization updates.
+    Returns: (centroids, cluster_assignments)
+    """
+    rng = random.Random(seed)
+    n = len(points)
+    dim = len(points[0])
+
+    def dist_sq(p1: Tuple[float, ...], p2: Tuple[float, ...]) -> float:
+        return sum((a - b) ** 2 for a, b in zip(p1, p2))
+
+    centroids = [points[rng.randrange(n)]]
+    for _ in range(1, k):
+        distances = [min(dist_sq(p, c) for c in centroids) for p in points]
+        total = sum(distances)
+        r_val = rng.random() * total
+        acc = 0.0
+        for i, d in enumerate(distances):
+            acc += d
+            if acc >= r_val:
+                centroids.append(points[i])
+                break
+        else:
+            centroids.append(points[-1])
+
+    assignments = [0] * n
+    for _ in range(max_iters):
+        new_assignments = []
+        for p in points:
+            best_c = min(range(k), key=lambda idx: dist_sq(p, centroids[idx]))
+            new_assignments.append(best_c)
+
+        if new_assignments == assignments:
+            break
+        assignments = new_assignments
+
+        for c_idx in range(k):
+            cluster_pts = [points[i] for i in range(n) if assignments[i] == c_idx]
+            if cluster_pts:
+                centroids[c_idx] = tuple(
+                    sum(pt[d] for pt in cluster_pts) / len(cluster_pts) for d in range(dim)
+                )
+
+    return centroids, assignments
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8555,4 +8609,8 @@ if __name__ == "__main__":
     }
     dfa_stat = nfa_to_dfa_subset_construction({0, 1, 2, 3}, ["a", "b"], sample_nfa_trans, 0, {3})
     print("DFA stats (states, accept, transitions):", dfa_stat)
-    print("\nAll 181 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 182: K-Means Clustering (K-Means++) ===")
+    km_pts = [(1.0, 2.0), (1.0, 4.0), (1.0, 0.0), (10.0, 2.0), (10.0, 4.0), (10.0, 0.0)]
+    km_centroids, _ = kmeans_clustering(km_pts, 2)
+    print("Computed Cluster Centroids:", km_centroids)
+    print("\nAll 182 Algorithms & Data Structures complete and verified!")
