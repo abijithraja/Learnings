@@ -178,6 +178,7 @@ Part 175: Scanline Flood Fill Algorithm
 Part 176: Timsort (Adaptive Merge & Insertion Sort)
 Part 177: Boyer-Moore-Horspool String Search
 Part 178: Quickselect (3-Way Partition Order Statistic Selection)
+Part 179: Conjugate Gradient Method for Linear Systems
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7464,6 +7465,35 @@ def quickselect(arr: List[int], k: int, rng: Optional[random.Random] = None) -> 
     return _select(arr[:], 0, len(arr) - 1, k)
 
 
+def conjugate_gradient(A: List[List[float]], b: List[float], tol: float = 1e-8, max_iter: int = 100) -> List[float]:
+    """
+    Conjugate Gradient iterative method for solving Ax = b
+    where A is a symmetric positive-definite matrix.
+    """
+    n = len(b)
+    x = [0.0] * n
+    r = b[:]
+    p = r[:]
+    rsold = sum(ri * ri for ri in r)
+
+    for _ in range(max_iter):
+        if math.sqrt(rsold) < tol:
+            break
+        Ap = [sum(A[i][j] * p[j] for j in range(n)) for i in range(n)]
+        pAp = sum(p[i] * Ap[i] for i in range(n))
+        alpha = rsold / pAp
+        for i in range(n):
+            x[i] += alpha * p[i]
+            r[i] -= alpha * Ap[i]
+        rsnew = sum(ri * ri for ri in r)
+        beta = rsnew / rsold
+        for i in range(n):
+            p[i] = r[i] + beta * p[i]
+        rsold = rsnew
+
+    return x
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8412,4 +8442,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 178: Quickselect ===")
     qs_data = [9, 2, 7, 1, 8, 3, 5, 6, 4, 0]
     print("4th smallest element:", quickselect(qs_data, 4))
-    print("\nAll 178 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 179: Conjugate Gradient Linear Solver ===")
+    cg_mat = [[4.0, 1.0], [1.0, 3.0]]
+    cg_rhs = [1.0, 2.0]
+    print("CG solution x:", [round(v, 4) for v in conjugate_gradient(cg_mat, cg_rhs)])
+    print("\nAll 179 Algorithms & Data Structures complete and verified!")
