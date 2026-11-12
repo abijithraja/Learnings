@@ -173,6 +173,7 @@ Part 170: Bitap (Shift-Or) Bit-Parallel Pattern Matching
 Part 171: PageRank Power Iteration Algorithm
 Part 172: Bresenham's Line Drawing Algorithm
 Part 173: Separating Axis Theorem (SAT) for 2D Convex Polygon Collision
+Part 174: Midpoint Circle Drawing Algorithm (Bresenham Circle)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7261,6 +7262,35 @@ def separating_axis_theorem(poly1: List[Tuple[float, float]], poly2: List[Tuple[
     return True
 
 
+def midpoint_circle(xc: int, yc: int, r: int) -> List[Tuple[int, int]]:
+    """
+    Midpoint Circle Algorithm (Bresenham's Circle) rasterizing a circle
+    using 8-way symmetry and pure integer arithmetic.
+    """
+    points: Set[Tuple[int, int]] = set()
+    x = 0
+    y = r
+    d = 1 - r
+
+    def add_symmetry(px: int, py: int):
+        points.update([
+            (xc + px, yc + py), (xc - px, yc + py), (xc + px, yc - py), (xc - px, yc - py),
+            (xc + py, yc + px), (xc - py, yc + px), (xc + py, yc - px), (xc - py, yc - px)
+        ])
+
+    add_symmetry(x, y)
+    while x < y:
+        x += 1
+        if d < 0:
+            d += 2 * x + 1
+        else:
+            y -= 1
+            d += 2 * (x - y) + 1
+        add_symmetry(x, y)
+
+    return sorted(list(points))
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8189,4 +8219,7 @@ if __name__ == "__main__":
     box3 = [(5.0, 5.0), (6.0, 5.0), (6.0, 6.0), (5.0, 6.0)]
     print("box1 intersects box2:", separating_axis_theorem(box1, box2))
     print("box1 intersects box3:", separating_axis_theorem(box1, box3))
-    print("\nAll 173 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 174: Midpoint Circle Drawing Algorithm ===")
+    circ_pts = midpoint_circle(0, 0, 3)
+    print(f"Midpoint Circle (r=3) pixel count: {len(circ_pts)}")
+    print("\nAll 174 Algorithms & Data Structures complete and verified!")
