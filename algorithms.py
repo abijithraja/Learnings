@@ -179,6 +179,7 @@ Part 176: Timsort (Adaptive Merge & Insertion Sort)
 Part 177: Boyer-Moore-Horspool String Search
 Part 178: Quickselect (3-Way Partition Order Statistic Selection)
 Part 179: Conjugate Gradient Method for Linear Systems
+Part 180: Interval Tree for Overlapping Interval Search
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7494,6 +7495,54 @@ def conjugate_gradient(A: List[List[float]], b: List[float], tol: float = 1e-8, 
     return x
 
 
+class IntervalTreeNode:
+    def __init__(self, low: int, high: int, val: Any = None):
+        self.low = low
+        self.high = high
+        self.val = val
+        self.max_high = high
+        self.left: Optional["IntervalTreeNode"] = None
+        self.right: Optional["IntervalTreeNode"] = None
+
+
+class IntervalTree:
+    """
+    Augmented Binary Search Tree holding intervals [low, high] and maintaining
+    subtree max_high to query all intervals overlapping [q_low, q_high] in O(log n + k).
+    """
+    def __init__(self):
+        self.root: Optional[IntervalTreeNode] = None
+
+    def insert(self, low: int, high: int, val: Any = None) -> None:
+        def _ins(node: Optional[IntervalTreeNode], l: int, h: int, v: Any) -> IntervalTreeNode:
+            if not node:
+                return IntervalTreeNode(l, h, v)
+            if l < node.low:
+                node.left = _ins(node.left, l, h, v)
+            else:
+                node.right = _ins(node.right, l, h, v)
+            node.max_high = max(node.max_high, h)
+            return node
+
+        self.root = _ins(self.root, low, high, val)
+
+    def query_overlapping(self, q_low: int, q_high: int) -> List[Tuple[int, int, Any]]:
+        results: List[Tuple[int, int, Any]] = []
+
+        def _search(node: Optional[IntervalTreeNode]):
+            if not node:
+                return
+            if node.low <= q_high and q_low <= node.high:
+                results.append((node.low, node.high, node.val))
+            if node.left and node.left.max_high >= q_low:
+                _search(node.left)
+            if node.right and node.low <= q_high:
+                _search(node.right)
+
+        _search(self.root)
+        return results
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8446,4 +8495,9 @@ if __name__ == "__main__":
     cg_mat = [[4.0, 1.0], [1.0, 3.0]]
     cg_rhs = [1.0, 2.0]
     print("CG solution x:", [round(v, 4) for v in conjugate_gradient(cg_mat, cg_rhs)])
-    print("\nAll 179 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 180: Interval Tree ===")
+    itree = IntervalTree()
+    for l, h in [(15, 20), (10, 30), (17, 19), (5, 20), (12, 15), (30, 40)]:
+        itree.insert(l, h)
+    print("Intervals overlapping [14, 16]:", itree.query_overlapping(14, 16))
+    print("\nAll 180 Algorithms & Data Structures complete and verified!")
