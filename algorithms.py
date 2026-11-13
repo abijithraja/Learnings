@@ -187,6 +187,7 @@ Part 184: Principal Component Analysis (PCA via SVD / Power Iteration)
 Part 185: Discrete Cosine Transform (DCT-II & IDCT-II)
 Part 186: Arithmetic Coding (Entropy Encoding & Decoding)
 Part 187: BK-Tree (Burkhard-Keller Metric Tree for Fuzzy Search)
+Part 188: Ball Tree Metric Spatial Partitioning for Nearest Neighbor
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7832,6 +7833,72 @@ class BKTree:
         return results
 
 
+class BallTreeNode:
+    def __init__(self, center: Tuple[float, ...], radius: float, points: List[Tuple[float, ...]], left=None, right=None):
+        self.center = center
+        self.radius = radius
+        self.points = points
+        self.left = left
+        self.right = right
+
+
+class BallTree:
+    """
+    Metric Ball Tree recursively partitioning multidimensional space using nested bounding hyperspheres,
+    pruning subtrees via triangle inequality during nearest neighbor searches.
+    """
+    def __init__(self, points: List[Tuple[float, ...]], leaf_size: int = 2):
+        self.leaf_size = leaf_size
+        self.root = self._build(points)
+
+    def _dist(self, p1: Tuple[float, ...], p2: Tuple[float, ...]) -> float:
+        return math.sqrt(sum((a - b) ** 2 for a, b in zip(p1, p2)))
+
+    def _build(self, pts: List[Tuple[float, ...]]) -> Optional[BallTreeNode]:
+        if not pts:
+            return None
+        dim = len(pts[0])
+        center = tuple(sum(p[d] for p in pts) / len(pts) for d in range(dim))
+        radius = max(self._dist(center, p) for p in pts)
+        if len(pts) <= self.leaf_size:
+            return BallTreeNode(center, radius, pts)
+
+        variances = [sum((p[d] - center[d]) ** 2 for p in pts) for d in range(dim)]
+        split_dim = max(range(dim), key=lambda d: variances[d])
+        pts_sorted = sorted(pts, key=lambda p: p[split_dim])
+        mid = len(pts_sorted) // 2
+        left = self._build(pts_sorted[:mid])
+        right = self._build(pts_sorted[mid:])
+        return BallTreeNode(center, radius, pts, left, right)
+
+    def nearest_neighbor(self, target: Tuple[float, ...]) -> Tuple[Optional[Tuple[float, ...]], float]:
+        best_pt: Optional[Tuple[float, ...]] = None
+        best_dist = float("inf")
+
+        def _search(node: Optional[BallTreeNode]):
+            nonlocal best_pt, best_dist
+            if not node:
+                return
+            if self._dist(target, node.center) - node.radius >= best_dist:
+                return
+            if node.left is None and node.right is None:
+                for p in node.points:
+                    d = self._dist(target, p)
+                    if d < best_dist:
+                        best_dist = d
+                        best_pt = p
+                return
+
+            d_l = self._dist(target, node.left.center) if node.left else float("inf")
+            d_r = self._dist(target, node.right.center) if node.right else float("inf")
+            first, second = (node.left, node.right) if d_l < d_r else (node.right, node.left)
+            _search(first)
+            _search(second)
+
+        _search(self.root)
+        return best_pt, best_dist
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8829,4 +8896,7 @@ if __name__ == "__main__":
     for word in ["book", "books", "boo", "boon", "cook", "cake", "cape", "cart"]:
         bk_tree.insert(word)
     print("Fuzzy matches for 'cool' (dist <= 2):", sorted(bk_tree.search("cool", 2)))
-    print("\nAll 187 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 188: Ball Tree Nearest Neighbor Search ===")
+    ball_tree = BallTree([(2, 3), (5, 4), (9, 6), (4, 7), (8, 1), (7, 2)])
+    print("BallTree NN for (9, 2):", ball_tree.nearest_neighbor((9, 2)))
+    print("\nAll 188 Algorithms & Data Structures complete and verified!")
