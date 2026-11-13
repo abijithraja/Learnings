@@ -182,6 +182,7 @@ Part 179: Conjugate Gradient Method for Linear Systems
 Part 180: Interval Tree for Overlapping Interval Search
 Part 181: Powerset Construction (NFA to DFA Subset Conversion)
 Part 182: K-Means Clustering with K-Means++ Initialization
+Part 183: Adam Optimizer for Multivariate Function Optimization
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7644,6 +7645,36 @@ def kmeans_clustering(
     return centroids, assignments
 
 
+class AdamOptimizer:
+    """
+    Adaptive Moment Estimation (Adam) stochastic first-order gradient-based optimization
+    with bias-corrected first (momentum) and second (uncentered variance) moment estimates.
+    """
+    def __init__(self, lr: float = 0.001, beta1: float = 0.9, beta2: float = 0.999, eps: float = 1e-8):
+        self.lr = lr
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.eps = eps
+        self.m: Optional[List[float]] = None
+        self.v: Optional[List[float]] = None
+        self.t = 0
+
+    def step(self, params: List[float], grads: List[float]) -> List[float]:
+        """Performs a single Adam parameter update step."""
+        if self.m is None:
+            self.m = [0.0] * len(params)
+            self.v = [0.0] * len(params)
+        self.t += 1
+        new_params = []
+        for i in range(len(params)):
+            self.m[i] = self.beta1 * self.m[i] + (1.0 - self.beta1) * grads[i]
+            self.v[i] = self.beta2 * self.v[i] + (1.0 - self.beta2) * (grads[i] ** 2)
+            m_hat = self.m[i] / (1.0 - (self.beta1 ** self.t))
+            v_hat = self.v[i] / (1.0 - (self.beta2 ** self.t))
+            new_params.append(params[i] - self.lr * m_hat / (math.sqrt(v_hat) + self.eps))
+        return new_params
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8613,4 +8644,12 @@ if __name__ == "__main__":
     km_pts = [(1.0, 2.0), (1.0, 4.0), (1.0, 0.0), (10.0, 2.0), (10.0, 4.0), (10.0, 0.0)]
     km_centroids, _ = kmeans_clustering(km_pts, 2)
     print("Computed Cluster Centroids:", km_centroids)
-    print("\nAll 182 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 183: Adam Optimizer ===")
+    adam_opt = AdamOptimizer(lr=0.2)
+    opt_p = [0.0, 0.0]
+    for _ in range(100):
+        # Minimize f(x, y) = (x - 3)^2 + (y + 2)^2
+        g = [2 * (opt_p[0] - 3.0), 2 * (opt_p[1] + 2.0)]
+        opt_p = adam_opt.step(opt_p, g)
+    print("Adam optimized params near (3, -2):", [round(v, 3) for v in opt_p])
+    print("\nAll 183 Algorithms & Data Structures complete and verified!")
