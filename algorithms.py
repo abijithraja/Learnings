@@ -189,6 +189,7 @@ Part 186: Arithmetic Coding (Entropy Encoding & Decoding)
 Part 187: BK-Tree (Burkhard-Keller Metric Tree for Fuzzy Search)
 Part 188: Ball Tree Metric Spatial Partitioning for Nearest Neighbor
 Part 189: Floyd-Steinberg Error Diffusion Dithering
+Part 190: Jump Point Search (JPS Grid Pathfinding)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7929,6 +7930,67 @@ def floyd_steinberg_dithering(image: List[List[float]]) -> List[List[int]]:
     return out
 
 
+def jump_point_search(grid: List[List[int]], start: Tuple[int, int], goal: Tuple[int, int]) -> Optional[List[Tuple[int, int]]]:
+    """
+    Jump Point Search (JPS) pathfinding algorithm on uniform-cost 2D grid,
+    pruning symmetric intermediate nodes by jumping along lines of sight.
+    0 = walkable, 1 = obstacle.
+    """
+    rows, cols = len(grid), len(grid[0])
+
+    def is_walkable(r: int, c: int) -> bool:
+        return 0 <= r < rows and 0 <= c < cols and grid[r][c] == 0
+
+    def jump(r: int, c: int, dr: int, dc: int) -> Optional[Tuple[int, int]]:
+        nr, nc = r + dr, c + dc
+        if not is_walkable(nr, nc):
+            return None
+        if (nr, nc) == goal:
+            return (nr, nc)
+
+        # Forced neighbor detection
+        if dr != 0 and dc == 0:
+            if (is_walkable(nr, nc + 1) and not is_walkable(r, nc + 1)) or                (is_walkable(nr, nc - 1) and not is_walkable(r, nc - 1)):
+                return (nr, nc)
+        elif dr == 0 and dc != 0:
+            if (is_walkable(nr + 1, nc) and not is_walkable(nr + 1, c)) or                (is_walkable(nr - 1, nc) and not is_walkable(nr - 1, c)):
+                return (nr, nc)
+        else:
+            if (is_walkable(nr - dr, nc + dc) and not is_walkable(nr - dr, nc)) or                (is_walkable(nr + dr, nc - dc) and not is_walkable(nr, nc - dc)):
+                return (nr, nc)
+            if jump(nr, nc, dr, 0) is not None or jump(nr, nc, 0, dc) is not None:
+                return (nr, nc)
+
+        return jump(nr, nc, dr, dc)
+
+    open_set: List[Tuple[float, Tuple[int, int]]] = [(0.0, start)]
+    came_from: Dict[Tuple[int, int], Tuple[int, int]] = {}
+    g_score: Dict[Tuple[int, int], float] = {start: 0.0}
+
+    dirs = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
+    while open_set:
+        _, curr = heapq.heappop(open_set)
+        if curr == goal:
+            path = [curr]
+            while curr in came_from:
+                curr = came_from[curr]
+                path.append(curr)
+            return path[::-1]
+
+        for dr, dc in dirs:
+            jp = jump(curr[0], curr[1], dr, dc)
+            if jp:
+                dist = math.hypot(jp[0] - curr[0], jp[1] - curr[1])
+                tentative_g = g_score[curr] + dist
+                if tentative_g < g_score.get(jp, float("inf")):
+                    g_score[jp] = tentative_g
+                    f = tentative_g + math.hypot(goal[0] - jp[0], goal[1] - jp[1])
+                    came_from[jp] = curr
+                    heapq.heappush(open_set, (f, jp))
+
+    return None
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8932,4 +8994,12 @@ if __name__ == "__main__":
     print("\n=== Iteration 189: Floyd-Steinberg Error Diffusion Dithering ===")
     dither_in = [[100.0, 150.0], [200.0, 50.0]]
     print("Dithered 2x2 image:", floyd_steinberg_dithering(dither_in))
-    print("\nAll 189 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 190: Jump Point Search (JPS) ===")
+    jps_test_grid = [
+        [0, 0, 0, 0, 0],
+        [0, 1, 1, 1, 0],
+        [0, 0, 0, 1, 0],
+        [0, 1, 0, 0, 0]
+    ]
+    print("JPS path from (0, 0) to (3, 4):", jump_point_search(jps_test_grid, (0, 0), (3, 4)))
+    print("\nAll 190 Algorithms & Data Structures complete and verified!")
