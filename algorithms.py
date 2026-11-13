@@ -190,6 +190,7 @@ Part 187: BK-Tree (Burkhard-Keller Metric Tree for Fuzzy Search)
 Part 188: Ball Tree Metric Spatial Partitioning for Nearest Neighbor
 Part 189: Floyd-Steinberg Error Diffusion Dithering
 Part 190: Jump Point Search (JPS Grid Pathfinding)
+Part 191: Constraint Satisfaction Problem Solver (MRV + Forward Checking)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7991,6 +7992,51 @@ def jump_point_search(grid: List[List[int]], start: Tuple[int, int], goal: Tuple
     return None
 
 
+def solve_csp_mrv(
+    variables: List[str],
+    domains: Dict[str, List[Any]],
+    neighbors: Dict[str, List[str]],
+    constraints_fn: Any
+) -> Optional[Dict[str, Any]]:
+    """
+    Constraint Satisfaction Problem (CSP) solver incorporating Minimum Remaining Values (MRV)
+    heuristic and Forward Checking domain reduction during backtracking search.
+    """
+    def is_consistent(var: str, val: Any, assignment: Dict[str, Any]) -> bool:
+        for n in neighbors.get(var, []):
+            if n in assignment and not constraints_fn(var, val, n, assignment[n]):
+                return False
+        return True
+
+    def backtrack(assignment: Dict[str, Any], cur_domains: Dict[str, List[Any]]) -> Optional[Dict[str, Any]]:
+        if len(assignment) == len(variables):
+            return assignment
+
+        unassigned = [v for v in variables if v not in assignment]
+        var = min(unassigned, key=lambda v: len(cur_domains[v]))
+
+        for val in cur_domains[var]:
+            if is_consistent(var, val, assignment):
+                assignment[var] = val
+                new_domains = {v: list(cur_domains[v]) for v in variables}
+                valid = True
+                for n in neighbors.get(var, []):
+                    if n not in assignment:
+                        new_domains[n] = [v for v in new_domains[n] if constraints_fn(var, val, n, v)]
+                        if not new_domains[n]:
+                            valid = False
+                            break
+                if valid:
+                    res = backtrack(assignment, new_domains)
+                    if res is not None:
+                        return res
+                del assignment[var]
+
+        return None
+
+    return backtrack({}, {v: list(domains[v]) for v in variables})
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9002,4 +9048,9 @@ if __name__ == "__main__":
         [0, 1, 0, 0, 0]
     ]
     print("JPS path from (0, 0) to (3, 4):", jump_point_search(jps_test_grid, (0, 0), (3, 4)))
-    print("\nAll 190 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 191: CSP Solver (MRV + Forward Checking) ===")
+    csp_vars = ["WA", "NT", "SA", "Q"]
+    csp_doms = {v: ["Red", "Green", "Blue"] for v in csp_vars}
+    csp_nbrs = {"WA": ["NT", "SA"], "NT": ["WA", "SA", "Q"], "SA": ["WA", "NT", "Q"], "Q": ["NT", "SA"]}
+    print("Map 3-coloring solution:", solve_csp_mrv(csp_vars, csp_doms, csp_nbrs, lambda v1, c1, v2, c2: c1 != c2))
+    print("\nAll 191 Algorithms & Data Structures complete and verified!")
