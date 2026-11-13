@@ -188,6 +188,7 @@ Part 185: Discrete Cosine Transform (DCT-II & IDCT-II)
 Part 186: Arithmetic Coding (Entropy Encoding & Decoding)
 Part 187: BK-Tree (Burkhard-Keller Metric Tree for Fuzzy Search)
 Part 188: Ball Tree Metric Spatial Partitioning for Nearest Neighbor
+Part 189: Floyd-Steinberg Error Diffusion Dithering
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7899,6 +7900,35 @@ class BallTree:
         return best_pt, best_dist
 
 
+def floyd_steinberg_dithering(image: List[List[float]]) -> List[List[int]]:
+    """
+    Floyd-Steinberg error diffusion spatial dithering algorithm, quantizing pixel intensities
+    to binary levels while distributing quantization error to neighboring pixels.
+    """
+    h = len(image)
+    w = len(image[0])
+    img = [row[:] for row in image]
+    out = [[0] * w for _ in range(h)]
+
+    for y in range(h):
+        for x in range(w):
+            old_p = img[y][x]
+            new_p = 255.0 if old_p > 127.5 else 0.0
+            out[y][x] = int(new_p)
+            err = old_p - new_p
+
+            if x + 1 < w:
+                img[y][x + 1] += err * (7.0 / 16.0)
+            if y + 1 < h and x > 0:
+                img[y + 1][x - 1] += err * (3.0 / 16.0)
+            if y + 1 < h:
+                img[y + 1][x] += err * (5.0 / 16.0)
+            if y + 1 < h and x + 1 < w:
+                img[y + 1][x + 1] += err * (1.0 / 16.0)
+
+    return out
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8899,4 +8929,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 188: Ball Tree Nearest Neighbor Search ===")
     ball_tree = BallTree([(2, 3), (5, 4), (9, 6), (4, 7), (8, 1), (7, 2)])
     print("BallTree NN for (9, 2):", ball_tree.nearest_neighbor((9, 2)))
-    print("\nAll 188 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 189: Floyd-Steinberg Error Diffusion Dithering ===")
+    dither_in = [[100.0, 150.0], [200.0, 50.0]]
+    print("Dithered 2x2 image:", floyd_steinberg_dithering(dither_in))
+    print("\nAll 189 Algorithms & Data Structures complete and verified!")
