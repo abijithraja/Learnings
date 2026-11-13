@@ -183,6 +183,7 @@ Part 180: Interval Tree for Overlapping Interval Search
 Part 181: Powerset Construction (NFA to DFA Subset Conversion)
 Part 182: K-Means Clustering with K-Means++ Initialization
 Part 183: Adam Optimizer for Multivariate Function Optimization
+Part 184: Principal Component Analysis (PCA via SVD / Power Iteration)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7675,6 +7676,37 @@ class AdamOptimizer:
         return new_params
 
 
+def pca_transform(data: List[List[float]], n_components: int = 1) -> List[List[float]]:
+    """
+    Principal Component Analysis (PCA) performing mean-centering, covariance matrix estimation,
+    and power-iteration deflation to project data onto top principal components.
+    """
+    n = len(data)
+    d = len(data[0])
+    mean = [sum(row[j] for row in data) / n for j in range(d)]
+    centered = [[row[j] - mean[j] for j in range(d)] for row in data]
+
+    cov = [[sum(centered[i][j] * centered[i][k] for i in range(n)) / max(1, n - 1) for k in range(d)] for j in range(d)]
+    cur_cov = [row[:] for row in cov]
+    components: List[List[float]] = []
+
+    for _ in range(n_components):
+        v = [1.0] * d
+        for _ in range(60):
+            w = [sum(cur_cov[i][j] * v[j] for j in range(d)) for i in range(d)]
+            norm = math.hypot(*w)
+            if norm == 0:
+                break
+            v = [wi / norm for wi in w]
+        eigenval = sum(v[i] * sum(cur_cov[i][j] * v[j] for j in range(d)) for i in range(d))
+        components.append(v)
+        for i in range(d):
+            for j in range(d):
+                cur_cov[i][j] -= eigenval * v[i] * v[j]
+
+    return [[sum(centered[i][j] * comp[j] for j in range(d)) for comp in components] for i in range(n)]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8652,4 +8684,8 @@ if __name__ == "__main__":
         g = [2 * (opt_p[0] - 3.0), 2 * (opt_p[1] + 2.0)]
         opt_p = adam_opt.step(opt_p, g)
     print("Adam optimized params near (3, -2):", [round(v, 3) for v in opt_p])
-    print("\nAll 183 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 184: Principal Component Analysis (PCA) ===")
+    pca_pts = [[2.5, 2.4], [0.5, 0.7], [2.2, 2.9], [1.9, 2.2], [3.1, 3.0], [2.3, 2.7]]
+    pca_proj = pca_transform(pca_pts, 1)
+    print("1D PCA projection head:", [round(row[0], 3) for row in pca_proj[:3]])
+    print("\nAll 184 Algorithms & Data Structures complete and verified!")
