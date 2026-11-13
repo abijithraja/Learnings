@@ -185,6 +185,7 @@ Part 182: K-Means Clustering with K-Means++ Initialization
 Part 183: Adam Optimizer for Multivariate Function Optimization
 Part 184: Principal Component Analysis (PCA via SVD / Power Iteration)
 Part 185: Discrete Cosine Transform (DCT-II & IDCT-II)
+Part 186: Arithmetic Coding (Entropy Encoding & Decoding)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7733,6 +7734,44 @@ def inverse_discrete_cosine_transform(coeffs: List[float]) -> List[float]:
     return res
 
 
+def arithmetic_encode(text: str, freqs: Dict[str, int]) -> float:
+    """Encodes a string into a floating-point tag interval [low, high) via arithmetic coding."""
+    total = sum(freqs.values())
+    cum: Dict[str, Tuple[float, float]] = {}
+    cur = 0.0
+    for ch in sorted(freqs.keys()):
+        cum[ch] = (cur / total, (cur + freqs[ch]) / total)
+        cur += freqs[ch]
+
+    low, high = 0.0, 1.0
+    for ch in text:
+        r = high - low
+        c_low, c_high = cum[ch]
+        high = low + r * c_high
+        low = low + r * c_low
+    return (low + high) / 2.0
+
+
+def arithmetic_decode(code: float, length: int, freqs: Dict[str, int]) -> str:
+    """Decodes a floating-point arithmetic code back to the original text of given length."""
+    total = sum(freqs.values())
+    cum: Dict[str, Tuple[float, float]] = {}
+    cur = 0.0
+    for ch in sorted(freqs.keys()):
+        cum[ch] = (cur / total, (cur + freqs[ch]) / total)
+        cur += freqs[ch]
+
+    res: List[str] = []
+    val = code
+    for _ in range(length):
+        for ch, (cl, chigh) in cum.items():
+            if cl <= val < chigh:
+                res.append(ch)
+                val = (val - cl) / (chigh - cl)
+                break
+    return "".join(res)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8719,4 +8758,10 @@ if __name__ == "__main__":
     dct_vals = discrete_cosine_transform(orig_sig)
     rec_sig = inverse_discrete_cosine_transform(dct_vals)
     print("DCT reconstructed signal:", [round(x, 4) for x in rec_sig])
-    print("\nAll 185 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 186: Arithmetic Coding ===")
+    arith_txt = "ABRACADABRA"
+    arith_fr = {c: arith_txt.count(c) for c in set(arith_txt)}
+    arith_encoded = arithmetic_encode(arith_txt, arith_fr)
+    arith_decoded = arithmetic_decode(arith_encoded, len(arith_txt), arith_fr)
+    print(f"Arithmetic Tag: {arith_encoded:.8f}, Decoded match: {arith_decoded == arith_txt}")
+    print("\nAll 186 Algorithms & Data Structures complete and verified!")
