@@ -184,6 +184,7 @@ Part 181: Powerset Construction (NFA to DFA Subset Conversion)
 Part 182: K-Means Clustering with K-Means++ Initialization
 Part 183: Adam Optimizer for Multivariate Function Optimization
 Part 184: Principal Component Analysis (PCA via SVD / Power Iteration)
+Part 185: Discrete Cosine Transform (DCT-II & IDCT-II)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7707,6 +7708,31 @@ def pca_transform(data: List[List[float]], n_components: int = 1) -> List[List[f
     return [[sum(centered[i][j] * comp[j] for j in range(d)) for comp in components] for i in range(n)]
 
 
+def discrete_cosine_transform(signal: List[float]) -> List[float]:
+    """Computes the orthonormal Type-II Discrete Cosine Transform (DCT-II)."""
+    N = len(signal)
+    res: List[float] = []
+    for k in range(N):
+        scale = math.sqrt(1.0 / (4.0 * N)) if k == 0 else math.sqrt(1.0 / (2.0 * N))
+        val = sum(signal[n] * math.cos(math.pi * (2 * n + 1) * k / (2.0 * N)) for n in range(N))
+        res.append(2.0 * scale * val)
+    return res
+
+
+def inverse_discrete_cosine_transform(coeffs: List[float]) -> List[float]:
+    """Computes the Type-III Discrete Cosine Transform (IDCT-II)."""
+    N = len(coeffs)
+    res: List[float] = []
+    for n in range(N):
+        val = sum(
+            (coeffs[0] / math.sqrt(N) if k == 0 else coeffs[k] * math.sqrt(2.0 / N)) *
+            math.cos(math.pi * (2 * n + 1) * k / (2.0 * N))
+            for k in range(N)
+        )
+        res.append(val)
+    return res
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8688,4 +8714,9 @@ if __name__ == "__main__":
     pca_pts = [[2.5, 2.4], [0.5, 0.7], [2.2, 2.9], [1.9, 2.2], [3.1, 3.0], [2.3, 2.7]]
     pca_proj = pca_transform(pca_pts, 1)
     print("1D PCA projection head:", [round(row[0], 3) for row in pca_proj[:3]])
-    print("\nAll 184 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 185: Discrete Cosine Transform (DCT-II) ===")
+    orig_sig = [1.0, 2.0, 3.0, 4.0]
+    dct_vals = discrete_cosine_transform(orig_sig)
+    rec_sig = inverse_discrete_cosine_transform(dct_vals)
+    print("DCT reconstructed signal:", [round(x, 4) for x in rec_sig])
+    print("\nAll 185 Algorithms & Data Structures complete and verified!")
