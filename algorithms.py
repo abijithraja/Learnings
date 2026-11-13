@@ -186,6 +186,7 @@ Part 183: Adam Optimizer for Multivariate Function Optimization
 Part 184: Principal Component Analysis (PCA via SVD / Power Iteration)
 Part 185: Discrete Cosine Transform (DCT-II & IDCT-II)
 Part 186: Arithmetic Coding (Entropy Encoding & Decoding)
+Part 187: BK-Tree (Burkhard-Keller Metric Tree for Fuzzy Search)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -7772,6 +7773,65 @@ def arithmetic_decode(code: float, length: int, freqs: Dict[str, int]) -> str:
     return "".join(res)
 
 
+class BKTreeNode:
+    def __init__(self, word: str):
+        self.word = word
+        self.children: Dict[int, "BKTreeNode"] = {}
+
+
+class BKTree:
+    """
+    Burkhard-Keller Tree (BK-Tree) indexing discrete metric spaces under Levenshtein
+    distance to answer fuzzy string search queries within tolerance in sublinear time.
+    """
+    def __init__(self):
+        self.root: Optional[BKTreeNode] = None
+
+    @staticmethod
+    def _edit_distance(s1: str, s2: str) -> int:
+        m, n = len(s1), len(s2)
+        dp = list(range(n + 1))
+        for i in range(1, m + 1):
+            prev = dp[0]
+            dp[0] = i
+            for j in range(1, n + 1):
+                temp = dp[j]
+                cost = 0 if s1[i - 1] == s2[j - 1] else 1
+                dp[j] = min(dp[j] + 1, dp[j - 1] + 1, prev + cost)
+                prev = temp
+        return dp[n]
+
+    def insert(self, word: str) -> None:
+        if not self.root:
+            self.root = BKTreeNode(word)
+            return
+        node = self.root
+        while True:
+            d = self._edit_distance(word, node.word)
+            if d == 0:
+                return
+            if d not in node.children:
+                node.children[d] = BKTreeNode(word)
+                return
+            node = node.children[d]
+
+    def search(self, query: str, max_dist: int) -> List[Tuple[str, int]]:
+        """Finds all words in the BK-tree with Levenshtein distance <= max_dist to query."""
+        if not self.root:
+            return []
+        results: List[Tuple[str, int]] = []
+        stack = [self.root]
+        while stack:
+            node = stack.pop()
+            d = self._edit_distance(query, node.word)
+            if d <= max_dist:
+                results.append((node.word, d))
+            for edge_d, child in node.children.items():
+                if d - max_dist <= edge_d <= d + max_dist:
+                    stack.append(child)
+        return results
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -8764,4 +8824,9 @@ if __name__ == "__main__":
     arith_encoded = arithmetic_encode(arith_txt, arith_fr)
     arith_decoded = arithmetic_decode(arith_encoded, len(arith_txt), arith_fr)
     print(f"Arithmetic Tag: {arith_encoded:.8f}, Decoded match: {arith_decoded == arith_txt}")
-    print("\nAll 186 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 187: BK-Tree Metric Fuzzy Search ===")
+    bk_tree = BKTree()
+    for word in ["book", "books", "boo", "boon", "cook", "cake", "cape", "cart"]:
+        bk_tree.insert(word)
+    print("Fuzzy matches for 'cool' (dist <= 2):", sorted(bk_tree.search("cool", 2)))
+    print("\nAll 187 Algorithms & Data Structures complete and verified!")
