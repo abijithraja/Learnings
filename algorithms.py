@@ -191,6 +191,7 @@ Part 188: Ball Tree Metric Spatial Partitioning for Nearest Neighbor
 Part 189: Floyd-Steinberg Error Diffusion Dithering
 Part 190: Jump Point Search (JPS Grid Pathfinding)
 Part 191: Constraint Satisfaction Problem Solver (MRV + Forward Checking)
+Part 192: Welsh-Powell Graph Vertex Coloring Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8037,6 +8038,32 @@ def solve_csp_mrv(
     return backtrack({}, {v: list(domains[v]) for v in variables})
 
 
+def welsh_powell_coloring(n: int, edges: List[Tuple[int, int]]) -> Tuple[int, List[int]]:
+    """
+    Welsh-Powell greedy graph vertex coloring algorithm ordering vertices by descending degree
+    to achieve an efficient upper-bounded chromatic assignment.
+    Returns: (chromatic_number_used, vertex_colors)
+    """
+    adj: List[Set[int]] = [set() for _ in range(n)]
+    for u, v in edges:
+        adj[u].add(v)
+        adj[v].add(u)
+
+    order = sorted(range(n), key=lambda u: len(adj[u]), reverse=True)
+    colors = [-1] * n
+    curr_color = 0
+
+    for u in order:
+        if colors[u] == -1:
+            colors[u] = curr_color
+            for v in order:
+                if colors[v] == -1 and all(colors[w] != curr_color for w in adj[v]):
+                    colors[v] = curr_color
+            curr_color += 1
+
+    return curr_color, colors
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9053,4 +9080,8 @@ if __name__ == "__main__":
     csp_doms = {v: ["Red", "Green", "Blue"] for v in csp_vars}
     csp_nbrs = {"WA": ["NT", "SA"], "NT": ["WA", "SA", "Q"], "SA": ["WA", "NT", "Q"], "Q": ["NT", "SA"]}
     print("Map 3-coloring solution:", solve_csp_mrv(csp_vars, csp_doms, csp_nbrs, lambda v1, c1, v2, c2: c1 != c2))
-    print("\nAll 191 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 192: Welsh-Powell Graph Coloring ===")
+    wp_edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 0), (0, 2)]
+    wp_k, wp_cols = welsh_powell_coloring(5, wp_edges)
+    print(f"Colors used: {wp_k}, Assignments: {wp_cols}")
+    print("\nAll 192 Algorithms & Data Structures complete and verified!")
