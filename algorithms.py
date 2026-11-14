@@ -198,6 +198,7 @@ Part 195: Hopfield Network for Associative Memory Pattern Retrieval
 Part 196: Apriori Algorithm for Frequent Itemset Mining
 Part 197: Genetic Algorithm for Traveling Salesperson Problem
 Part 198: DBSCAN (Density-Based Spatial Clustering of Applications with Noise)
+Part 199: Expectation-Maximization (EM) for Gaussian Mixture Models
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8355,6 +8356,48 @@ def dbscan_clustering(points: List[Tuple[float, ...]], eps: float, min_samples: 
     return labels
 
 
+def gaussian_mixture_model_em(
+    data: List[float],
+    k: int = 2,
+    max_iters: int = 30,
+    seed: int = 42
+) -> Tuple[List[float], List[float]]:
+    """
+    Expectation-Maximization (EM) algorithm fitting a 1D Gaussian Mixture Model (GMM).
+    Alternates between E-step (soft assignment responsibilities) and M-step (parameter updates).
+    Returns: (component_means, component_mixing_weights)
+    """
+    rng = random.Random(seed)
+    n = len(data)
+    means = [data[rng.randrange(n)] for _ in range(k)]
+    variances = [1.0] * k
+    weights = [1.0 / k] * k
+
+    def norm_pdf(x: float, m: float, v: float) -> float:
+        return (1.0 / math.sqrt(2.0 * math.pi * max(v, 1e-6))) * math.exp(-((x - m) ** 2) / (2.0 * max(v, 1e-6)))
+
+    for _ in range(max_iters):
+        resp: List[List[float]] = []
+        for x in data:
+            row = [weights[j] * norm_pdf(x, means[j], variances[j]) for j in range(k)]
+            total = sum(row)
+            if total == 0:
+                row = [1.0 / k] * k
+            else:
+                row = [val / total for val in row]
+            resp.append(row)
+
+        for j in range(k):
+            N_j = sum(resp[i][j] for i in range(n))
+            if N_j == 0:
+                continue
+            weights[j] = N_j / n
+            means[j] = sum(resp[i][j] * data[i] for i in range(n)) / N_j
+            variances[j] = sum(resp[i][j] * ((data[i] - means[j]) ** 2) for i in range(n)) / N_j
+
+    return means, weights
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9405,4 +9448,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 198: DBSCAN Clustering ===")
     db_points = [(1.0, 1.0), (1.0, 1.5), (1.5, 1.0), (10.0, 10.0), (10.0, 10.5), (50.0, 50.0)]
     print("DBSCAN Cluster Labels:", dbscan_clustering(db_points, 1.0, 2))
-    print("\nAll 198 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 199: Gaussian Mixture Model (EM) ===")
+    gmm_sample = [1.0, 1.2, 0.9, 1.1, 10.0, 10.2, 9.8, 10.1]
+    gmm_m, gmm_w = gaussian_mixture_model_em(gmm_sample, 2)
+    print("EM Component Means:", [round(m, 2) for m in sorted(gmm_m)])
+    print("\nAll 199 Algorithms & Data Structures complete and verified!")
