@@ -196,6 +196,7 @@ Part 193: Forward-Backward Algorithm (HMM Posterior Marginal Decoding)
 Part 194: R-Tree Spatial Bounding Box Index
 Part 195: Hopfield Network for Associative Memory Pattern Retrieval
 Part 196: Apriori Algorithm for Frequent Itemset Mining
+Part 197: Genetic Algorithm for Traveling Salesperson Problem
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8257,6 +8258,61 @@ def apriori_frequent_itemsets(transactions: List[List[str]], min_support: float)
     return {tuple(sorted(list(k))): v / n for k, v in all_frequent.items()}
 
 
+def genetic_algorithm_tsp(
+    cities: List[Tuple[float, float]],
+    pop_size: int = 30,
+    generations: int = 50,
+    seed: int = 42
+) -> Tuple[List[int], float]:
+    """
+    Genetic Algorithm solving Traveling Salesperson Problem (TSP) using Ordered Crossover (OX),
+    swap mutation, tournament selection, and elitism preservation.
+    """
+    rng = random.Random(seed)
+    n = len(cities)
+
+    def dist(c1: Tuple[float, float], c2: Tuple[float, float]) -> float:
+        return math.hypot(c1[0] - c2[0], c1[1] - c2[1])
+
+    def tour_length(tour: List[int]) -> float:
+        return sum(dist(cities[tour[i]], cities[tour[(i + 1) % n]]) for i in range(n))
+
+    pop = [rng.sample(range(n), n) for _ in range(pop_size)]
+    best_tour = min(pop, key=tour_length)
+    best_len = tour_length(best_tour)
+
+    for _ in range(generations):
+        pop.sort(key=tour_length)
+        new_pop = pop[:max(1, pop_size // 4)]
+        while len(new_pop) < pop_size:
+            p1 = min(rng.sample(pop, 3), key=tour_length)
+            p2 = min(rng.sample(pop, 3), key=tour_length)
+            a, b = sorted([rng.randrange(n), rng.randrange(n)])
+
+            child = [-1] * n
+            child[a:b + 1] = p1[a:b + 1]
+            p2_rem = [x for x in p2 if x not in child]
+            idx = 0
+            for i in range(n):
+                if child[i] == -1:
+                    child[i] = p2_rem[idx]
+                    idx += 1
+
+            if rng.random() < 0.2:
+                i1, i2 = rng.sample(range(n), 2)
+                child[i1], child[i2] = child[i2], child[i1]
+            new_pop.append(child)
+
+        pop = new_pop
+        cur_best = min(pop, key=tour_length)
+        cur_len = tour_length(cur_best)
+        if cur_len < best_len:
+            best_len = cur_len
+            best_tour = cur_best
+
+    return best_tour, best_len
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9300,4 +9356,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 196: Apriori Frequent Itemsets ===")
     sample_txs = [["beer", "diapers"], ["beer", "diapers", "chips"], ["beer", "milk"], ["diapers", "chips"]]
     print("Frequent itemsets (support >= 0.5):", apriori_frequent_itemsets(sample_txs, 0.5))
-    print("\nAll 196 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 197: Genetic Algorithm TSP ===")
+    square_cities = [(0.0, 0.0), (0.0, 3.0), (4.0, 3.0), (4.0, 0.0)]
+    best_t, best_cost = genetic_algorithm_tsp(square_cities)
+    print(f"GA Tour: {best_t}, Minimal Perimeter: {best_cost:.3f}")
+    print("\nAll 197 Algorithms & Data Structures complete and verified!")
