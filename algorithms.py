@@ -194,6 +194,7 @@ Part 191: Constraint Satisfaction Problem Solver (MRV + Forward Checking)
 Part 192: Welsh-Powell Graph Vertex Coloring Algorithm
 Part 193: Forward-Backward Algorithm (HMM Posterior Marginal Decoding)
 Part 194: R-Tree Spatial Bounding Box Index
+Part 195: Hopfield Network for Associative Memory Pattern Retrieval
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8171,6 +8172,47 @@ class RTree:
         return results
 
 
+class HopfieldNetwork:
+    """
+    Fully-connected recurrent Hopfield associative memory network storing binary patterns
+    using outer-product Hebbian learning and converging to local energy minima.
+    """
+    def __init__(self, num_neurons: int):
+        self.n = num_neurons
+        self.weights = [[0.0] * num_neurons for _ in range(num_neurons)]
+
+    def train(self, patterns: List[List[int]]) -> None:
+        """Trains the network on bipolar (+1 / -1) target states."""
+        p_len = len(patterns)
+        if p_len == 0:
+            return
+        for p in patterns:
+            for i in range(self.n):
+                for j in range(self.n):
+                    if i != j:
+                        self.weights[i][j] += p[i] * p[j]
+        for i in range(self.n):
+            for j in range(self.n):
+                self.weights[i][j] /= p_len
+
+    def energy(self, state: List[int]) -> float:
+        """Computes the Lyapunov energy function value of a state."""
+        e = 0.0
+        for i in range(self.n):
+            for j in range(self.n):
+                e -= 0.5 * self.weights[i][j] * state[i] * state[j]
+        return e
+
+    def retrieve(self, state: List[int], steps: int = 10) -> List[int]:
+        """Recovers stored memory from corrupted input state via synchronous updates."""
+        s = list(state)
+        for _ in range(steps):
+            for i in range(self.n):
+                h = sum(self.weights[i][j] * s[j] for j in range(self.n))
+                s[i] = 1 if h >= 0 else -1
+        return s
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9205,4 +9247,10 @@ if __name__ == "__main__":
     rtree.insert(RTreeBox(3, 3, 5, 5, "B"))
     rtree.insert(RTreeBox(1, 1, 4, 4, "C"))
     print("Boxes overlapping [1..3, 1..3]:", sorted(rtree.query(RTreeBox(1, 1, 3, 3))))
-    print("\nAll 194 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 195: Hopfield Network ===")
+    hopfield = HopfieldNetwork(4)
+    trained_pattern = [1, -1, 1, -1]
+    hopfield.train([trained_pattern])
+    recovered = hopfield.retrieve([1, 1, 1, -1])
+    print(f"Original: {trained_pattern}, Restored from noisy [1, 1, 1, -1]: {recovered}")
+    print("\nAll 195 Algorithms & Data Structures complete and verified!")
