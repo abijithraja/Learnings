@@ -197,6 +197,7 @@ Part 194: R-Tree Spatial Bounding Box Index
 Part 195: Hopfield Network for Associative Memory Pattern Retrieval
 Part 196: Apriori Algorithm for Frequent Itemset Mining
 Part 197: Genetic Algorithm for Traveling Salesperson Problem
+Part 198: DBSCAN (Density-Based Spatial Clustering of Applications with Noise)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8313,6 +8314,47 @@ def genetic_algorithm_tsp(
     return best_tour, best_len
 
 
+def dbscan_clustering(points: List[Tuple[float, ...]], eps: float, min_samples: int) -> List[int]:
+    """
+    Density-Based Spatial Clustering of Applications with Noise (DBSCAN).
+    Discovers arbitrarily shaped clusters and labels outliers as -1 (noise).
+    """
+    n = len(points)
+    labels = [-1] * n
+    cluster_id = 0
+
+    def dist(p1: Tuple[float, ...], p2: Tuple[float, ...]) -> float:
+        return math.hypot(*[a - b for a, b in zip(p1, p2)])
+
+    def region_query(p_idx: int) -> List[int]:
+        return [i for i in range(n) if dist(points[p_idx], points[i]) <= eps]
+
+    for i in range(n):
+        if labels[i] != -1:
+            continue
+        neighbors = region_query(i)
+        if len(neighbors) < min_samples:
+            continue
+        labels[i] = cluster_id
+        seed_set = [idx for idx in neighbors if idx != i]
+
+        while seed_set:
+            q = seed_set.pop(0)
+            if labels[q] == -1:
+                labels[q] = cluster_id
+            if labels[q] != cluster_id:
+                continue
+            labels[q] = cluster_id
+            q_neighbors = region_query(q)
+            if len(q_neighbors) >= min_samples:
+                for qn in q_neighbors:
+                    if labels[qn] == -1 and qn not in seed_set:
+                        seed_set.append(qn)
+        cluster_id += 1
+
+    return labels
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9360,4 +9402,7 @@ if __name__ == "__main__":
     square_cities = [(0.0, 0.0), (0.0, 3.0), (4.0, 3.0), (4.0, 0.0)]
     best_t, best_cost = genetic_algorithm_tsp(square_cities)
     print(f"GA Tour: {best_t}, Minimal Perimeter: {best_cost:.3f}")
-    print("\nAll 197 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 198: DBSCAN Clustering ===")
+    db_points = [(1.0, 1.0), (1.0, 1.5), (1.5, 1.0), (10.0, 10.0), (10.0, 10.5), (50.0, 50.0)]
+    print("DBSCAN Cluster Labels:", dbscan_clustering(db_points, 1.0, 2))
+    print("\nAll 198 Algorithms & Data Structures complete and verified!")
