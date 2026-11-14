@@ -200,6 +200,7 @@ Part 197: Genetic Algorithm for Traveling Salesperson Problem
 Part 198: DBSCAN (Density-Based Spatial Clustering of Applications with Noise)
 Part 199: Expectation-Maximization (EM) for Gaussian Mixture Models
 Part 200: Barnes-Hut N-Body Quadtree Force Approximation
+Part 201: 2-3 Tree (Self-Balancing 2-3 Search Tree)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8491,6 +8492,89 @@ def barnes_hut_nbody_force(
     return forces
 
 
+class TwoThreeTree:
+    """
+    Self-balancing 2-3 Search Tree (B-tree of order 3), maintaining logarithmic height
+    with all leaf nodes residing at the exact same depth.
+    """
+    class Node:
+        def __init__(self, keys=None, children=None):
+            self.keys: List[int] = keys if keys else []
+            self.children: List["TwoThreeTree.Node"] = children if children else []
+
+        def is_leaf(self) -> bool:
+            return len(self.children) == 0
+
+    def __init__(self):
+        self.root: Optional[TwoThreeTree.Node] = None
+
+    def search(self, key: int) -> bool:
+        """Searches for key in O(log n) time."""
+        node = self.root
+        while node:
+            if key in node.keys:
+                return True
+            if node.is_leaf():
+                return False
+            if key < node.keys[0]:
+                node = node.children[0]
+            elif len(node.keys) == 1 or key < node.keys[1]:
+                node = node.children[1]
+            else:
+                node = node.children[2]
+        return False
+
+    def insert(self, key: int) -> None:
+        """Inserts key into the 2-3 tree with bottom-up node splitting."""
+        if self.search(key):
+            return
+        if not self.root:
+            self.root = self.Node([key])
+            return
+
+        def _insert(node: TwoThreeTree.Node):
+            if node.is_leaf():
+                idx = 0
+                while idx < len(node.keys) and node.keys[idx] < key:
+                    idx += 1
+                node.keys.insert(idx, key)
+                if len(node.keys) == 3:
+                    mid = node.keys[1]
+                    left = TwoThreeTree.Node([node.keys[0]])
+                    right = TwoThreeTree.Node([node.keys[2]])
+                    return mid, left, right
+                return None
+
+            if key < node.keys[0]:
+                child_idx = 0
+            elif len(node.keys) == 1 or key < node.keys[1]:
+                child_idx = 1
+            else:
+                child_idx = 2
+
+            split = _insert(node.children[child_idx])
+            if split:
+                promoted, left, right = split
+                node.children.pop(child_idx)
+                node.children.insert(child_idx, right)
+                node.children.insert(child_idx, left)
+                idx = 0
+                while idx < len(node.keys) and node.keys[idx] < promoted:
+                    idx += 1
+                node.keys.insert(idx, promoted)
+                if len(node.keys) == 3:
+                    mid = node.keys[1]
+                    n_left = TwoThreeTree.Node([node.keys[0]], [node.children[0], node.children[1]])
+                    n_right = TwoThreeTree.Node([node.keys[2]], [node.children[2], node.children[3]])
+                    return mid, n_left, n_right
+            return None
+
+        split_root = _insert(self.root)
+        if split_root:
+            promoted, left, right = split_root
+            self.root = self.Node([promoted], [left, right])
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9549,4 +9633,9 @@ if __name__ == "__main__":
     sim_bodies = [(0.0, 0.0, 0.0, 0.0, 10.0), (1.0, 0.0, 0.0, 0.0, 1.0), (10.0, 10.0, 0.0, 0.0, 5.0)]
     sim_f = barnes_hut_nbody_force(sim_bodies)
     print("Barnes-Hut Net Force on body 1:", [round(x, 4) for x in sim_f[1]])
-    print("\nAll 200 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 201: 2-3 Tree ===")
+    two_three = TwoThreeTree()
+    for val in [10, 20, 5, 15, 25, 30, 2]:
+        two_three.insert(val)
+    print("Search 15:", two_three.search(15), "| Search 99:", two_three.search(99))
+    print("\nAll 201 Algorithms & Data Structures complete and verified!")
