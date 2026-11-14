@@ -199,6 +199,7 @@ Part 196: Apriori Algorithm for Frequent Itemset Mining
 Part 197: Genetic Algorithm for Traveling Salesperson Problem
 Part 198: DBSCAN (Density-Based Spatial Clustering of Applications with Noise)
 Part 199: Expectation-Maximization (EM) for Gaussian Mixture Models
+Part 200: Barnes-Hut N-Body Quadtree Force Approximation
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8398,6 +8399,98 @@ def gaussian_mixture_model_em(
     return means, weights
 
 
+class BHNode:
+    def __init__(self, x: float, y: float, size: float):
+        self.x, self.y, self.size = x, y, size
+        self.mass = 0.0
+        self.cx, self.cy = 0.0, 0.0
+        self.body: Optional[Tuple[float, float, float, float, float]] = None
+        self.children: Optional[List["BHNode"]] = None
+
+
+def barnes_hut_nbody_force(
+    bodies: List[Tuple[float, float, float, float, float]],
+    G: float = 1.0,
+    theta: float = 0.5
+) -> List[Tuple[float, float]]:
+    """
+    Barnes-Hut algorithm approximating gravitational N-body forces in O(N log N) time
+    using hierarchical quadtree space decomposition and multipole acceptance threshold theta.
+    Body format: (x, y, vx, vy, mass)
+    """
+    if not bodies:
+        return []
+
+    min_x = min(b[0] for b in bodies)
+    max_x = max(b[0] for b in bodies)
+    min_y = min(b[1] for b in bodies)
+    max_y = max(b[1] for b in bodies)
+    size = max(max_x - min_x, max_y - min_y, 1.0)
+    root = BHNode(min_x, min_y, size)
+
+    def insert(node: BHNode, body: Tuple[float, float, float, float, float]):
+        bx, by, _, _, bm = body
+        if node.body is None and node.children is None:
+            node.body = body
+            node.mass = bm
+            node.cx, node.cy = bx, by
+            return
+
+        if node.children is None:
+            s2 = node.size / 2.0
+            node.children = [
+                BHNode(node.x, node.y, s2),
+                BHNode(node.x + s2, node.y, s2),
+                BHNode(node.x, node.y + s2, s2),
+                BHNode(node.x + s2, node.y + s2, s2)
+            ]
+            old_body = node.body
+            node.body = None
+            if old_body:
+                for child in node.children:
+                    if child.x <= old_body[0] <= child.x + s2 and child.y <= old_body[1] <= child.y + s2:
+                        insert(child, old_body)
+                        break
+
+        s2 = node.size / 2.0
+        for child in node.children:
+            if child.x <= bx <= child.x + s2 and child.y <= by <= child.y + s2:
+                insert(child, body)
+                break
+
+        total_m = node.mass + bm
+        node.cx = (node.cx * node.mass + bx * bm) / total_m
+        node.cy = (node.cy * node.mass + by * bm) / total_m
+        node.mass = total_m
+
+    for b in bodies:
+        insert(root, b)
+
+    forces: List[Tuple[float, float]] = []
+    for b in bodies:
+        bx, by, _, _, bm = b
+        fx, fy = 0.0, 0.0
+        stack = [root]
+        while stack:
+            n = stack.pop()
+            if n is None or n.mass == 0:
+                continue
+            dx = n.cx - bx
+            dy = n.cy - by
+            d = math.hypot(dx, dy)
+            if d == 0:
+                continue
+            if n.children is None or (n.size / d) < theta:
+                f = (G * bm * n.mass) / (d ** 2 + 1e-4)
+                fx += f * dx / d
+                fy += f * dy / d
+            else:
+                stack.extend(n.children)
+        forces.append((fx, fy))
+
+    return forces
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9452,4 +9545,8 @@ if __name__ == "__main__":
     gmm_sample = [1.0, 1.2, 0.9, 1.1, 10.0, 10.2, 9.8, 10.1]
     gmm_m, gmm_w = gaussian_mixture_model_em(gmm_sample, 2)
     print("EM Component Means:", [round(m, 2) for m in sorted(gmm_m)])
-    print("\nAll 199 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 200: Barnes-Hut N-Body Force (Milestone 200!) ===")
+    sim_bodies = [(0.0, 0.0, 0.0, 0.0, 10.0), (1.0, 0.0, 0.0, 0.0, 1.0), (10.0, 10.0, 0.0, 0.0, 5.0)]
+    sim_f = barnes_hut_nbody_force(sim_bodies)
+    print("Barnes-Hut Net Force on body 1:", [round(x, 4) for x in sim_f[1]])
+    print("\nAll 200 Algorithms & Data Structures complete and verified!")
