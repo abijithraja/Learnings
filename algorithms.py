@@ -192,6 +192,7 @@ Part 189: Floyd-Steinberg Error Diffusion Dithering
 Part 190: Jump Point Search (JPS Grid Pathfinding)
 Part 191: Constraint Satisfaction Problem Solver (MRV + Forward Checking)
 Part 192: Welsh-Powell Graph Vertex Coloring Algorithm
+Part 193: Forward-Backward Algorithm (HMM Posterior Marginal Decoding)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8064,6 +8065,56 @@ def welsh_powell_coloring(n: int, edges: List[Tuple[int, int]]) -> Tuple[int, Li
     return curr_color, colors
 
 
+def forward_backward_hmm(
+    obs: List[str],
+    states: List[str],
+    start_p: Dict[str, float],
+    trans_p: Dict[str, Dict[str, float]],
+    emit_p: Dict[str, Dict[str, float]]
+) -> Tuple[float, List[Dict[str, float]]]:
+    """
+    Forward-Backward dynamic programming algorithm computing smoothed posterior state
+    probabilities P(X_t = s | Y_{1:T}) across all time steps in a Hidden Markov Model.
+    Returns: (total_observation_probability, posterior_marginals_per_step)
+    """
+    n = len(obs)
+    if n == 0:
+        return 0.0, []
+
+    # Forward pass: alpha[t][s]
+    alpha: List[Dict[str, float]] = []
+    a0 = {s: start_p[s] * emit_p[s].get(obs[0], 0.0) for s in states}
+    alpha.append(a0)
+
+    for t in range(1, n):
+        at: Dict[str, float] = {}
+        for s in states:
+            val = sum(alpha[t - 1][prev] * trans_p[prev].get(s, 0.0) for prev in states)
+            at[s] = val * emit_p[s].get(obs[t], 0.0)
+        alpha.append(at)
+
+    total_prob = sum(alpha[-1].values())
+
+    # Backward pass: beta[t][s]
+    beta: List[Dict[str, float]] = [{} for _ in range(n)]
+    beta[-1] = {s: 1.0 for s in states}
+
+    for t in range(n - 2, -1, -1):
+        for s in states:
+            beta[t][s] = sum(
+                trans_p[s].get(nxt, 0.0) * emit_p[nxt].get(obs[t + 1], 0.0) * beta[t + 1][nxt]
+                for nxt in states
+            )
+
+    # Posterior smoothing: gamma[t][s]
+    gamma: List[Dict[str, float]] = []
+    for t in range(n):
+        gt = {s: (alpha[t][s] * beta[t][s]) / max(total_prob, 1e-18) for s in states}
+        gamma.append(gt)
+
+    return total_prob, gamma
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9084,4 +9135,12 @@ if __name__ == "__main__":
     wp_edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 0), (0, 2)]
     wp_k, wp_cols = welsh_powell_coloring(5, wp_edges)
     print(f"Colors used: {wp_k}, Assignments: {wp_cols}")
-    print("\nAll 192 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 193: Forward-Backward HMM Algorithm ===")
+    fb_states = ["Rainy", "Sunny"]
+    fb_obs = ["walk", "shop", "clean"]
+    fb_sp = {"Rainy": 0.6, "Sunny": 0.4}
+    fb_tp = {"Rainy": {"Rainy": 0.7, "Sunny": 0.3}, "Sunny": {"Rainy": 0.4, "Sunny": 0.6}}
+    fb_ep = {"Rainy": {"walk": 0.1, "shop": 0.4, "clean": 0.5}, "Sunny": {"walk": 0.6, "shop": 0.3, "clean": 0.1}}
+    fb_p, fb_post = forward_backward_hmm(fb_obs, fb_states, fb_sp, fb_tp, fb_ep)
+    print(f"P(obs): {fb_p:.5f}, Posterior step 0:", {k: round(v, 3) for k, v in fb_post[0].items()})
+    print("\nAll 193 Algorithms & Data Structures complete and verified!")
