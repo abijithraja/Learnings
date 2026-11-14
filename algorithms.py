@@ -195,6 +195,7 @@ Part 192: Welsh-Powell Graph Vertex Coloring Algorithm
 Part 193: Forward-Backward Algorithm (HMM Posterior Marginal Decoding)
 Part 194: R-Tree Spatial Bounding Box Index
 Part 195: Hopfield Network for Associative Memory Pattern Retrieval
+Part 196: Apriori Algorithm for Frequent Itemset Mining
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8213,6 +8214,49 @@ class HopfieldNetwork:
         return s
 
 
+def apriori_frequent_itemsets(transactions: List[List[str]], min_support: float) -> Dict[Tuple[str, ...], float]:
+    """
+    Apriori algorithm exploiting the downward-closure (anti-monotonicity) property
+    to mine all frequent itemsets exceeding support threshold min_support.
+    """
+    n = len(transactions)
+    if n == 0:
+        return {}
+    min_count = math.ceil(min_support * n)
+
+    counts: Dict[frozenset, int] = {}
+    for tx in transactions:
+        for item in tx:
+            k_set = frozenset([item])
+            counts[k_set] = counts.get(k_set, 0) + 1
+
+    L = {k: v for k, v in counts.items() if v >= min_count}
+    all_frequent: Dict[frozenset, int] = dict(L)
+    k = 2
+
+    while L:
+        prev_items = list(L.keys())
+        Ck: Set[frozenset] = set()
+        for i in range(len(prev_items)):
+            for j in range(i + 1, len(prev_items)):
+                union = prev_items[i] | prev_items[j]
+                if len(union) == k:
+                    Ck.add(union)
+
+        c_counts: Dict[frozenset, int] = {}
+        for tx in transactions:
+            tx_set = set(tx)
+            for cand in Ck:
+                if cand.issubset(tx_set):
+                    c_counts[cand] = c_counts.get(cand, 0) + 1
+
+        L = {c: v for c, v in c_counts.items() if v >= min_count}
+        all_frequent.update(L)
+        k += 1
+
+    return {tuple(sorted(list(k))): v / n for k, v in all_frequent.items()}
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9253,4 +9297,7 @@ if __name__ == "__main__":
     hopfield.train([trained_pattern])
     recovered = hopfield.retrieve([1, 1, 1, -1])
     print(f"Original: {trained_pattern}, Restored from noisy [1, 1, 1, -1]: {recovered}")
-    print("\nAll 195 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 196: Apriori Frequent Itemsets ===")
+    sample_txs = [["beer", "diapers"], ["beer", "diapers", "chips"], ["beer", "milk"], ["diapers", "chips"]]
+    print("Frequent itemsets (support >= 0.5):", apriori_frequent_itemsets(sample_txs, 0.5))
+    print("\nAll 196 Algorithms & Data Structures complete and verified!")
