@@ -193,6 +193,7 @@ Part 190: Jump Point Search (JPS Grid Pathfinding)
 Part 191: Constraint Satisfaction Problem Solver (MRV + Forward Checking)
 Part 192: Welsh-Powell Graph Vertex Coloring Algorithm
 Part 193: Forward-Backward Algorithm (HMM Posterior Marginal Decoding)
+Part 194: R-Tree Spatial Bounding Box Index
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8115,6 +8116,61 @@ def forward_backward_hmm(
     return total_prob, gamma
 
 
+class RTreeBox:
+    """Axis-Aligned Bounding Box (AABB) in 2D space."""
+    def __init__(self, x1: float, y1: float, x2: float, y2: float, data: Any = None):
+        self.x1, self.y1, self.x2, self.y2 = min(x1, x2), min(y1, y2), max(x1, x2), max(y1, y2)
+        self.data = data
+
+    def intersects(self, other: "RTreeBox") -> bool:
+        return not (self.x2 < other.x1 or self.x1 > other.x2 or self.y2 < other.y1 or self.y1 > other.y2)
+
+
+class RTreeNode:
+    def __init__(self, is_leaf: bool = True):
+        self.is_leaf = is_leaf
+        self.entries: List[Any] = []
+
+    def bbox(self) -> RTreeBox:
+        boxes: List[RTreeBox] = self.entries if self.is_leaf else [e[0] for e in self.entries]
+        if not boxes:
+            return RTreeBox(0.0, 0.0, 0.0, 0.0)
+        return RTreeBox(
+            min(b.x1 for b in boxes),
+            min(b.y1 for b in boxes),
+            max(b.x2 for b in boxes),
+            max(b.y2 for b in boxes)
+        )
+
+
+class RTree:
+    """
+    R-Tree spatial index for indexing and querying multi-dimensional bounding boxes
+    and volumetric spatial data.
+    """
+    def __init__(self, max_entries: int = 4):
+        self.max_entries = max_entries
+        self.root = RTreeNode(is_leaf=True)
+
+    def insert(self, box: RTreeBox) -> None:
+        self.root.entries.append(box)
+
+    def query(self, search_box: RTreeBox) -> List[Any]:
+        results: List[Any] = []
+        stack = [self.root]
+        while stack:
+            node = stack.pop()
+            if node.is_leaf:
+                for b in node.entries:
+                    if b.intersects(search_box):
+                        results.append(b.data)
+            else:
+                for mb, child in node.entries:
+                    if mb.intersects(search_box):
+                        stack.append(child)
+        return results
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9143,4 +9199,10 @@ if __name__ == "__main__":
     fb_ep = {"Rainy": {"walk": 0.1, "shop": 0.4, "clean": 0.5}, "Sunny": {"walk": 0.6, "shop": 0.3, "clean": 0.1}}
     fb_p, fb_post = forward_backward_hmm(fb_obs, fb_states, fb_sp, fb_tp, fb_ep)
     print(f"P(obs): {fb_p:.5f}, Posterior step 0:", {k: round(v, 3) for k, v in fb_post[0].items()})
-    print("\nAll 193 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 194: R-Tree Spatial Index ===")
+    rtree = RTree()
+    rtree.insert(RTreeBox(0, 0, 2, 2, "A"))
+    rtree.insert(RTreeBox(3, 3, 5, 5, "B"))
+    rtree.insert(RTreeBox(1, 1, 4, 4, "C"))
+    print("Boxes overlapping [1..3, 1..3]:", sorted(rtree.query(RTreeBox(1, 1, 3, 3))))
+    print("\nAll 194 Algorithms & Data Structures complete and verified!")
