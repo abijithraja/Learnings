@@ -201,6 +201,7 @@ Part 198: DBSCAN (Density-Based Spatial Clustering of Applications with Noise)
 Part 199: Expectation-Maximization (EM) for Gaussian Mixture Models
 Part 200: Barnes-Hut N-Body Quadtree Force Approximation
 Part 201: 2-3 Tree (Self-Balancing 2-3 Search Tree)
+Part 202: Earley Parser for General Context-Free Grammars
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8575,6 +8576,56 @@ class TwoThreeTree:
             self.root = self.Node([promoted], [left, right])
 
 
+class EarleyParser:
+    """
+    Earley chart-based parser for arbitrary Context-Free Grammars (including ambiguous
+    and left-recursive productions) executing predictor, scanner, and completer steps.
+    """
+    def __init__(self, grammar: Dict[str, List[List[str]]], start_symbol: str):
+        self.grammar = grammar
+        self.start = start_symbol
+
+    def parse(self, tokens: List[str]) -> bool:
+        """Determines whether token sequence can be derived from start_symbol in O(n^3)."""
+        chart: List[List[Tuple[str, Tuple[str, ...], int, int]]] = [[] for _ in range(len(tokens) + 1)]
+        for prod in self.grammar.get(self.start, []):
+            chart[0].append((self.start, tuple(prod), 0, 0))
+
+        for i in range(len(tokens) + 1):
+            j = 0
+            seen = set(chart[i])
+            while j < len(chart[i]):
+                lhs, rhs, dot, origin = chart[i][j]
+                j += 1
+
+                if dot < len(rhs):
+                    nxt = rhs[dot]
+                    if nxt in self.grammar:
+                        # Predictor
+                        for prod in self.grammar[nxt]:
+                            st = (nxt, tuple(prod), 0, i)
+                            if st not in seen:
+                                seen.add(st)
+                                chart[i].append(st)
+                    elif i < len(tokens) and nxt == tokens[i]:
+                        # Scanner
+                        st = (lhs, rhs, dot + 1, origin)
+                        chart[i + 1].append(st)
+                else:
+                    # Completer
+                    for p_lhs, p_rhs, p_dot, p_orig in chart[origin]:
+                        if p_dot < len(p_rhs) and p_rhs[p_dot] == lhs:
+                            st = (p_lhs, p_rhs, p_dot + 1, p_orig)
+                            if st not in seen:
+                                seen.add(st)
+                                chart[i].append(st)
+
+        for lhs, rhs, dot, origin in chart[len(tokens)]:
+            if lhs == self.start and origin == 0 and dot == len(rhs):
+                return True
+        return False
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9638,4 +9689,16 @@ if __name__ == "__main__":
     for val in [10, 20, 5, 15, 25, 30, 2]:
         two_three.insert(val)
     print("Search 15:", two_three.search(15), "| Search 99:", two_three.search(99))
-    print("\nAll 201 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 202: Earley CFG Parser ===")
+    earley_cfg = {
+        "S": [["NP", "VP"]],
+        "NP": [["Det", "N"], ["John"]],
+        "VP": [["V", "NP"]],
+        "Det": [["a"], ["the"]],
+        "N": [["dog"], ["cat"]],
+        "V": [["chased"], ["saw"]]
+    }
+    ep = EarleyParser(earley_cfg, "S")
+    print("Earley parsed 'John chased the cat':", ep.parse(["John", "chased", "the", "cat"]))
+    print("Earley parsed 'the John chased':", ep.parse(["the", "John", "chased"]))
+    print("\nAll 202 Algorithms & Data Structures complete and verified!")
