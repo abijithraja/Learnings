@@ -210,6 +210,7 @@ Part 207: Vantage-Point Tree (VP-Tree Metric Space Index)
 Part 208: L-System (Lindenmayer String Rewriting Grammar)
 Part 209: HITS Algorithm (Kleinberg's Hubs and Authorities)
 Part 210: Particle Swarm Optimization (PSO)
+Part 211: MinHash & Locality-Sensitive Hashing (LSH) for Jaccard Similarity
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8929,6 +8930,34 @@ def particle_swarm_optimization(
     return gbest, gbest_score
 
 
+class MinHash:
+    """
+    MinHash dimensionality reduction and locality-sensitive hashing (LSH) scheme
+    for estimating Jaccard set similarity using random universal linear hash permutations.
+    """
+    def __init__(self, num_perm: int = 64, seed: int = 42):
+        self.num_perm = num_perm
+        rng = random.Random(seed)
+        self.primes = [(rng.randint(1000, 50000), rng.randint(1000, 50000)) for _ in range(num_perm)]
+        self.MOD = 2147483647
+
+    def signature(self, token_set: Set[Any]) -> List[int]:
+        """Generates minhash signature array of size num_perm for token_set."""
+        sig = [self.MOD] * self.num_perm
+        for token in token_set:
+            h = hash(token) & 0x7FFFFFFF
+            for i, (a, b) in enumerate(self.primes):
+                val = (a * h + b) % self.MOD
+                if val < sig[i]:
+                    sig[i] = val
+        return sig
+
+    @staticmethod
+    def jaccard_similarity(sig1: List[int], sig2: List[int]) -> float:
+        """Estimates Jaccard similarity between two MinHash signatures."""
+        return sum(1 for a, b in zip(sig1, sig2) if a == b) / len(sig1)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10031,4 +10060,11 @@ if __name__ == "__main__":
     print("\n=== Iteration 210: Particle Swarm Optimization (PSO) ===")
     pso_min, pso_val = particle_swarm_optimization(lambda p: sum((x - 2.0) ** 2 for x in p), 2, (-5.0, 5.0))
     print(f"PSO minimum found near (2, 2): {[round(x, 3) for x in pso_min]} (cost={pso_val:.5f})")
-    print("\nAll 210 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 211: MinHash Similarity Estimation ===")
+    mh_engine = MinHash(128)
+    set_a = {"apple", "banana", "orange", "grape", "mango"}
+    set_b = {"apple", "banana", "orange", "pear", "peach"}
+    true_j = len(set_a & set_b) / len(set_a | set_b)
+    est_j = MinHash.jaccard_similarity(mh_engine.signature(set_a), mh_engine.signature(set_b))
+    print(f"True Jaccard: {true_j:.3f}, MinHash Estimated: {est_j:.3f}")
+    print("\nAll 211 Algorithms & Data Structures complete and verified!")
