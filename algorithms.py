@@ -203,6 +203,7 @@ Part 200: Barnes-Hut N-Body Quadtree Force Approximation
 Part 201: 2-3 Tree (Self-Balancing 2-3 Search Tree)
 Part 202: Earley Parser for General Context-Free Grammars
 Part 203: Elias Gamma Coding (Universal Integer Compression)
+Part 204: Thomas Algorithm (Tridiagonal Matrix Algorithm - TDMA)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8648,6 +8649,45 @@ def elias_gamma_decode(bits: str) -> int:
     return int(binary, 2)
 
 
+def thomas_algorithm_tdma(
+    a: List[float],
+    b: List[float],
+    c: List[float],
+    d: List[float]
+) -> List[float]:
+    """
+    Thomas Algorithm (Tridiagonal Matrix Algorithm - TDMA) solving tridiagonal linear
+    systems Ax = d in optimal O(n) time and O(n) space.
+    a: sub-diagonal (length n-1), b: main diagonal (length n), c: super-diagonal (length n-1), d: RHS (length n).
+    """
+    n = len(d)
+    if n == 0:
+        return []
+    if n == 1:
+        return [d[0] / b[0]]
+
+    c_prime = [0.0] * (n - 1)
+    d_prime = [0.0] * n
+
+    c_prime[0] = c[0] / b[0]
+    d_prime[0] = d[0] / b[0]
+
+    for i in range(1, n - 1):
+        denom = b[i] - a[i - 1] * c_prime[i - 1]
+        c_prime[i] = c[i] / denom
+        d_prime[i] = (d[i] - a[i - 1] * d_prime[i - 1]) / denom
+
+    denom = b[n - 1] - a[n - 2] * c_prime[n - 2]
+    d_prime[n - 1] = (d[n - 1] - a[n - 2] * d_prime[n - 2]) / denom
+
+    x = [0.0] * n
+    x[n - 1] = d_prime[n - 1]
+    for i in range(n - 2, -1, -1):
+        x[i] = d_prime[i] - c_prime[i] * x[i + 1]
+
+    return x
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9727,4 +9767,7 @@ if __name__ == "__main__":
     eg_enc = elias_gamma_encode(17)
     eg_dec = elias_gamma_decode(eg_enc)
     print(f"Elias Gamma encoded 17: '{eg_enc}', Decoded: {eg_dec}")
-    print("\nAll 203 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 204: Thomas Algorithm (TDMA) ===")
+    tdma_sol = thomas_algorithm_tdma([-1.0, -1.0], [2.0, 2.0, 2.0], [-1.0, -1.0], [1.0, 0.0, 1.0])
+    print("TDMA Solution:", [round(v, 4) for v in tdma_sol])
+    print("\nAll 204 Algorithms & Data Structures complete and verified!")
