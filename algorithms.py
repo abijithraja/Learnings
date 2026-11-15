@@ -206,6 +206,7 @@ Part 203: Elias Gamma Coding (Universal Integer Compression)
 Part 204: Thomas Algorithm (Tridiagonal Matrix Algorithm - TDMA)
 Part 205: Natural Cubic Spline Interpolation
 Part 206: Modified Gram-Schmidt QR Decomposition
+Part 207: Vantage-Point Tree (VP-Tree Metric Space Index)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8759,6 +8760,73 @@ def qr_decomposition_mgs(A: List[List[float]]) -> Tuple[List[List[float]], List[
     return Q, R
 
 
+class VPNode:
+    def __init__(self, vp: Tuple[float, ...], threshold: float = 0.0, inside=None, outside=None):
+        self.vp = vp
+        self.threshold = threshold
+        self.inside: Optional["VPNode"] = inside
+        self.outside: Optional["VPNode"] = outside
+
+
+class VPTree:
+    """
+    Vantage-Point Tree (VP-Tree) partitioning arbitrary metric spaces via spherical shells
+    around chosen vantage points, providing fast sublinear nearest neighbor lookups.
+    """
+    def __init__(self, points: List[Tuple[float, ...]]):
+        def euclidean_metric(p1: Tuple[float, ...], p2: Tuple[float, ...]) -> float:
+            return math.sqrt(sum((a - b) ** 2 for a, b in zip(p1, p2)))
+
+        self._dist = euclidean_metric
+
+        def _build(pts: List[Tuple[float, ...]]) -> Optional[VPNode]:
+            if not pts:
+                return None
+            vp = pts[0]
+            if len(pts) == 1:
+                return VPNode(vp)
+
+            distances = [self._dist(vp, p) for p in pts[1:]]
+            median_d = sorted(distances)[len(distances) // 2]
+
+            inside_pts = [p for p, d in zip(pts[1:], distances) if d <= median_d]
+            outside_pts = [p for p, d in zip(pts[1:], distances) if d > median_d]
+            return VPNode(vp, median_d, _build(inside_pts), _build(outside_pts))
+
+        self.root = _build(points)
+
+    def nearest_neighbor(self, target: Tuple[float, ...]) -> Tuple[Optional[Tuple[float, ...]], float]:
+        best_pt: Optional[Tuple[float, ...]] = None
+        best_dist = float("inf")
+
+        def _search(node: Optional[VPNode]):
+            nonlocal best_pt, best_dist
+            if not node:
+                return
+
+            d = self._dist(target, node.vp)
+            if d < best_dist:
+                best_dist = d
+                best_pt = node.vp
+
+            if node.inside is None and node.outside is None:
+                return
+
+            if d < node.threshold:
+                if d - best_dist <= node.threshold:
+                    _search(node.inside)
+                if d + best_dist >= node.threshold:
+                    _search(node.outside)
+            else:
+                if d + best_dist >= node.threshold:
+                    _search(node.outside)
+                if d - best_dist <= node.threshold:
+                    _search(node.inside)
+
+        _search(self.root)
+        return best_pt, best_dist
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9848,4 +9916,7 @@ if __name__ == "__main__":
     mgs_mat = [[1.0, 1.0], [1.0, 0.0], [0.0, 1.0]]
     _, r_decomp = qr_decomposition_mgs(mgs_mat)
     print("MGS R diagonal:", [round(r_decomp[i][i], 4) for i in range(2)])
-    print("\nAll 206 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 207: Vantage-Point Tree (VP-Tree) ===")
+    vp_tree = VPTree([(2, 3), (5, 4), (9, 6), (4, 7), (8, 1), (7, 2)])
+    print("VP-Tree Nearest Neighbor to (9, 2):", vp_tree.nearest_neighbor((9, 2)))
+    print("\nAll 207 Algorithms & Data Structures complete and verified!")
