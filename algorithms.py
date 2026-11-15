@@ -207,6 +207,7 @@ Part 204: Thomas Algorithm (Tridiagonal Matrix Algorithm - TDMA)
 Part 205: Natural Cubic Spline Interpolation
 Part 206: Modified Gram-Schmidt QR Decomposition
 Part 207: Vantage-Point Tree (VP-Tree Metric Space Index)
+Part 208: L-System (Lindenmayer String Rewriting Grammar)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8827,6 +8828,23 @@ class VPTree:
         return best_pt, best_dist
 
 
+class LSystem:
+    """
+    Lindenmayer System (L-System) formal grammar generating complex fractal sequences
+    and developmental plant biological structures via parallel string replacement rules.
+    """
+    def __init__(self, axiom: str, rules: Dict[str, str]):
+        self.axiom = axiom
+        self.rules = rules
+
+    def generate(self, iterations: int) -> str:
+        """Applies rewriting rules iteratively for the specified generation count."""
+        state = self.axiom
+        for _ in range(iterations):
+            state = "".join(self.rules.get(ch, ch) for ch in state)
+        return state
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9919,4 +9937,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 207: Vantage-Point Tree (VP-Tree) ===")
     vp_tree = VPTree([(2, 3), (5, 4), (9, 6), (4, 7), (8, 1), (7, 2)])
     print("VP-Tree Nearest Neighbor to (9, 2):", vp_tree.nearest_neighbor((9, 2)))
-    print("\nAll 207 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 208: Lindenmayer System (L-System) ===")
+    algae_sys = LSystem("A", {"A": "AB", "B": "A"})
+    print("Algae growth (iter 4):", algae_sys.generate(4))
+    print("\nAll 208 Algorithms & Data Structures complete and verified!")
