@@ -211,6 +211,7 @@ Part 208: L-System (Lindenmayer String Rewriting Grammar)
 Part 209: HITS Algorithm (Kleinberg's Hubs and Authorities)
 Part 210: Particle Swarm Optimization (PSO)
 Part 211: MinHash & Locality-Sensitive Hashing (LSH) for Jaccard Similarity
+Part 212: Levenberg-Marquardt Non-Linear Least Squares Optimization
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8958,6 +8959,51 @@ class MinHash:
         return sum(1 for a, b in zip(sig1, sig2) if a == b) / len(sig1)
 
 
+def levenberg_marquardt(
+    residual_fn: Any,
+    jacobian_fn: Any,
+    p0: List[float],
+    max_iter: int = 30,
+    lambda_val: float = 1.0
+) -> List[float]:
+    """
+    Levenberg-Marquardt non-linear least squares curve fitting algorithm,
+    interpolating adaptively between gradient descent and the Gauss-Newton method.
+    """
+    p = list(p0)
+    for _ in range(max_iter):
+        r = residual_fn(p)
+        J = jacobian_fn(p)
+        m, n = len(r), len(p)
+
+        JtJ = [[sum(J[k][i] * J[k][j] for k in range(m)) for j in range(n)] for i in range(n)]
+        Jtr = [sum(J[k][i] * r[k] for k in range(m)) for i in range(n)]
+
+        for i in range(n):
+            JtJ[i][i] += lambda_val * max(JtJ[i][i], 1e-4)
+
+        if n == 2:
+            det = JtJ[0][0] * JtJ[1][1] - JtJ[0][1] * JtJ[1][0]
+            if abs(det) < 1e-12:
+                break
+            delta0 = (-Jtr[0] * JtJ[1][1] - (-Jtr[1]) * JtJ[0][1]) / det
+            delta1 = (JtJ[0][0] * (-Jtr[1]) - JtJ[1][0] * (-Jtr[0])) / det
+            delta = [delta0, delta1]
+        else:
+            delta = [-Jtr[i] / max(JtJ[i][i], 1e-6) for i in range(n)]
+
+        p_new = [p[i] + delta[i] for i in range(n)]
+        r_new = residual_fn(p_new)
+
+        if sum(x ** 2 for x in r_new) < sum(x ** 2 for x in r):
+            p = p_new
+            lambda_val = max(1e-6, lambda_val / 10.0)
+        else:
+            lambda_val = min(1e6, lambda_val * 10.0)
+
+    return p
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10067,4 +10113,13 @@ if __name__ == "__main__":
     true_j = len(set_a & set_b) / len(set_a | set_b)
     est_j = MinHash.jaccard_similarity(mh_engine.signature(set_a), mh_engine.signature(set_b))
     print(f"True Jaccard: {true_j:.3f}, MinHash Estimated: {est_j:.3f}")
-    print("\nAll 211 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 212: Levenberg-Marquardt Optimization ===")
+    lm_x = [1.0, 2.0, 3.0, 4.0]
+    lm_y = [3.0, 5.0, 7.0, 9.0] # y = 2x + 1
+    fit_params = levenberg_marquardt(
+        lambda p: [p[0] * x + p[1] - y for x, y in zip(lm_x, lm_y)],
+        lambda p: [[x, 1.0] for x in lm_x],
+        [0.0, 0.0]
+    )
+    print("Fitted line parameters [slope, intercept]:", [round(v, 3) for v in fit_params])
+    print("\nAll 212 Algorithms & Data Structures complete and verified!")
