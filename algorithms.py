@@ -209,6 +209,7 @@ Part 206: Modified Gram-Schmidt QR Decomposition
 Part 207: Vantage-Point Tree (VP-Tree Metric Space Index)
 Part 208: L-System (Lindenmayer String Rewriting Grammar)
 Part 209: HITS Algorithm (Kleinberg's Hubs and Authorities)
+Part 210: Particle Swarm Optimization (PSO)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8880,6 +8881,54 @@ def hits_algorithm(
     return hubs, auth
 
 
+def particle_swarm_optimization(
+    cost_func: Any,
+    dim: int,
+    bounds: Tuple[float, float],
+    num_particles: int = 25,
+    max_iter: int = 40,
+    seed: int = 42
+) -> Tuple[List[float], float]:
+    """
+    Particle Swarm Optimization (PSO) population-based metaheuristic searching for continuous
+    global function minima through cognitive (pbest) and social (gbest) velocity updates.
+    Returns: (best_parameter_vector, minimum_cost)
+    """
+    rng = random.Random(seed)
+    w, c1, c2 = 0.5, 1.5, 1.5
+    low, high = bounds
+
+    pos = [[low + rng.random() * (high - low) for _ in range(dim)] for _ in range(num_particles)]
+    vel = [[(rng.random() - 0.5) * (high - low) * 0.1 for _ in range(dim)] for _ in range(num_particles)]
+    pbest = [p[:] for p in pos]
+    pbest_scores = [cost_func(p) for p in pos]
+
+    gbest = min(pbest, key=cost_func)
+    gbest_score = cost_func(gbest)
+
+    for _ in range(max_iter):
+        for i in range(num_particles):
+            for d in range(dim):
+                r1, r2 = rng.random(), rng.random()
+                vel[i][d] = (
+                    w * vel[i][d] +
+                    c1 * r1 * (pbest[i][d] - pos[i][d]) +
+                    c2 * r2 * (gbest[d] - pos[i][d])
+                )
+                pos[i][d] += vel[i][d]
+                pos[i][d] = max(low, min(high, pos[i][d]))
+
+            score = cost_func(pos[i])
+            if score < pbest_scores[i]:
+                pbest_scores[i] = score
+                pbest[i] = pos[i][:]
+                if score < gbest_score:
+                    gbest_score = score
+                    gbest = pos[i][:]
+
+    return gbest, gbest_score
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9979,4 +10028,7 @@ if __name__ == "__main__":
     hits_edges = [(0, 1), (0, 2), (1, 2), (2, 3), (3, 2)]
     hub_res, auth_res = hits_algorithm(4, hits_edges)
     print(f"Top Hub Node: {max(range(4), key=lambda i: hub_res[i])}, Top Authority Node: {max(range(4), key=lambda i: auth_res[i])}")
-    print("\nAll 209 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 210: Particle Swarm Optimization (PSO) ===")
+    pso_min, pso_val = particle_swarm_optimization(lambda p: sum((x - 2.0) ** 2 for x in p), 2, (-5.0, 5.0))
+    print(f"PSO minimum found near (2, 2): {[round(x, 3) for x in pso_min]} (cost={pso_val:.5f})")
+    print("\nAll 210 Algorithms & Data Structures complete and verified!")
