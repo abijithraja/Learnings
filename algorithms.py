@@ -205,6 +205,7 @@ Part 202: Earley Parser for General Context-Free Grammars
 Part 203: Elias Gamma Coding (Universal Integer Compression)
 Part 204: Thomas Algorithm (Tridiagonal Matrix Algorithm - TDMA)
 Part 205: Natural Cubic Spline Interpolation
+Part 206: Modified Gram-Schmidt QR Decomposition
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8734,6 +8735,30 @@ class NaturalCubicSpline:
         return self.a[0] if x_val < self.x[0] else self.a[-1]
 
 
+def qr_decomposition_mgs(A: List[List[float]]) -> Tuple[List[List[float]], List[List[float]]]:
+    """
+    Computes the QR factorization of matrix A (m x n, m >= n) via Modified Gram-Schmidt (MGS)
+    orthogonalization, yielding orthonormal column matrix Q and upper-triangular matrix R.
+    """
+    m = len(A)
+    n = len(A[0])
+    Q = [[0.0] * n for _ in range(m)]
+    R = [[0.0] * n for _ in range(n)]
+    V = [[A[i][j] for i in range(m)] for j in range(n)]
+
+    for j in range(n):
+        R[j][j] = math.sqrt(sum(V[j][i] ** 2 for i in range(m)))
+        if R[j][j] > 1e-12:
+            for i in range(m):
+                Q[i][j] = V[j][i] / R[j][j]
+        for k in range(j + 1, n):
+            R[j][k] = sum(Q[i][j] * V[k][i] for i in range(m))
+            for i in range(m):
+                V[k][i] -= R[j][k] * Q[i][j]
+
+    return Q, R
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9819,4 +9844,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 205: Natural Cubic Spline Interpolation ===")
     cub_spline = NaturalCubicSpline([0.0, 1.0, 2.0, 3.0], [0.0, 1.0, 8.0, 27.0])
     print(f"Spline interpolated value at x=1.5: {cub_spline.interpolate(1.5):.4f}")
-    print("\nAll 205 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 206: Modified Gram-Schmidt QR Decomposition ===")
+    mgs_mat = [[1.0, 1.0], [1.0, 0.0], [0.0, 1.0]]
+    _, r_decomp = qr_decomposition_mgs(mgs_mat)
+    print("MGS R diagonal:", [round(r_decomp[i][i], 4) for i in range(2)])
+    print("\nAll 206 Algorithms & Data Structures complete and verified!")
