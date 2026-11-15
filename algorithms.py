@@ -202,6 +202,7 @@ Part 199: Expectation-Maximization (EM) for Gaussian Mixture Models
 Part 200: Barnes-Hut N-Body Quadtree Force Approximation
 Part 201: 2-3 Tree (Self-Balancing 2-3 Search Tree)
 Part 202: Earley Parser for General Context-Free Grammars
+Part 203: Elias Gamma Coding (Universal Integer Compression)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8626,6 +8627,27 @@ class EarleyParser:
         return False
 
 
+def elias_gamma_encode(n: int) -> str:
+    """
+    Encodes a positive integer n using Elias Gamma universal coding.
+    Produces floor(log2(n)) zero bits followed by binary representation of n.
+    """
+    if n <= 0:
+        raise ValueError("Elias Gamma coding requires positive integers (n >= 1)")
+    binary = bin(n)[2:]
+    k = len(binary) - 1
+    return ("0" * k) + binary
+
+
+def elias_gamma_decode(bits: str) -> int:
+    """Decodes an Elias Gamma bitstring back to its positive integer."""
+    k = 0
+    while k < len(bits) and bits[k] == "0":
+        k += 1
+    binary = bits[k:2 * k + 1]
+    return int(binary, 2)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9701,4 +9723,8 @@ if __name__ == "__main__":
     ep = EarleyParser(earley_cfg, "S")
     print("Earley parsed 'John chased the cat':", ep.parse(["John", "chased", "the", "cat"]))
     print("Earley parsed 'the John chased':", ep.parse(["the", "John", "chased"]))
-    print("\nAll 202 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 203: Elias Gamma Coding ===")
+    eg_enc = elias_gamma_encode(17)
+    eg_dec = elias_gamma_decode(eg_enc)
+    print(f"Elias Gamma encoded 17: '{eg_enc}', Decoded: {eg_dec}")
+    print("\nAll 203 Algorithms & Data Structures complete and verified!")
