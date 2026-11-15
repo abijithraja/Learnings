@@ -208,6 +208,7 @@ Part 205: Natural Cubic Spline Interpolation
 Part 206: Modified Gram-Schmidt QR Decomposition
 Part 207: Vantage-Point Tree (VP-Tree Metric Space Index)
 Part 208: L-System (Lindenmayer String Rewriting Grammar)
+Part 209: HITS Algorithm (Kleinberg's Hubs and Authorities)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8845,6 +8846,40 @@ class LSystem:
         return state
 
 
+def hits_algorithm(
+    n: int,
+    edges: List[Tuple[int, int]],
+    iterations: int = 30
+) -> Tuple[List[float], List[float]]:
+    """
+    Kleinberg's Hyperlink-Induced Topic Search (HITS) algorithm calculating mutually
+    reinforcing Hubs and Authorities scores for vertices in a directed web graph.
+    Returns: (hub_scores, authority_scores)
+    """
+    if n <= 0:
+        return [], []
+
+    auth = [1.0] * n
+    hubs = [1.0] * n
+    in_edges: List[List[int]] = [[] for _ in range(n)]
+    out_edges: List[List[int]] = [[] for _ in range(n)]
+
+    for u, v in edges:
+        out_edges[u].append(v)
+        in_edges[v].append(u)
+
+    for _ in range(iterations):
+        new_auth = [sum(hubs[u] for u in in_edges[v]) for v in range(n)]
+        norm_a = math.sqrt(sum(a ** 2 for a in new_auth)) or 1.0
+        auth = [a / norm_a for a in new_auth]
+
+        new_hubs = [sum(auth[v] for v in out_edges[u]) for u in range(n)]
+        norm_h = math.sqrt(sum(h ** 2 for h in new_hubs)) or 1.0
+        hubs = [h / norm_h for h in new_hubs]
+
+    return hubs, auth
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9940,4 +9975,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 208: Lindenmayer System (L-System) ===")
     algae_sys = LSystem("A", {"A": "AB", "B": "A"})
     print("Algae growth (iter 4):", algae_sys.generate(4))
-    print("\nAll 208 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 209: HITS Algorithm (Hubs & Authorities) ===")
+    hits_edges = [(0, 1), (0, 2), (1, 2), (2, 3), (3, 2)]
+    hub_res, auth_res = hits_algorithm(4, hits_edges)
+    print(f"Top Hub Node: {max(range(4), key=lambda i: hub_res[i])}, Top Authority Node: {max(range(4), key=lambda i: auth_res[i])}")
+    print("\nAll 209 Algorithms & Data Structures complete and verified!")
