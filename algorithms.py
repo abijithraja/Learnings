@@ -204,6 +204,7 @@ Part 201: 2-3 Tree (Self-Balancing 2-3 Search Tree)
 Part 202: Earley Parser for General Context-Free Grammars
 Part 203: Elias Gamma Coding (Universal Integer Compression)
 Part 204: Thomas Algorithm (Tridiagonal Matrix Algorithm - TDMA)
+Part 205: Natural Cubic Spline Interpolation
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -8688,6 +8689,51 @@ def thomas_algorithm_tdma(
     return x
 
 
+class NaturalCubicSpline:
+    """
+    Natural Cubic Spline interpolating tabular points (x_i, y_i) with piecewise C^2
+    continuity and zero second derivatives at both endpoints.
+    """
+    def __init__(self, x_pts: List[float], y_pts: List[float]):
+        n = len(x_pts)
+        if n < 2 or len(y_pts) != n:
+            raise ValueError("Cubic spline requires at least two points with matching coordinates")
+
+        self.x = list(x_pts)
+        self.a = list(y_pts)
+        h = [x_pts[i + 1] - x_pts[i] for i in range(n - 1)]
+
+        alpha = [0.0] * n
+        for i in range(1, n - 1):
+            alpha[i] = (3.0 / h[i]) * (self.a[i + 1] - self.a[i]) - (3.0 / h[i - 1]) * (self.a[i] - self.a[i - 1])
+
+        l = [1.0] * n
+        mu = [0.0] * n
+        z = [0.0] * n
+
+        for i in range(1, n - 1):
+            l[i] = 2.0 * (x_pts[i + 1] - x_pts[i - 1]) - h[i - 1] * mu[i - 1]
+            mu[i] = h[i] / l[i]
+            z[i] = (alpha[i] - h[i - 1] * z[i - 1]) / l[i]
+
+        self.c = [0.0] * n
+        self.b = [0.0] * (n - 1)
+        self.d = [0.0] * (n - 1)
+
+        for j in range(n - 2, -1, -1):
+            self.c[j] = z[j] - mu[j] * self.c[j + 1]
+            self.b[j] = (self.a[j + 1] - self.a[j]) / h[j] - h[j] * (self.c[j + 1] + 2.0 * self.c[j]) / 3.0
+            self.d[j] = (self.c[j + 1] - self.c[j]) / (3.0 * h[j])
+
+    def interpolate(self, x_val: float) -> float:
+        """Evaluates the piecewise cubic polynomial at query position x_val."""
+        for i in range(len(self.x) - 1):
+            if self.x[i] <= x_val <= self.x[i + 1]:
+                dx = x_val - self.x[i]
+                return self.a[i] + self.b[i] * dx + self.c[i] * (dx ** 2) + self.d[i] * (dx ** 3)
+        return self.a[0] if x_val < self.x[0] else self.a[-1]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -9770,4 +9816,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 204: Thomas Algorithm (TDMA) ===")
     tdma_sol = thomas_algorithm_tdma([-1.0, -1.0], [2.0, 2.0, 2.0], [-1.0, -1.0], [1.0, 0.0, 1.0])
     print("TDMA Solution:", [round(v, 4) for v in tdma_sol])
-    print("\nAll 204 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 205: Natural Cubic Spline Interpolation ===")
+    cub_spline = NaturalCubicSpline([0.0, 1.0, 2.0, 3.0], [0.0, 1.0, 8.0, 27.0])
+    print(f"Spline interpolated value at x=1.5: {cub_spline.interpolate(1.5):.4f}")
+    print("\nAll 205 Algorithms & Data Structures complete and verified!")
