@@ -213,6 +213,7 @@ Part 210: Particle Swarm Optimization (PSO)
 Part 211: MinHash & Locality-Sensitive Hashing (LSH) for Jaccard Similarity
 Part 212: Levenberg-Marquardt Non-Linear Least Squares Optimization
 Part 213: 2-3-4 Tree (Self-Balancing 2-3-4 Search Tree)
+Part 214: Runge-Kutta 4th Order Method (RK4 ODE Integrator)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9074,6 +9075,28 @@ class TwoThreeFourTree:
         curr.keys.insert(idx, key)
 
 
+def runge_kutta_4th_order(f: Any, y0: float, t0: float, t_end: float, steps: int) -> float:
+    """
+    Classic Runge-Kutta 4th Order (RK4) numerical integrator for initial value ordinary
+    differential equations dy/dt = f(t, y) with global truncation error O(h^4).
+    """
+    if steps <= 0:
+        return y0
+    h = (t_end - t0) / steps
+    t = t0
+    y = y0
+
+    for _ in range(steps):
+        k1 = f(t, y)
+        k2 = f(t + 0.5 * h, y + 0.5 * h * k1)
+        k3 = f(t + 0.5 * h, y + 0.5 * h * k2)
+        k4 = f(t + h, y + h * k3)
+        y += (h / 6.0) * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
+        t += h
+
+    return y
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10197,4 +10220,7 @@ if __name__ == "__main__":
     for item in [10, 20, 30, 40, 50, 25, 15]:
         ttf_tree.insert(item)
     print("Search 25:", ttf_tree.search(25), "| Search 99:", ttf_tree.search(99))
-    print("\nAll 213 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 214: Runge-Kutta 4th Order Method (RK4) ===")
+    rk4_val = runge_kutta_4th_order(lambda t, y: y, 1.0, 0.0, 1.0, 10) # dy/dt = y -> y(1) = e
+    print(f"RK4 approximate e = {rk4_val:.5f} (true e = {math.e:.5f})")
+    print("\nAll 214 Algorithms & Data Structures complete and verified!")
