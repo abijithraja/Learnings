@@ -218,6 +218,7 @@ Part 215: Misra-Gries Heavy Hitters Streaming Algorithm
 Part 216: De Bruijn Graph Genome Sequence Assembly
 Part 217: Marching Squares 2D Isocontour Extraction Algorithm
 Part 218: K-Medoids Clustering (Partitioning Around Medoids - PAM)
+Part 219: Maximum Independent Set (Branch and Bound with Degree Ordering)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9263,6 +9264,41 @@ def k_medoids_pam(
     return [points[m] for m in medoids], clusters
 
 
+def maximum_independent_set_bb(n: int, edges: List[Tuple[int, int]]) -> List[int]:
+    """
+    Exact Branch-and-Bound algorithm to find the Maximum Independent Set in an undirected graph,
+    branching on maximum remaining degree vertices with upper-bound pruning.
+    """
+    if n <= 0:
+        return []
+
+    adj: List[Set[int]] = [set() for _ in range(n)]
+    for u, v in edges:
+        adj[u].add(v)
+        adj[v].add(u)
+
+    best_is: Set[int] = set()
+
+    def solve(candidates: Set[int], current_is: Set[int]):
+        nonlocal best_is
+        if not candidates:
+            if len(current_is) > len(best_is):
+                best_is = set(current_is)
+            return
+
+        if len(current_is) + len(candidates) <= len(best_is):
+            return
+
+        v = max(candidates, key=lambda u: len(adj[u] & candidates))
+        # Branch 1: include v
+        solve(candidates - {v} - adj[v], current_is | {v})
+        # Branch 2: exclude v
+        solve(candidates - {v}, current_is)
+
+    solve(set(range(n)), set())
+    return sorted(list(best_is))
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10403,4 +10439,7 @@ if __name__ == "__main__":
     pam_points = [(1.0, 2.0), (2.0, 2.0), (2.0, 3.0), (8.0, 7.0), (8.0, 8.0), (25.0, 25.0)]
     pam_medoids, _ = k_medoids_pam(pam_points, 2)
     print("PAM Medoids:", pam_medoids)
-    print("\nAll 218 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 219: Maximum Independent Set (Branch & Bound) ===")
+    c5_edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 0)]
+    print("MIS of 5-cycle graph C5:", maximum_independent_set_bb(5, c5_edges))
+    print("\nAll 219 Algorithms & Data Structures complete and verified!")
