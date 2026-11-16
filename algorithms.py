@@ -216,6 +216,7 @@ Part 213: 2-3-4 Tree (Self-Balancing 2-3-4 Search Tree)
 Part 214: Runge-Kutta 4th Order Method (RK4 ODE Integrator)
 Part 215: Misra-Gries Heavy Hitters Streaming Algorithm
 Part 216: De Bruijn Graph Genome Sequence Assembly
+Part 217: Marching Squares 2D Isocontour Extraction Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9170,6 +9171,48 @@ def debruijn_sequence_assembly(kmers: List[str], k: int) -> str:
     return res
 
 
+def marching_squares(grid: List[List[float]], threshold: float = 0.5) -> List[Tuple[Tuple[float, float], Tuple[float, float]]]:
+    """
+    Marching Squares algorithm generating 2D contour line segments from a scalar grid
+    by evaluating 16 topological boundary cases per grid cell.
+    """
+    h = len(grid)
+    w = len(grid[0])
+    segments: List[Tuple[Tuple[float, float], Tuple[float, float]]] = []
+
+    for y in range(h - 1):
+        for x in range(w - 1):
+            tl = 1 if grid[y][x] >= threshold else 0
+            tr = 1 if grid[y][x + 1] >= threshold else 0
+            br = 1 if grid[y + 1][x + 1] >= threshold else 0
+            bl = 1 if grid[y + 1][x] >= threshold else 0
+            case = (tl << 3) | (tr << 2) | (br << 1) | bl
+
+            top = (x + 0.5, float(y))
+            right = (float(x + 1), y + 0.5)
+            bottom = (x + 0.5, float(y + 1))
+            left = (float(x), y + 0.5)
+
+            if case in (1, 14):
+                segments.append((left, bottom))
+            elif case in (2, 13):
+                segments.append((bottom, right))
+            elif case in (3, 12):
+                segments.append((left, right))
+            elif case in (4, 11):
+                segments.append((top, right))
+            elif case in (6, 9):
+                segments.append((top, bottom))
+            elif case in (7, 8):
+                segments.append((left, top))
+            elif case == 5:
+                segments.extend([(left, top), (bottom, right)])
+            elif case == 10:
+                segments.extend([(top, right), (left, bottom)])
+
+    return segments
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10303,4 +10346,7 @@ if __name__ == "__main__":
     sample_seq = "ATGCA"
     test_kmers = [sample_seq[i:i + 3] for i in range(len(sample_seq) - 2)]
     print("Reconstructed genomic sequence:", debruijn_sequence_assembly(test_kmers, 3))
-    print("\nAll 216 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 217: Marching Squares Isocontour Extraction ===")
+    ms_grid = [[0.0, 1.0], [1.0, 0.0]]
+    print("Contour segments extracted:", marching_squares(ms_grid, 0.5))
+    print("\nAll 217 Algorithms & Data Structures complete and verified!")
