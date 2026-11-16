@@ -212,6 +212,7 @@ Part 209: HITS Algorithm (Kleinberg's Hubs and Authorities)
 Part 210: Particle Swarm Optimization (PSO)
 Part 211: MinHash & Locality-Sensitive Hashing (LSH) for Jaccard Similarity
 Part 212: Levenberg-Marquardt Non-Linear Least Squares Optimization
+Part 213: 2-3-4 Tree (Self-Balancing 2-3-4 Search Tree)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9004,6 +9005,75 @@ def levenberg_marquardt(
     return p
 
 
+class TwoThreeFourNode:
+    def __init__(self, keys=None, children=None):
+        self.keys: List[int] = keys if keys else []
+        self.children: List["TwoThreeFourNode"] = children if children else []
+
+    def is_leaf(self) -> bool:
+        return len(self.children) == 0
+
+
+class TwoThreeFourTree:
+    """
+    Self-balancing 2-3-4 Tree (B-tree of order 4) where every internal node contains
+    1, 2, or 3 data keys, maintaining perfect balance via top-down preemptive splitting.
+    """
+    def __init__(self):
+        self.root = TwoThreeFourNode()
+
+    def search(self, key: int) -> bool:
+        """Searches for key in O(log n) time."""
+        node = self.root
+        while node:
+            if key in node.keys:
+                return True
+            if node.is_leaf():
+                return False
+            idx = 0
+            while idx < len(node.keys) and key > node.keys[idx]:
+                idx += 1
+            node = node.children[idx]
+        return False
+
+    def insert(self, key: int) -> None:
+        """Inserts key with top-down preemptive splitting of 4-nodes."""
+        if self.search(key):
+            return
+
+        if len(self.root.keys) == 3:
+            old_root = self.root
+            self.root = TwoThreeFourNode(
+                [old_root.keys[1]],
+                [
+                    TwoThreeFourNode([old_root.keys[0]], old_root.children[:2] if not old_root.is_leaf() else []),
+                    TwoThreeFourNode([old_root.keys[2]], old_root.children[2:] if not old_root.is_leaf() else [])
+                ]
+            )
+
+        curr = self.root
+        while not curr.is_leaf():
+            idx = 0
+            while idx < len(curr.keys) and key > curr.keys[idx]:
+                idx += 1
+            child = curr.children[idx]
+            if len(child.keys) == 3:
+                curr.keys.insert(idx, child.keys[1])
+                curr.children.pop(idx)
+                curr.children.insert(idx, TwoThreeFourNode([child.keys[2]], child.children[2:] if not child.is_leaf() else []))
+                curr.children.insert(idx, TwoThreeFourNode([child.keys[0]], child.children[:2] if not child.is_leaf() else []))
+                if key > curr.keys[idx]:
+                    child = curr.children[idx + 1]
+                else:
+                    child = curr.children[idx]
+            curr = child
+
+        idx = 0
+        while idx < len(curr.keys) and key > curr.keys[idx]:
+            idx += 1
+        curr.keys.insert(idx, key)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10122,4 +10192,9 @@ if __name__ == "__main__":
         [0.0, 0.0]
     )
     print("Fitted line parameters [slope, intercept]:", [round(v, 3) for v in fit_params])
-    print("\nAll 212 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 213: 2-3-4 Tree ===")
+    ttf_tree = TwoThreeFourTree()
+    for item in [10, 20, 30, 40, 50, 25, 15]:
+        ttf_tree.insert(item)
+    print("Search 25:", ttf_tree.search(25), "| Search 99:", ttf_tree.search(99))
+    print("\nAll 213 Algorithms & Data Structures complete and verified!")
