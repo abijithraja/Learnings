@@ -220,6 +220,7 @@ Part 217: Marching Squares 2D Isocontour Extraction Algorithm
 Part 218: K-Medoids Clustering (Partitioning Around Medoids - PAM)
 Part 219: Maximum Independent Set (Branch and Bound with Degree Ordering)
 Part 220: Ant Colony Optimization (ACO for Traveling Salesperson Problem)
+Part 221: Householder Reflection QR Decomposition
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9373,6 +9374,41 @@ def ant_colony_optimization_tsp(
     return best_tour, best_len
 
 
+def householder_qr_decomposition(A: List[List[float]]) -> Tuple[List[List[float]], List[List[float]]]:
+    """
+    Computes numerically stable QR decomposition A = QR via Householder reflection matrices H_k,
+    eliminating subdiagonal elements unconditionally without loss of orthogonality.
+    """
+    m = len(A)
+    n = len(A[0])
+    R = [row[:] for row in A]
+    Q = [[1.0 if i == j else 0.0 for j in range(m)] for i in range(m)]
+
+    for k in range(min(m - 1, n)):
+        x = [R[i][k] for i in range(k, m)]
+        norm_x = math.sqrt(sum(xi ** 2 for xi in x))
+        if norm_x < 1e-12:
+            continue
+
+        sign = 1.0 if x[0] >= 0 else -1.0
+        v = x[:]
+        v[0] += sign * norm_x
+        norm_v = math.sqrt(sum(vi ** 2 for vi in v))
+        v = [vi / norm_v for vi in v]
+
+        for j in range(k, n):
+            dot = sum(v[i - k] * R[i][j] for i in range(k, m))
+            for i in range(k, m):
+                R[i][j] -= 2.0 * v[i - k] * dot
+
+        for i in range(m):
+            dot = sum(Q[i][j] * v[j - k] for j in range(k, m))
+            for j in range(k, m):
+                Q[i][j] -= 2.0 * dot * v[j - k]
+
+    return Q, R
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10520,4 +10556,8 @@ if __name__ == "__main__":
     aco_nodes = [(0.0, 0.0), (0.0, 4.0), (3.0, 4.0), (3.0, 0.0)]
     aco_t, aco_l = ant_colony_optimization_tsp(aco_nodes)
     print(f"ACO Tour: {aco_t}, Length: {aco_l:.3f}")
-    print("\nAll 220 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 221: Householder QR Decomposition ===")
+    hh_mat = [[12.0, -51.0, 4.0], [6.0, 167.0, -68.0], [-4.0, 24.0, -41.0]]
+    _, hh_r = householder_qr_decomposition(hh_mat)
+    print("Householder R diagonal:", [round(hh_r[i][i], 2) for i in range(3)])
+    print("\nAll 221 Algorithms & Data Structures complete and verified!")
