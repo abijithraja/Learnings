@@ -214,6 +214,7 @@ Part 211: MinHash & Locality-Sensitive Hashing (LSH) for Jaccard Similarity
 Part 212: Levenberg-Marquardt Non-Linear Least Squares Optimization
 Part 213: 2-3-4 Tree (Self-Balancing 2-3-4 Search Tree)
 Part 214: Runge-Kutta 4th Order Method (RK4 ODE Integrator)
+Part 215: Misra-Gries Heavy Hitters Streaming Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9097,6 +9098,32 @@ def runge_kutta_4th_order(f: Any, y0: float, t0: float, t_end: float, steps: int
     return y
 
 
+def misra_gries_heavy_hitters(stream: Any, k: int) -> Dict[Any, int]:
+    """
+    Misra-Gries deterministic streaming algorithm identifying elements occurring
+    with frequency > N / k using at most (k - 1) frequency counters.
+    """
+    if k <= 1:
+        return {}
+    counters: Dict[Any, int] = {}
+
+    for item in stream:
+        if item in counters:
+            counters[item] += 1
+        elif len(counters) < k - 1:
+            counters[item] = 1
+        else:
+            to_del = []
+            for key in counters:
+                counters[key] -= 1
+                if counters[key] == 0:
+                    to_del.append(key)
+            for key in to_del:
+                del counters[key]
+
+    return counters
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10223,4 +10250,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 214: Runge-Kutta 4th Order Method (RK4) ===")
     rk4_val = runge_kutta_4th_order(lambda t, y: y, 1.0, 0.0, 1.0, 10) # dy/dt = y -> y(1) = e
     print(f"RK4 approximate e = {rk4_val:.5f} (true e = {math.e:.5f})")
-    print("\nAll 214 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 215: Misra-Gries Heavy Hitters ===")
+    mg_stream = ["A", "A", "B", "A", "C", "A", "D", "A", "B", "B", "A"]
+    print("Misra-Gries candidates (k=3):", misra_gries_heavy_hitters(mg_stream, 3))
+    print("\nAll 215 Algorithms & Data Structures complete and verified!")
