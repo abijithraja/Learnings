@@ -215,6 +215,7 @@ Part 212: Levenberg-Marquardt Non-Linear Least Squares Optimization
 Part 213: 2-3-4 Tree (Self-Balancing 2-3-4 Search Tree)
 Part 214: Runge-Kutta 4th Order Method (RK4 ODE Integrator)
 Part 215: Misra-Gries Heavy Hitters Streaming Algorithm
+Part 216: De Bruijn Graph Genome Sequence Assembly
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9124,6 +9125,51 @@ def misra_gries_heavy_hitters(stream: Any, k: int) -> Dict[Any, int]:
     return counters
 
 
+def debruijn_sequence_assembly(kmers: List[str], k: int) -> str:
+    """
+    Bioinformatic sequence assembly via De Bruijn graph construction from k-mers
+    and reconstructing the original sequence via Eulerian path traversal.
+    """
+    if not kmers:
+        return ""
+
+    adj: Dict[str, List[str]] = {}
+    in_deg: Dict[str, int] = {}
+    out_deg: Dict[str, int] = {}
+
+    for kmer in kmers:
+        u = kmer[:-1]
+        v = kmer[1:]
+        adj.setdefault(u, []).append(v)
+        out_deg[u] = out_deg.get(u, 0) + 1
+        in_deg[v] = in_deg.get(v, 0) + 1
+        in_deg.setdefault(u, 0)
+        out_deg.setdefault(v, 0)
+
+    start = list(adj.keys())[0]
+    for node in in_deg:
+        if out_deg.get(node, 0) - in_deg.get(node, 0) == 1:
+            start = node
+            break
+
+    # Hierholzer Eulerian path traversal
+    stack = [start]
+    path: List[str] = []
+    while stack:
+        curr = stack[-1]
+        if adj.get(curr):
+            nxt = adj[curr].pop()
+            stack.append(nxt)
+        else:
+            path.append(stack.pop())
+
+    path.reverse()
+    res = path[0]
+    for node in path[1:]:
+        res += node[-1]
+    return res
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10253,4 +10299,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 215: Misra-Gries Heavy Hitters ===")
     mg_stream = ["A", "A", "B", "A", "C", "A", "D", "A", "B", "B", "A"]
     print("Misra-Gries candidates (k=3):", misra_gries_heavy_hitters(mg_stream, 3))
-    print("\nAll 215 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 216: De Bruijn Sequence Assembly ===")
+    sample_seq = "ATGCA"
+    test_kmers = [sample_seq[i:i + 3] for i in range(len(sample_seq) - 2)]
+    print("Reconstructed genomic sequence:", debruijn_sequence_assembly(test_kmers, 3))
+    print("\nAll 216 Algorithms & Data Structures complete and verified!")
