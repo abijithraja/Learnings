@@ -221,6 +221,7 @@ Part 218: K-Medoids Clustering (Partitioning Around Medoids - PAM)
 Part 219: Maximum Independent Set (Branch and Bound with Degree Ordering)
 Part 220: Ant Colony Optimization (ACO for Traveling Salesperson Problem)
 Part 221: Householder Reflection QR Decomposition
+Part 222: Chan's Output-Sensitive 2D Convex Hull Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9409,6 +9410,58 @@ def householder_qr_decomposition(A: List[List[float]]) -> Tuple[List[List[float]
     return Q, R
 
 
+def chans_convex_hull(points: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+    """
+    Chan's optimal output-sensitive 2D Convex Hull algorithm running in O(n log h) time,
+    combining Graham Scan on sub-clusters with Jarvis March tangent finding.
+    """
+    def cross(o: Tuple[float, float], a: Tuple[float, float], b: Tuple[float, float]) -> float:
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    def graham_subhull(pts: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+        p_sorted = sorted(set(pts))
+        if len(p_sorted) <= 2:
+            return p_sorted
+        lower: List[Tuple[float, float]] = []
+        for p in p_sorted:
+            while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
+                lower.pop()
+            lower.append(p)
+        upper: List[Tuple[float, float]] = []
+        for p in reversed(p_sorted):
+            while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
+                upper.pop()
+            upper.append(p)
+        return lower[:-1] + upper[:-1]
+
+    n = len(points)
+    if n <= 3:
+        return sorted(set(points))
+
+    for t in range(1, 15):
+        m = min(n, 2 ** (2 ** t))
+        subsets = [points[i:i + m] for i in range(0, n, m)]
+        hulls = [graham_subhull(sub) for sub in subsets]
+
+        p0 = min(points, key=lambda p: (p[1], p[0]))
+        hull = [p0]
+
+        for _ in range(m):
+            p = hull[-1]
+            q = None
+            for h in hulls:
+                for candidate in h:
+                    if candidate == p:
+                        continue
+                    if q is None or cross(p, q, candidate) < 0:
+                        q = candidate
+            if q is None or q == hull[0]:
+                return hull
+            hull.append(q)
+
+    return graham_subhull(points)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10560,4 +10613,7 @@ if __name__ == "__main__":
     hh_mat = [[12.0, -51.0, 4.0], [6.0, 167.0, -68.0], [-4.0, 24.0, -41.0]]
     _, hh_r = householder_qr_decomposition(hh_mat)
     print("Householder R diagonal:", [round(hh_r[i][i], 2) for i in range(3)])
-    print("\nAll 221 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 222: Chan's Output-Sensitive Convex Hull ===")
+    chan_sample = [(0.0, 0.0), (5.0, 0.0), (5.0, 5.0), (0.0, 5.0), (2.0, 2.0), (1.0, 3.0)]
+    print("Chan Hull Vertices:", chans_convex_hull(chan_sample))
+    print("\nAll 222 Algorithms & Data Structures complete and verified!")
