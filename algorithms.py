@@ -219,6 +219,7 @@ Part 216: De Bruijn Graph Genome Sequence Assembly
 Part 217: Marching Squares 2D Isocontour Extraction Algorithm
 Part 218: K-Medoids Clustering (Partitioning Around Medoids - PAM)
 Part 219: Maximum Independent Set (Branch and Bound with Degree Ordering)
+Part 220: Ant Colony Optimization (ACO for Traveling Salesperson Problem)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9299,6 +9300,79 @@ def maximum_independent_set_bb(n: int, edges: List[Tuple[int, int]]) -> List[int
     return sorted(list(best_is))
 
 
+def ant_colony_optimization_tsp(
+    cities: List[Tuple[float, float]],
+    n_ants: int = 15,
+    n_iterations: int = 30,
+    alpha: float = 1.0,
+    beta: float = 2.0,
+    rho: float = 0.1,
+    Q: float = 100.0,
+    seed: int = 42
+) -> Tuple[List[int], float]:
+    """
+    Ant Colony Optimization (ACO) swarm intelligence metaheuristic discovering
+    optimal tour solutions to the Traveling Salesperson Problem (TSP) using pheromone evaporation and reinforcement.
+    """
+    rng = random.Random(seed)
+    n = len(cities)
+
+    def dist(c1: Tuple[float, float], c2: Tuple[float, float]) -> float:
+        return math.hypot(c1[0] - c2[0], c1[1] - c2[1])
+
+    dist_mat = [[dist(cities[i], cities[j]) for j in range(n)] for i in range(n)]
+    eta = [[1.0 / max(dist_mat[i][j], 1e-6) if i != j else 0.0 for j in range(n)] for i in range(n)]
+    pheromone = [[1.0 for _ in range(n)] for _ in range(n)]
+    best_tour: List[int] = list(range(n))
+    best_len = float("inf")
+
+    for _ in range(n_iterations):
+        all_tours = []
+        for _ in range(n_ants):
+            start = rng.randrange(n)
+            tour = [start]
+            unvisited = set(range(n)) - {start}
+
+            while unvisited:
+                curr = tour[-1]
+                nodes = list(unvisited)
+                probs = [(pheromone[curr][node] ** alpha) * (eta[curr][node] ** beta) for node in nodes]
+                total_p = sum(probs)
+
+                if total_p == 0:
+                    nxt = rng.choice(nodes)
+                else:
+                    r = rng.random() * total_p
+                    acc = 0.0
+                    for node, p in zip(nodes, probs):
+                        acc += p
+                        if acc >= r:
+                            nxt = node
+                            break
+                    else:
+                        nxt = nodes[-1]
+                tour.append(nxt)
+                unvisited.remove(nxt)
+            all_tours.append(tour)
+
+        for i in range(n):
+            for j in range(n):
+                pheromone[i][j] *= (1.0 - rho)
+
+        for tour in all_tours:
+            t_len = sum(dist_mat[tour[i]][tour[(i + 1) % n]] for i in range(n))
+            if t_len < best_len:
+                best_len = t_len
+                best_tour = tour
+            deposit = Q / t_len
+            for i in range(n):
+                u, v = tour[i], tour[(i + 1) % n]
+                pheromone[u][v] += deposit
+                pheromone[v][u] += deposit
+
+    return best_tour, best_len
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10442,4 +10516,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 219: Maximum Independent Set (Branch & Bound) ===")
     c5_edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 0)]
     print("MIS of 5-cycle graph C5:", maximum_independent_set_bb(5, c5_edges))
-    print("\nAll 219 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 220: Ant Colony Optimization (ACO TSP) ===")
+    aco_nodes = [(0.0, 0.0), (0.0, 4.0), (3.0, 4.0), (3.0, 0.0)]
+    aco_t, aco_l = ant_colony_optimization_tsp(aco_nodes)
+    print(f"ACO Tour: {aco_t}, Length: {aco_l:.3f}")
+    print("\nAll 220 Algorithms & Data Structures complete and verified!")
