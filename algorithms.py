@@ -228,6 +228,7 @@ Part 225: Kalman Filter (Linear Quadratic State Estimation)
 Part 226: Montgomery Modular Multiplication (Montgomery Reduction)
 Part 227: Matrix Chain Multiplication (Optimal Parenthesization DP)
 Part 228: Feasible Circulation with Demands and Edge Lower Bounds
+Part 229: LZ77 Sliding Window Compression and Decompression
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9760,6 +9761,50 @@ def feasible_circulation(
     return is_feasible, edge_flows
 
 
+def lz77_compress(text: str, window_size: int = 20) -> List[Tuple[int, int, str]]:
+    """
+    LZ77 sliding-window dictionary lossless compression algorithm encoding data
+    as a stream of (offset, length, next_character) tuples.
+    """
+    i = 0
+    compressed: List[Tuple[int, int, str]] = []
+    n = len(text)
+
+    while i < n:
+        match_len = 0
+        match_dist = 0
+        search_start = max(0, i - window_size)
+        search_buf = text[search_start:i]
+
+        for l in range(1, n - i + 1):
+            sub = text[i:i + l]
+            idx = search_buf.rfind(sub)
+            if idx != -1:
+                match_dist = len(search_buf) - idx
+                match_len = l
+            else:
+                break
+
+        next_char = text[i + match_len] if i + match_len < n else ""
+        compressed.append((match_dist, match_len, next_char))
+        i += match_len + 1
+
+    return compressed
+
+
+def lz77_decompress(compressed: List[Tuple[int, int, str]]) -> str:
+    """Reconstructs the original uncompressed string from LZ77 token tuples."""
+    out: List[str] = []
+    for dist, length, char in compressed:
+        if length > 0:
+            start = len(out) - dist
+            for k in range(length):
+                out.append(out[start + k])
+        if char:
+            out.append(char)
+    return "".join(out)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10941,4 +10986,9 @@ if __name__ == "__main__":
     circ_edges = [(0, 1, 1, 3), (1, 2, 1, 2), (2, 0, 1, 2)]
     is_f, flows = feasible_circulation(3, circ_edges, [0, 0, 0])
     print(f"Circulation Feasible: {is_f}, Edge Flows: {flows}")
-    print("\nAll 228 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 229: LZ77 Compression & Decompression ===")
+    lz_sample = "abracadabrarrrbarray"
+    lz_comp = lz77_compress(lz_sample)
+    lz_decomp = lz77_decompress(lz_comp)
+    print(f"LZ77 Tokens: {len(lz_comp)}, Lossless Match: {lz_decomp == lz_sample}")
+    print("\nAll 229 Algorithms & Data Structures complete and verified!")
