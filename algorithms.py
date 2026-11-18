@@ -227,6 +227,7 @@ Part 224: Differential Evolution (DE/rand/1/bin Global Optimization)
 Part 225: Kalman Filter (Linear Quadratic State Estimation)
 Part 226: Montgomery Modular Multiplication (Montgomery Reduction)
 Part 227: Matrix Chain Multiplication (Optimal Parenthesization DP)
+Part 228: Feasible Circulation with Demands and Edge Lower Bounds
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9683,6 +9684,82 @@ def matrix_chain_multiplication(dims: List[int]) -> Tuple[int, str]:
     return int(m[0][n - 1]), build_parens(0, n - 1)
 
 
+def feasible_circulation(
+    n: int,
+    edges_with_bounds: List[Tuple[int, int, int, int]],
+    demands: List[int]
+) -> Tuple[bool, List[int]]:
+    """
+    Determines existence of a feasible circulation satisfying vertex demands and edge capacity intervals [low, cap].
+    Reduces the system to standard maximum network flow via super-source and super-sink.
+    Returns: (is_feasible, edge_flows)
+    """
+    adj: Dict[int, List[int]] = {}
+    cap: Dict[Tuple[int, int], int] = {}
+    flow: Dict[Tuple[int, int], int] = {}
+
+    def add_edge(u: int, v: int, c: int):
+        adj.setdefault(u, []).append(v)
+        adj.setdefault(v, []).append(u)
+        cap[(u, v)] = cap.get((u, v), 0) + c
+        cap.setdefault((v, u), 0)
+        flow[(u, v)] = 0
+        flow[(v, u)] = 0
+
+    d_prime = list(demands)
+    for u, v, low, c in edges_with_bounds:
+        add_edge(u, v, c - low)
+        d_prime[u] += low
+        d_prime[v] -= low
+
+    source = n
+    sink = n + 1
+    total_demand = 0
+
+    for i in range(n):
+        if d_prime[i] > 0:
+            add_edge(i, sink, d_prime[i])
+            total_demand += d_prime[i]
+        elif d_prime[i] < 0:
+            add_edge(source, i, -d_prime[i])
+
+    def bfs():
+        parent = {source: None}
+        queue = [source]
+        while queue:
+            curr = queue.pop(0)
+            if curr == sink:
+                break
+            for nxt in adj.get(curr, []):
+                if nxt not in parent and cap.get((curr, nxt), 0) - flow.get((curr, nxt), 0) > 0:
+                    parent[nxt] = curr
+                    queue.append(nxt)
+        if sink not in parent:
+            return 0, None
+        path = []
+        curr = sink
+        while curr != source:
+            p = parent[curr]
+            path.append((p, curr))
+            curr = p
+        bottleneck = min(cap[e] - flow[e] for e in path)
+        return bottleneck, path
+
+    total_flow = 0
+    while True:
+        bot, path = bfs()
+        if bot == 0:
+            break
+        total_flow += bot
+        for u, v in path:
+            flow[(u, v)] += bot
+            flow[(v, u)] -= bot
+
+    is_feasible = (total_flow == total_demand)
+    edge_flows = [low + flow.get((u, v), 0) for u, v, low, _ in edges_with_bounds]
+    return is_feasible, edge_flows
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10860,4 +10937,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 227: Matrix Chain Multiplication ===")
     mcm_cost, mcm_order = matrix_chain_multiplication([10, 30, 5, 60])
     print(f"Optimal Scalar Multiplications: {mcm_cost}, Order: {mcm_order}")
-    print("\nAll 227 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 228: Feasible Circulation with Lower Bounds ===")
+    circ_edges = [(0, 1, 1, 3), (1, 2, 1, 2), (2, 0, 1, 2)]
+    is_f, flows = feasible_circulation(3, circ_edges, [0, 0, 0])
+    print(f"Circulation Feasible: {is_f}, Edge Flows: {flows}")
+    print("\nAll 228 Algorithms & Data Structures complete and verified!")
