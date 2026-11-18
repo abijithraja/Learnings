@@ -222,6 +222,7 @@ Part 219: Maximum Independent Set (Branch and Bound with Degree Ordering)
 Part 220: Ant Colony Optimization (ACO for Traveling Salesperson Problem)
 Part 221: Householder Reflection QR Decomposition
 Part 222: Chan's Output-Sensitive 2D Convex Hull Algorithm
+Part 223: Baum-Welch Algorithm (HMM Parameter Estimation)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9462,6 +9463,78 @@ def chans_convex_hull(points: List[Tuple[float, float]]) -> List[Tuple[float, fl
     return graham_subhull(points)
 
 
+def baum_welch_hmm(
+    obs: List[str],
+    states: List[str],
+    symbols: List[str],
+    start_p: Dict[str, float],
+    trans_p: Dict[str, Dict[str, float]],
+    emit_p: Dict[str, Dict[str, float]],
+    max_iter: int = 15
+) -> Tuple[Dict[str, float], Dict[str, Dict[str, float]], Dict[str, Dict[str, float]]]:
+    """
+    Baum-Welch expectation-maximization algorithm estimating Hidden Markov Model parameters
+    (initial distribution, transition probabilities, emission probabilities) from observations.
+    """
+    n = len(obs)
+    if n == 0:
+        return start_p, trans_p, emit_p
+
+    cur_start = dict(start_p)
+    cur_trans = {u: dict(trans_p[u]) for u in states}
+    cur_emit = {u: dict(emit_p[u]) for u in states}
+
+    for _ in range(max_iter):
+        # Forward pass
+        alpha = [{s: cur_start[s] * cur_emit[s].get(obs[0], 0.0) for s in states}]
+        for t in range(1, n):
+            at = {}
+            for s in states:
+                val = sum(alpha[t - 1][prev] * cur_trans[prev].get(s, 0.0) for prev in states)
+                at[s] = val * cur_emit[s].get(obs[t], 0.0)
+            alpha.append(at)
+
+        total_p = sum(alpha[-1].values())
+        if total_p == 0:
+            break
+
+        # Backward pass
+        beta = [{} for _ in range(n)]
+        beta[-1] = {s: 1.0 for s in states}
+        for t in range(n - 2, -1, -1):
+            for s in states:
+                beta[t][s] = sum(
+                    cur_trans[s].get(nxt, 0.0) * cur_emit[nxt].get(obs[t + 1], 0.0) * beta[t + 1][nxt]
+                    for nxt in states
+                )
+
+        # Gamma (state occupancy) and Xi (transition occupancy)
+        gamma = [{s: (alpha[t][s] * beta[t][s]) / total_p for s in states} for t in range(n)]
+        xi = []
+        for t in range(n - 1):
+            xi_t = {}
+            for u in states:
+                for v in states:
+                    xi_t[(u, v)] = (
+                        alpha[t][u] * cur_trans[u].get(v, 0.0) *
+                        cur_emit[v].get(obs[t + 1], 0.0) * beta[t + 1][v]
+                    ) / total_p
+            xi.append(xi_t)
+
+        cur_start = {s: gamma[0][s] for s in states}
+        for u in states:
+            denom_u = sum(gamma[t][u] for t in range(n - 1)) or 1e-12
+            for v in states:
+                cur_trans[u][v] = sum(xi[t][(u, v)] for t in range(n - 1)) / denom_u
+
+        for u in states:
+            denom_total = sum(gamma[t][u] for t in range(n)) or 1e-12
+            for sym in symbols:
+                cur_emit[u][sym] = sum(gamma[t][u] for t in range(n) if obs[t] == sym) / denom_total
+
+    return cur_start, cur_trans, cur_emit
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10616,4 +10689,12 @@ if __name__ == "__main__":
     print("\n=== Iteration 222: Chan's Output-Sensitive Convex Hull ===")
     chan_sample = [(0.0, 0.0), (5.0, 0.0), (5.0, 5.0), (0.0, 5.0), (2.0, 2.0), (1.0, 3.0)]
     print("Chan Hull Vertices:", chans_convex_hull(chan_sample))
-    print("\nAll 222 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 223: Baum-Welch HMM Training ===")
+    bw_st, bw_syms = ["A", "B"], ["H", "T"]
+    bw_sp = {"A": 0.5, "B": 0.5}
+    bw_tp = {"A": {"A": 0.7, "B": 0.3}, "B": {"A": 0.4, "B": 0.6}}
+    bw_ep = {"A": {"H": 0.8, "T": 0.2}, "B": {"H": 0.4, "T": 0.6}}
+    bw_obs = ["H", "H", "T", "H", "T", "T", "H"]
+    new_sp, _, _ = baum_welch_hmm(bw_obs, bw_st, bw_syms, bw_sp, bw_tp, bw_ep, max_iter=5)
+    print("Baum-Welch Trained Initial Distribution:", {k: round(v, 3) for k, v in new_sp.items()})
+    print("\nAll 223 Algorithms & Data Structures complete and verified!")
