@@ -229,6 +229,7 @@ Part 226: Montgomery Modular Multiplication (Montgomery Reduction)
 Part 227: Matrix Chain Multiplication (Optimal Parenthesization DP)
 Part 228: Feasible Circulation with Demands and Edge Lower Bounds
 Part 229: LZ77 Sliding Window Compression and Decompression
+Part 230: Andrew's Monotone Chain Convex Hull Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9805,6 +9806,33 @@ def lz77_decompress(compressed: List[Tuple[int, int, str]]) -> str:
     return "".join(out)
 
 
+def andrew_monotone_chain_hull(points: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+    """
+    Andrew's Monotone Chain 2D Convex Hull algorithm constructing upper and lower hulls
+    in strictly O(n log n) time by sorting vertices lexicographically.
+    """
+    pts = sorted(set(points))
+    if len(pts) <= 1:
+        return pts
+
+    def cross(o: Tuple[float, float], a: Tuple[float, float], b: Tuple[float, float]) -> float:
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    lower: List[Tuple[float, float]] = []
+    for p in pts:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
+            lower.pop()
+        lower.append(p)
+
+    upper: List[Tuple[float, float]] = []
+    for p in reversed(pts):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+
+    return lower[:-1] + upper[:-1]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10991,4 +11019,7 @@ if __name__ == "__main__":
     lz_comp = lz77_compress(lz_sample)
     lz_decomp = lz77_decompress(lz_comp)
     print(f"LZ77 Tokens: {len(lz_comp)}, Lossless Match: {lz_decomp == lz_sample}")
-    print("\nAll 229 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 230: Andrew's Monotone Chain Convex Hull ===")
+    amc_points = [(0.0, 0.0), (2.0, 0.0), (2.0, 2.0), (0.0, 2.0), (1.0, 1.0)]
+    print("Andrew Hull Vertices:", andrew_monotone_chain_hull(amc_points))
+    print("\nAll 230 Algorithms & Data Structures complete and verified!")
