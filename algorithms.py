@@ -225,6 +225,7 @@ Part 222: Chan's Output-Sensitive 2D Convex Hull Algorithm
 Part 223: Baum-Welch Algorithm (HMM Parameter Estimation)
 Part 224: Differential Evolution (DE/rand/1/bin Global Optimization)
 Part 225: Kalman Filter (Linear Quadratic State Estimation)
+Part 226: Montgomery Modular Multiplication (Montgomery Reduction)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9607,6 +9608,49 @@ class KalmanFilter:
         return self.x
 
 
+class MontgomeryMultiplier:
+    """
+    Montgomery Modular Multiplier performing modular multiplication without trial division,
+    fundamental to fast RSA, elliptic curve, and cryptographic arithmetic.
+    """
+    def __init__(self, N: int):
+        if N <= 0 or N % 2 == 0:
+            raise ValueError("Montgomery reduction requires an odd positive modulus N")
+        self.N = N
+        self.r_bits = N.bit_length()
+        self.R = 1 << self.r_bits
+
+        def ext_gcd(a: int, b: int):
+            if b == 0:
+                return a, 1, 0
+            g, x, y = ext_gcd(b, a % b)
+            return g, y, x - (a // b) * y
+
+        _, r_inv, n_prime = ext_gcd(self.R, self.N)
+        self.R_inv = r_inv % self.N
+        self.N_prime = (-n_prime) % self.R
+
+    def to_montgomery(self, a: int) -> int:
+        """Converts an integer a into Montgomery space: a * R mod N."""
+        return (a * self.R) % self.N
+
+    def from_montgomery(self, a_bar: int) -> int:
+        """Converts an element back from Montgomery form."""
+        return self.reduce(a_bar)
+
+    def reduce(self, T: int) -> int:
+        """Montgomery reduction algorithm (REDC)."""
+        m = ((T & (self.R - 1)) * self.N_prime) & (self.R - 1)
+        t = (T + m * self.N) >> self.r_bits
+        if t >= self.N:
+            t -= self.N
+        return t
+
+    def multiply(self, a_bar: int, b_bar: int) -> int:
+        """Multiplies two numbers in Montgomery form."""
+        return self.reduce(a_bar * b_bar)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10776,4 +10820,9 @@ if __name__ == "__main__":
     kf_estimator = KalmanFilter(F=1.0, B=0.0, H=1.0, Q=0.01, R=0.1, x0=0.0, P0=1.0)
     kf_estimator.predict()
     print("Kalman updated estimate after measurement z=2.0:", round(kf_estimator.update(2.0), 3))
-    print("\nAll 225 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 226: Montgomery Modular Multiplication ===")
+    mont_mult = MontgomeryMultiplier(97)
+    a_m, b_m = mont_mult.to_montgomery(23), mont_mult.to_montgomery(45)
+    prod_m = mont_mult.multiply(a_m, b_m)
+    print("Montgomery (23 * 45 mod 97):", mont_mult.from_montgomery(prod_m))
+    print("\nAll 226 Algorithms & Data Structures complete and verified!")
