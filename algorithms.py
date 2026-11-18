@@ -224,6 +224,7 @@ Part 221: Householder Reflection QR Decomposition
 Part 222: Chan's Output-Sensitive 2D Convex Hull Algorithm
 Part 223: Baum-Welch Algorithm (HMM Parameter Estimation)
 Part 224: Differential Evolution (DE/rand/1/bin Global Optimization)
+Part 225: Kalman Filter (Linear Quadratic State Estimation)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9576,6 +9577,36 @@ def differential_evolution(
     return pop[best_idx], scores[best_idx]
 
 
+class KalmanFilter:
+    """
+    Discrete-time Kalman Filter performing recursive linear quadratic estimation
+    under Gaussian process and measurement noise.
+    """
+    def __init__(self, F: float, B: float, H: float, Q: float, R: float, x0: float, P0: float):
+        self.F = F
+        self.B = B
+        self.H = H
+        self.Q = Q
+        self.R = R
+        self.x = x0
+        self.P = P0
+
+    def predict(self, u: float = 0.0) -> float:
+        """Projects state and error covariance ahead."""
+        self.x = self.F * self.x + self.B * u
+        self.P = self.F * self.P * self.F + self.Q
+        return self.x
+
+    def update(self, z: float) -> float:
+        """Incorporates new noisy measurement z to update estimate and covariance."""
+        y = z - self.H * self.x
+        s = self.H * self.P * self.H + self.R
+        k = self.P * self.H / s
+        self.x += k * y
+        self.P = (1.0 - k * self.H) * self.P
+        return self.x
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10741,4 +10772,8 @@ if __name__ == "__main__":
     print("\n=== Iteration 224: Differential Evolution ===")
     de_opt, de_cost = differential_evolution(lambda p: sum((x - 1.5) ** 2 for x in p), [(-5.0, 5.0), (-5.0, 5.0)])
     print(f"DE Global Optimum near (1.5, 1.5): {[round(x, 3) for x in de_opt]} (cost={de_cost:.5f})")
-    print("\nAll 224 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 225: Kalman Filter ===")
+    kf_estimator = KalmanFilter(F=1.0, B=0.0, H=1.0, Q=0.01, R=0.1, x0=0.0, P0=1.0)
+    kf_estimator.predict()
+    print("Kalman updated estimate after measurement z=2.0:", round(kf_estimator.update(2.0), 3))
+    print("\nAll 225 Algorithms & Data Structures complete and verified!")
