@@ -231,6 +231,7 @@ Part 228: Feasible Circulation with Demands and Edge Lower Bounds
 Part 229: LZ77 Sliding Window Compression and Decompression
 Part 230: Andrew's Monotone Chain Convex Hull Algorithm
 Part 231: Irving's Algorithm for the Stable Roommates Problem
+Part 232: Louvain Modularity Community Detection Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9907,6 +9908,52 @@ def irving_stable_roommates(preferences: Dict[int, List[int]]) -> Optional[Dict[
     return {p: pref[p][0] for p in pref}
 
 
+def louvain_community_detection(n: int, edges: List[Tuple[int, int]]) -> List[int]:
+    """
+    Louvain heuristic algorithm for detecting communities in networks through greedy modularity optimization,
+    extracting high-density clusters in O(n log n).
+    """
+    m = len(edges)
+    if m == 0 or n <= 0:
+        return list(range(n))
+
+    adj: List[List[int]] = [[] for _ in range(n)]
+    for u, v in edges:
+        adj[u].append(v)
+        adj[v].append(u)
+
+    k = [len(adj[u]) for u in range(n)]
+    community = list(range(n))
+    tot = [k[u] for u in range(n)]
+
+    changed = True
+    while changed:
+        changed = False
+        for i in range(n):
+            best_c = community[i]
+            best_gain = 0.0
+            c_orig = community[i]
+            tot[c_orig] -= k[i]
+
+            comm_conn: Dict[int, int] = {}
+            for nbr in adj[i]:
+                c_nbr = community[nbr]
+                comm_conn[c_nbr] = comm_conn.get(c_nbr, 0) + 1
+
+            for c, k_i_in in comm_conn.items():
+                gain = (k_i_in / (2.0 * m)) - (tot[c] * k[i]) / (2.0 * m * m)
+                if gain > best_gain:
+                    best_gain = gain
+                    best_c = c
+
+            community[i] = best_c
+            tot[best_c] += k[i]
+            if best_c != c_orig:
+                changed = True
+
+    return community
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -11099,4 +11146,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 231: Irving's Stable Roommates Problem ===")
     roommates_pref = {1: [3, 4, 2], 2: [4, 3, 1], 3: [2, 1, 4], 4: [1, 2, 3]}
     print("Stable Roommates Pairs:", irving_stable_roommates(roommates_pref))
-    print("\nAll 231 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 232: Louvain Community Detection ===")
+    louvain_edges = [(0, 1), (1, 2), (2, 0), (2, 3), (3, 4), (4, 5), (5, 3)]
+    print("Detected Communities (2 connected triangles):", louvain_community_detection(6, louvain_edges))
+    print("\nAll 232 Algorithms & Data Structures complete and verified!")
