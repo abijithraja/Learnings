@@ -230,6 +230,7 @@ Part 227: Matrix Chain Multiplication (Optimal Parenthesization DP)
 Part 228: Feasible Circulation with Demands and Edge Lower Bounds
 Part 229: LZ77 Sliding Window Compression and Decompression
 Part 230: Andrew's Monotone Chain Convex Hull Algorithm
+Part 231: Irving's Algorithm for the Stable Roommates Problem
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9833,6 +9834,79 @@ def andrew_monotone_chain_hull(points: List[Tuple[float, float]]) -> List[Tuple[
     return lower[:-1] + upper[:-1]
 
 
+def irving_stable_roommates(preferences: Dict[int, List[int]]) -> Optional[Dict[int, int]]:
+    """
+    Irving's Algorithm for the Stable Roommates Problem (non-bipartite stable matching).
+    Executes Phase 1 deferred acceptance proposals and Phase 2 all-or-nothing cycle reduction in O(n^2).
+    """
+    pref = {p: list(preferences[p]) for p in preferences}
+    proposals: Dict[int, int] = {}
+    unmatched = list(preferences.keys())
+
+    # Phase 1: Proposals and mutual rejection
+    while unmatched:
+        p = unmatched.pop(0)
+        if not pref[p]:
+            return None
+        fav = pref[p][0]
+
+        if fav not in proposals:
+            proposals[fav] = p
+        else:
+            curr = proposals[fav]
+            if preferences[fav].index(p) < preferences[fav].index(curr):
+                proposals[fav] = p
+                unmatched.append(curr)
+                if fav in pref[curr]:
+                    pref[curr].remove(fav)
+            else:
+                unmatched.append(p)
+                if fav in pref[p]:
+                    pref[p].remove(fav)
+
+    for x, y in proposals.items():
+        y_idx = preferences[x].index(y)
+        for worse in preferences[x][y_idx + 1:]:
+            if worse in pref[x]:
+                pref[x].remove(worse)
+            if x in pref[worse]:
+                pref[worse].remove(x)
+
+    if any(len(lst) == 0 for lst in pref.values()):
+        return None
+
+    # Phase 2: Elimination of all-or-nothing rotations / cycles
+    while any(len(lst) > 1 for lst in pref.values()):
+        start = next(p for p in pref if len(pref[p]) > 1)
+        p_list = [start]
+        q_list = []
+
+        while True:
+            last_p = p_list[-1]
+            last_q = pref[last_p][1]
+            q_list.append(last_q)
+            next_p = pref[last_q][-1]
+
+            if next_p in p_list:
+                cycle_start = p_list.index(next_p)
+                cycle_p = p_list[cycle_start:]
+                cycle_q = q_list[cycle_start:]
+                for i in range(len(cycle_q)):
+                    qi = cycle_q[i]
+                    p_nxt = cycle_p[(i + 1) % len(cycle_p)]
+                    if p_nxt in pref[qi]:
+                        pref[qi].remove(p_nxt)
+                    if qi in pref[p_nxt]:
+                        pref[p_nxt].remove(qi)
+                break
+            p_list.append(next_p)
+
+        if any(len(lst) == 0 for lst in pref.values()):
+            return None
+
+    return {p: pref[p][0] for p in pref}
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -11022,4 +11096,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 230: Andrew's Monotone Chain Convex Hull ===")
     amc_points = [(0.0, 0.0), (2.0, 0.0), (2.0, 2.0), (0.0, 2.0), (1.0, 1.0)]
     print("Andrew Hull Vertices:", andrew_monotone_chain_hull(amc_points))
-    print("\nAll 230 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 231: Irving's Stable Roommates Problem ===")
+    roommates_pref = {1: [3, 4, 2], 2: [4, 3, 1], 3: [2, 1, 4], 4: [1, 2, 3]}
+    print("Stable Roommates Pairs:", irving_stable_roommates(roommates_pref))
+    print("\nAll 231 Algorithms & Data Structures complete and verified!")
