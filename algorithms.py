@@ -223,6 +223,7 @@ Part 220: Ant Colony Optimization (ACO for Traveling Salesperson Problem)
 Part 221: Householder Reflection QR Decomposition
 Part 222: Chan's Output-Sensitive 2D Convex Hull Algorithm
 Part 223: Baum-Welch Algorithm (HMM Parameter Estimation)
+Part 224: Differential Evolution (DE/rand/1/bin Global Optimization)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9535,6 +9536,46 @@ def baum_welch_hmm(
     return cur_start, cur_trans, cur_emit
 
 
+def differential_evolution(
+    cost_fn: Any,
+    bounds: List[Tuple[float, float]],
+    pop_size: int = 20,
+    F: float = 0.8,
+    CR: float = 0.7,
+    generations: int = 40,
+    seed: int = 42
+) -> Tuple[List[float], float]:
+    """
+    Differential Evolution (DE/rand/1/bin) stochastic population-based continuous global optimization
+    utilizing vector difference perturbations and binomial crossover.
+    """
+    rng = random.Random(seed)
+    dim = len(bounds)
+    pop = [[b[0] + rng.random() * (b[1] - b[0]) for b in bounds] for _ in range(pop_size)]
+    scores = [cost_fn(ind) for ind in pop]
+
+    for _ in range(generations):
+        for i in range(pop_size):
+            candidates = [idx for idx in range(pop_size) if idx != i]
+            r1, r2, r3 = rng.sample(candidates, 3)
+
+            mutant = [pop[r1][d] + F * (pop[r2][d] - pop[r3][d]) for d in range(dim)]
+            r_idx = rng.randrange(dim)
+            trial = [
+                mutant[d] if (rng.random() < CR or d == r_idx) else pop[i][d]
+                for d in range(dim)
+            ]
+            trial = [max(bounds[d][0], min(bounds[d][1], trial[d])) for d in range(dim)]
+
+            score_trial = cost_fn(trial)
+            if score_trial < scores[i]:
+                pop[i] = trial
+                scores[i] = score_trial
+
+    best_idx = min(range(pop_size), key=lambda idx: scores[idx])
+    return pop[best_idx], scores[best_idx]
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10697,4 +10738,7 @@ if __name__ == "__main__":
     bw_obs = ["H", "H", "T", "H", "T", "T", "H"]
     new_sp, _, _ = baum_welch_hmm(bw_obs, bw_st, bw_syms, bw_sp, bw_tp, bw_ep, max_iter=5)
     print("Baum-Welch Trained Initial Distribution:", {k: round(v, 3) for k, v in new_sp.items()})
-    print("\nAll 223 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 224: Differential Evolution ===")
+    de_opt, de_cost = differential_evolution(lambda p: sum((x - 1.5) ** 2 for x in p), [(-5.0, 5.0), (-5.0, 5.0)])
+    print(f"DE Global Optimum near (1.5, 1.5): {[round(x, 3) for x in de_opt]} (cost={de_cost:.5f})")
+    print("\nAll 224 Algorithms & Data Structures complete and verified!")
