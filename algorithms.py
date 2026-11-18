@@ -226,6 +226,7 @@ Part 223: Baum-Welch Algorithm (HMM Parameter Estimation)
 Part 224: Differential Evolution (DE/rand/1/bin Global Optimization)
 Part 225: Kalman Filter (Linear Quadratic State Estimation)
 Part 226: Montgomery Modular Multiplication (Montgomery Reduction)
+Part 227: Matrix Chain Multiplication (Optimal Parenthesization DP)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9651,6 +9652,37 @@ class MontgomeryMultiplier:
         return self.reduce(a_bar * b_bar)
 
 
+def matrix_chain_multiplication(dims: List[int]) -> Tuple[int, str]:
+    """
+    Dynamic programming algorithm solving Matrix Chain Multiplication to minimize total scalar multiplications,
+    reconstructing the optimal parenthesization string.
+    """
+    n = len(dims) - 1
+    if n <= 1:
+        return 0, "A0"
+
+    m = [[0] * n for _ in range(n)]
+    s = [[0] * n for _ in range(n)]
+
+    for length in range(2, n + 1):
+        for i in range(n - length + 1):
+            j = i + length - 1
+            m[i][j] = float("inf")
+            for k in range(i, j):
+                q = m[i][k] + m[k + 1][j] + dims[i] * dims[k + 1] * dims[j + 1]
+                if q < m[i][j]:
+                    m[i][j] = q
+                    s[i][j] = k
+
+    def build_parens(i: int, j: int) -> str:
+        if i == j:
+            return f"A{i}"
+        k = s[i][j]
+        return f"({build_parens(i, k)} x {build_parens(k + 1, j)})"
+
+    return int(m[0][n - 1]), build_parens(0, n - 1)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -10825,4 +10857,7 @@ if __name__ == "__main__":
     a_m, b_m = mont_mult.to_montgomery(23), mont_mult.to_montgomery(45)
     prod_m = mont_mult.multiply(a_m, b_m)
     print("Montgomery (23 * 45 mod 97):", mont_mult.from_montgomery(prod_m))
-    print("\nAll 226 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 227: Matrix Chain Multiplication ===")
+    mcm_cost, mcm_order = matrix_chain_multiplication([10, 30, 5, 60])
+    print(f"Optimal Scalar Multiplications: {mcm_cost}, Order: {mcm_order}")
+    print("\nAll 227 Algorithms & Data Structures complete and verified!")
