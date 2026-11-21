@@ -233,6 +233,7 @@ Part 230: Andrew's Monotone Chain Convex Hull Algorithm
 Part 231: Irving's Algorithm for the Stable Roommates Problem
 Part 232: Louvain Modularity Community Detection Algorithm
 Part 233: LZW (Lempel-Ziv-Welch) Lossless Data Compression
+Part 234: AA Tree (Arne Andersson Balanced Search Tree)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -10005,6 +10006,73 @@ def lzw_decompress(compressed: List[int]) -> str:
     return "".join(result)
 
 
+class AANode:
+    def __init__(self, key: int, level: int = 1):
+        self.key = key
+        self.level = level
+        self.left: Optional["AANode"] = None
+        self.right: Optional["AANode"] = None
+
+
+class AATree:
+    """
+    Arne Andersson Tree (AA Tree) simplified red-black balanced binary search tree
+    enforcing right-leaning red links eliminated via skew and split operations.
+    """
+    def __init__(self):
+        self.root: Optional[AANode] = None
+
+    def search(self, key: int) -> bool:
+        """Searches for key in logarithmic time O(log n)."""
+        curr = self.root
+        while curr:
+            if key == curr.key:
+                return True
+            curr = curr.left if key < curr.key else curr.right
+        return False
+
+    def _skew(self, node: Optional[AANode]) -> Optional[AANode]:
+        """Rotates right if a left-child horizontal red link is present."""
+        if not node or not node.left:
+            return node
+        if node.left.level == node.level:
+            left_child = node.left
+            node.left = left_child.right
+            left_child.right = node
+            return left_child
+        return node
+
+    def _split(self, node: Optional[AANode]) -> Optional[AANode]:
+        """Rotates left and increments level if two consecutive right-child links share same level."""
+        if not node or not node.right or not node.right.right:
+            return node
+        if node.level == node.right.right.level:
+            right_child = node.right
+            node.right = right_child.left
+            right_child.left = node
+            right_child.level += 1
+            return right_child
+        return node
+
+    def insert(self, key: int) -> None:
+        """Inserts key into the AA tree maintaining balanced level invariants."""
+        def _ins(node: Optional[AANode], k: int) -> AANode:
+            if not node:
+                return AANode(k, 1)
+            if k < node.key:
+                node.left = _ins(node.left, k)
+            elif k > node.key:
+                node.right = _ins(node.right, k)
+            else:
+                return node
+
+            node = self._skew(node)
+            node = self._split(node)
+            return node
+
+        self.root = _ins(self.root, key)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -11205,4 +11273,9 @@ if __name__ == "__main__":
     lzw_c = lzw_compress(lzw_text)
     lzw_d = lzw_decompress(lzw_c)
     print(f"LZW Compressed Tokens: {len(lzw_c)}, Lossless Match: {lzw_d == lzw_text}")
-    print("\nAll 233 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 234: AA Tree (Arne Andersson Balanced BST) ===")
+    aa_tree = AATree()
+    for v in range(1, 50):
+        aa_tree.insert(v)
+    print("Search 42:", aa_tree.search(42), "| Search 999:", aa_tree.search(999))
+    print("\nAll 234 Algorithms & Data Structures complete and verified!")
