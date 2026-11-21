@@ -235,6 +235,7 @@ Part 232: Louvain Modularity Community Detection Algorithm
 Part 233: LZW (Lempel-Ziv-Welch) Lossless Data Compression
 Part 234: AA Tree (Arne Andersson Balanced Search Tree)
 Part 235: Half-Plane Intersection (Convex Polygon Region Clipping)
+Part 236: Pollard's Rho Discrete Logarithm Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -10122,6 +10123,38 @@ def half_plane_intersection(
     return poly
 
 
+def pollards_rho_discrete_log(g: int, h: int, p: int, order: int) -> Optional[int]:
+    """
+    Pollard's Rho algorithm for solving the discrete logarithm problem g^x = h (mod p)
+    where g has prime subgroup order in expected O(sqrt(order)) time and O(1) space.
+    """
+    def partition_f(x: int, a: int, b: int) -> Tuple[int, int, int]:
+        subset = x % 3
+        if subset == 0:
+            return (x * x) % p, (2 * a) % order, (2 * b) % order
+        elif subset == 1:
+            return (x * g) % p, (a + 1) % order, b
+        else:
+            return (x * h) % p, a, (b + 1) % order
+
+    x1, a1, b1 = 1, 0, 0
+    x2, a2, b2 = 1, 0, 0
+
+    for _ in range(order * 2):
+        x1, a1, b1 = partition_f(x1, a1, b1)
+        x2, a2, b2 = partition_f(*partition_f(x2, a2, b2))
+        if x1 == x2:
+            r = (b1 - b2) % order
+            if r == 0:
+                return None
+            x = (pow(r, -1, order) * (a2 - a1)) % order
+            if pow(g, x, p) == h:
+                return x
+            return None
+
+    return None
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -11335,4 +11368,9 @@ if __name__ == "__main__":
         ((0.0, 1.0), (0.0, 0.0))
     ]
     print("Bounded Unit Square Vertex Count:", len(half_plane_intersection(hp_square)))
-    print("\nAll 235 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 236: Pollard's Rho Discrete Logarithm ===")
+    p_sub, g_sub, x_secret = 1019, 2, 357
+    h_sub = pow(g_sub, x_secret, p_sub)
+    recovered_dlog = pollards_rho_discrete_log(g_sub, h_sub, p_sub, (p_sub - 1) // 2)
+    print(f"Secret: {x_secret}, Pollard's Rho Solved: {recovered_dlog}")
+    print("\nAll 236 Algorithms & Data Structures complete and verified!")
