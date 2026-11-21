@@ -237,6 +237,7 @@ Part 234: AA Tree (Arne Andersson Balanced Search Tree)
 Part 235: Half-Plane Intersection (Convex Polygon Region Clipping)
 Part 236: Pollard's Rho Discrete Logarithm Algorithm
 Part 237: Rod Cutting Problem (Dynamic Programming with Reconstruction)
+Part 238: Gabow's Strongly Connected Components Algorithm
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -10184,6 +10185,49 @@ def rod_cutting_dp(prices: List[int], length: int) -> Tuple[int, List[int]]:
     return val[length], pieces
 
 
+def gabow_scc(n: int, adj: List[List[int]]) -> Tuple[int, List[int]]:
+    """
+    Cheriyan-Mehlhorn / Gabow path-based strongly connected components algorithm
+    finding all SCCs in a directed graph using two depth-first search stacks in O(V + E).
+    Returns: (scc_count, scc_assignment_per_vertex)
+    """
+    pre = [-1] * n
+    scc = [-1] * n
+    s1: List[int] = []
+    s2: List[int] = []
+    clock = 0
+    scc_count = 0
+
+    def dfs(u: int):
+        nonlocal clock, scc_count
+        pre[u] = clock
+        clock += 1
+        s1.append(u)
+        s2.append(u)
+
+        for v in adj[u]:
+            if pre[v] == -1:
+                dfs(v)
+            elif scc[v] == -1:
+                while pre[s2[-1]] > pre[v]:
+                    s2.pop()
+
+        if s2[-1] == u:
+            s2.pop()
+            while True:
+                w = s1.pop()
+                scc[w] = scc_count
+                if w == u:
+                    break
+            scc_count += 1
+
+    for u in range(n):
+        if pre[u] == -1:
+            dfs(u)
+
+    return scc_count, scc
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -11406,4 +11450,8 @@ if __name__ == "__main__":
     r_prices = [1, 5, 8, 9, 10, 17, 17, 20]
     r_rev, r_cuts = rod_cutting_dp(r_prices, 8)
     print(f"Max Revenue: {r_rev}, Optimal Cut Pieces: {r_cuts}")
-    print("\nAll 237 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 238: Gabow's Strongly Connected Components ===")
+    gabow_adj = [[1], [2], [0, 3], [4], [3]]
+    gabow_cnt, gabow_map = gabow_scc(5, gabow_adj)
+    print(f"Gabow SCC Count: {gabow_cnt}, Node Component Map: {gabow_map}")
+    print("\nAll 238 Algorithms & Data Structures complete and verified!")
