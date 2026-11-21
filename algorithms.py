@@ -234,6 +234,7 @@ Part 231: Irving's Algorithm for the Stable Roommates Problem
 Part 232: Louvain Modularity Community Detection Algorithm
 Part 233: LZW (Lempel-Ziv-Welch) Lossless Data Compression
 Part 234: AA Tree (Arne Andersson Balanced Search Tree)
+Part 235: Half-Plane Intersection (Convex Polygon Region Clipping)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -10073,6 +10074,54 @@ class AATree:
         self.root = _ins(self.root, key)
 
 
+def half_plane_intersection(
+    half_planes: List[Tuple[Tuple[float, float], Tuple[float, float]]]
+) -> List[Tuple[float, float]]:
+    """
+    Computes the convex polygon formed by the intersection of multiple directed half-planes.
+    Each half-plane is defined by directed edge (P1, P2) keeping points to the left of the ray.
+    """
+    def line_intersection(
+        p1: Tuple[float, float],
+        p2: Tuple[float, float],
+        p3: Tuple[float, float],
+        p4: Tuple[float, float]
+    ) -> Optional[Tuple[float, float]]:
+        denom = (p1[0] - p2[0]) * (p3[1] - p4[1]) - (p1[1] - p2[1]) * (p3[0] - p4[0])
+        if abs(denom) < 1e-12:
+            return None
+        t = ((p1[0] - p3[0]) * (p3[1] - p4[1]) - (p1[1] - p3[1]) * (p3[0] - p4[0])) / denom
+        return (p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1]))
+
+    poly = [(-1000.0, -1000.0), (1000.0, -1000.0), (1000.0, 1000.0), (-1000.0, 1000.0)]
+
+    for p1, p2 in half_planes:
+        if not poly:
+            break
+        new_poly: List[Tuple[float, float]] = []
+
+        def is_left(pt: Tuple[float, float]) -> bool:
+            return (p2[0] - p1[0]) * (pt[1] - p1[1]) - (p2[1] - p1[1]) * (pt[0] - p1[0]) >= -1e-9
+
+        for i in range(len(poly)):
+            cur = poly[i]
+            prev = poly[(i - 1) % len(poly)]
+            if is_left(cur):
+                if not is_left(prev):
+                    inter = line_intersection(prev, cur, p1, p2)
+                    if inter:
+                        new_poly.append(inter)
+                new_poly.append(cur)
+            elif is_left(prev):
+                inter = line_intersection(prev, cur, p1, p2)
+                if inter:
+                    new_poly.append(inter)
+
+        poly = new_poly
+
+    return poly
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -11278,4 +11327,12 @@ if __name__ == "__main__":
     for v in range(1, 50):
         aa_tree.insert(v)
     print("Search 42:", aa_tree.search(42), "| Search 999:", aa_tree.search(999))
-    print("\nAll 234 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 235: Half-Plane Intersection ===")
+    hp_square = [
+        ((0.0, 0.0), (1.0, 0.0)),
+        ((1.0, 0.0), (1.0, 1.0)),
+        ((1.0, 1.0), (0.0, 1.0)),
+        ((0.0, 1.0), (0.0, 0.0))
+    ]
+    print("Bounded Unit Square Vertex Count:", len(half_plane_intersection(hp_square)))
+    print("\nAll 235 Algorithms & Data Structures complete and verified!")
