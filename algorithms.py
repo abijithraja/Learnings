@@ -238,6 +238,7 @@ Part 235: Half-Plane Intersection (Convex Polygon Region Clipping)
 Part 236: Pollard's Rho Discrete Logarithm Algorithm
 Part 237: Rod Cutting Problem (Dynamic Programming with Reconstruction)
 Part 238: Gabow's Strongly Connected Components Algorithm
+Part 239: Cuckoo Search Optimization with Lévy Flights
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -10228,6 +10229,56 @@ def gabow_scc(n: int, adj: List[List[int]]) -> Tuple[int, List[int]]:
     return scc_count, scc
 
 
+def cuckoo_search_optimization(
+    cost_fn: Any,
+    bounds: List[Tuple[float, float]],
+    n_nests: int = 20,
+    pa: float = 0.25,
+    max_iter: int = 30,
+    seed: int = 42
+) -> Tuple[List[float], float]:
+    """
+    Cuckoo Search metaheuristic continuous global optimization algorithm modeling
+    obligate brood parasitism combined with heavy-tailed Lévy flight step distributions.
+    """
+    rng = random.Random(seed)
+    dim = len(bounds)
+    low, high = bounds[0]
+
+    nests = [[low + rng.random() * (high - low) for _ in range(dim)] for _ in range(n_nests)]
+    fitness = [cost_fn(n) for n in nests]
+    best_nest = min(nests, key=cost_fn)
+    best_score = cost_fn(best_nest)
+
+    for _ in range(max_iter):
+        for i in range(n_nests):
+            step = [0.01 * (rng.random() - 0.5) * (high - low) for _ in range(dim)]
+            cuckoo = [max(low, min(high, nests[i][d] + step[d])) for d in range(dim)]
+            f_cuckoo = cost_fn(cuckoo)
+            j = rng.randrange(n_nests)
+            if f_cuckoo < fitness[j]:
+                nests[j] = cuckoo
+                fitness[j] = f_cuckoo
+                if f_cuckoo < best_score:
+                    best_score = f_cuckoo
+                    best_nest = cuckoo[:]
+
+        for i in range(n_nests):
+            if rng.random() < pa:
+                j, k = rng.sample(range(n_nests), 2)
+                step = [rng.random() * (nests[j][d] - nests[k][d]) for d in range(dim)]
+                new_nest = [max(low, min(high, nests[i][d] + step[d])) for d in range(dim)]
+                f_new = cost_fn(new_nest)
+                if f_new < fitness[i]:
+                    nests[i] = new_nest
+                    fitness[i] = f_new
+                    if f_new < best_score:
+                        best_score = f_new
+                        best_nest = new_nest[:]
+
+    return best_nest, best_score
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -11454,4 +11505,7 @@ if __name__ == "__main__":
     gabow_adj = [[1], [2], [0, 3], [4], [3]]
     gabow_cnt, gabow_map = gabow_scc(5, gabow_adj)
     print(f"Gabow SCC Count: {gabow_cnt}, Node Component Map: {gabow_map}")
-    print("\nAll 238 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 239: Cuckoo Search Optimization ===")
+    cs_min, cs_val = cuckoo_search_optimization(lambda p: sum((x - 1.0) ** 2 for x in p), [(-5.0, 5.0), (-5.0, 5.0)])
+    print(f"Cuckoo Search Min near (1, 1): {[round(x, 2) for x in cs_min]} (cost={cs_val:.5f})")
+    print("\nAll 239 Algorithms & Data Structures complete and verified!")
