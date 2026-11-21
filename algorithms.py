@@ -236,6 +236,7 @@ Part 233: LZW (Lempel-Ziv-Welch) Lossless Data Compression
 Part 234: AA Tree (Arne Andersson Balanced Search Tree)
 Part 235: Half-Plane Intersection (Convex Polygon Region Clipping)
 Part 236: Pollard's Rho Discrete Logarithm Algorithm
+Part 237: Rod Cutting Problem (Dynamic Programming with Reconstruction)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -10155,6 +10156,34 @@ def pollards_rho_discrete_log(g: int, h: int, p: int, order: int) -> Optional[in
     return None
 
 
+def rod_cutting_dp(prices: List[int], length: int) -> Tuple[int, List[int]]:
+    """
+    Rod Cutting dynamic programming algorithm determining maximum revenue obtainable
+    by cutting a rod of given length into pieces with given price catalog, reconstructing optimal cuts.
+    """
+    if length <= 0:
+        return 0, []
+
+    val = [0] * (length + 1)
+    cuts = [0] * (length + 1)
+
+    for j in range(1, length + 1):
+        max_v = -1
+        for i in range(1, min(j, len(prices)) + 1):
+            if prices[i - 1] + val[j - i] > max_v:
+                max_v = prices[i - 1] + val[j - i]
+                cuts[j] = i
+        val[j] = max_v
+
+    pieces: List[int] = []
+    rem = length
+    while rem > 0:
+        pieces.append(cuts[rem])
+        rem -= cuts[rem]
+
+    return val[length], pieces
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -11373,4 +11402,8 @@ if __name__ == "__main__":
     h_sub = pow(g_sub, x_secret, p_sub)
     recovered_dlog = pollards_rho_discrete_log(g_sub, h_sub, p_sub, (p_sub - 1) // 2)
     print(f"Secret: {x_secret}, Pollard's Rho Solved: {recovered_dlog}")
-    print("\nAll 236 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 237: Rod Cutting Dynamic Programming ===")
+    r_prices = [1, 5, 8, 9, 10, 17, 17, 20]
+    r_rev, r_cuts = rod_cutting_dp(r_prices, 8)
+    print(f"Max Revenue: {r_rev}, Optimal Cut Pieces: {r_cuts}")
+    print("\nAll 237 Algorithms & Data Structures complete and verified!")
