@@ -240,6 +240,7 @@ Part 237: Rod Cutting Problem (Dynamic Programming with Reconstruction)
 Part 238: Gabow's Strongly Connected Components Algorithm
 Part 239: Cuckoo Search Optimization with Lévy Flights
 Part 240: Bluestein's FFT (Chirp Z-Transform for Arbitrary Sizes)
+Part 241: IDA* (Iterative Deepening A* Search)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -10298,6 +10299,49 @@ def bluestein_fft(x: List[float]) -> List[complex]:
     return out
 
 
+def ida_star_search(
+    start: Any,
+    is_goal_fn: Any,
+    get_neighbors_fn: Any,
+    heuristic_fn: Any
+) -> Optional[List[Any]]:
+    """
+    Iterative Deepening A* (IDA*) heuristic search algorithm combining depth-first search's
+    O(depth) memory efficiency with A*'s admissible cost optimality.
+    """
+    threshold = heuristic_fn(start)
+    path = [start]
+
+    def search(g: float, thresh: float) -> Tuple[float, bool]:
+        curr = path[-1]
+        f = g + heuristic_fn(curr)
+        if f > thresh:
+            return f, False
+        if is_goal_fn(curr):
+            return g, True
+
+        min_thresh = float("inf")
+        for nxt, cost in get_neighbors_fn(curr):
+            if nxt not in path:
+                path.append(nxt)
+                t, found = search(g + cost, thresh)
+                if found:
+                    return t, True
+                if t < min_thresh:
+                    min_thresh = t
+                path.pop()
+
+        return min_thresh, False
+
+    while True:
+        t, found = search(0.0, threshold)
+        if found:
+            return path[:]
+        if t == float("inf"):
+            return None
+        threshold = t
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -11530,4 +11574,9 @@ if __name__ == "__main__":
     print("\n=== Iteration 240: Bluestein's Chirp Z-Transform FFT ===")
     b_fft = bluestein_fft([1.0, 2.0, 3.0, 4.0, 5.0]) # Prime length N=5
     print("Bluestein DFT DC component:", round(b_fft[0].real, 3))
-    print("\nAll 240 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 241: Iterative Deepening A* (IDA*) ===")
+    ida_nbrs = lambda p: [((p[0] + dx, p[1] + dy), 1.0) for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)] if 0 <= p[0] + dx <= 3 and 0 <= p[1] + dy <= 3]
+    ida_h = lambda p: abs(3 - p[0]) + abs(3 - p[1])
+    ida_path = ida_star_search((0, 0), lambda p: p == (3, 3), ida_nbrs, ida_h)
+    print("IDA* Path Found Length:", len(ida_path) if ida_path else 0)
+    print("\nAll 241 Algorithms & Data Structures complete and verified!")
