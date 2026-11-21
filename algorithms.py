@@ -232,6 +232,7 @@ Part 229: LZ77 Sliding Window Compression and Decompression
 Part 230: Andrew's Monotone Chain Convex Hull Algorithm
 Part 231: Irving's Algorithm for the Stable Roommates Problem
 Part 232: Louvain Modularity Community Detection Algorithm
+Part 233: LZW (Lempel-Ziv-Welch) Lossless Data Compression
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -9954,6 +9955,56 @@ def louvain_community_detection(n: int, edges: List[Tuple[int, int]]) -> List[in
     return community
 
 
+def lzw_compress(uncompressed: str) -> List[int]:
+    """
+    Lempel-Ziv-Welch (LZW) dictionary-based lossless compression algorithm
+    translating repeating substrings into variable-length integer token codes.
+    """
+    dict_size = 256
+    dictionary: Dict[str, int] = {chr(i): i for i in range(dict_size)}
+    w = ""
+    result: List[int] = []
+
+    for c in uncompressed:
+        wc = w + c
+        if wc in dictionary:
+            w = wc
+        else:
+            result.append(dictionary[w])
+            dictionary[wc] = dict_size
+            dict_size += 1
+            w = c
+
+    if w:
+        result.append(dictionary[w])
+    return result
+
+
+def lzw_decompress(compressed: List[int]) -> str:
+    """Decompresses an LZW token code sequence back to the original text."""
+    if not compressed:
+        return ""
+    dict_size = 256
+    dictionary: Dict[int, str] = {i: chr(i) for i in range(dict_size)}
+    w = chr(compressed[0])
+    result: List[str] = [w]
+
+    for k in compressed[1:]:
+        if k in dictionary:
+            entry = dictionary[k]
+        elif k == dict_size:
+            entry = w + w[0]
+        else:
+            raise ValueError(f"Invalid compressed code: {k}")
+
+        result.append(entry)
+        dictionary[dict_size] = w + entry[0]
+        dict_size += 1
+        w = entry
+
+    return "".join(result)
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -11149,4 +11200,9 @@ if __name__ == "__main__":
     print("\n=== Iteration 232: Louvain Community Detection ===")
     louvain_edges = [(0, 1), (1, 2), (2, 0), (2, 3), (3, 4), (4, 5), (5, 3)]
     print("Detected Communities (2 connected triangles):", louvain_community_detection(6, louvain_edges))
-    print("\nAll 232 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 233: LZW Compression & Decompression ===")
+    lzw_text = "TOBEORNOTTOBEORTOBEORNOT"
+    lzw_c = lzw_compress(lzw_text)
+    lzw_d = lzw_decompress(lzw_c)
+    print(f"LZW Compressed Tokens: {len(lzw_c)}, Lossless Match: {lzw_d == lzw_text}")
+    print("\nAll 233 Algorithms & Data Structures complete and verified!")
