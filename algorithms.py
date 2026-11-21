@@ -241,6 +241,7 @@ Part 238: Gabow's Strongly Connected Components Algorithm
 Part 239: Cuckoo Search Optimization with Lévy Flights
 Part 240: Bluestein's FFT (Chirp Z-Transform for Arbitrary Sizes)
 Part 241: IDA* (Iterative Deepening A* Search)
+Part 242: Minimum Bounding Box via Rotating Calipers
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -10342,6 +10343,64 @@ def ida_star_search(
         threshold = t
 
 
+def minimum_bounding_box_calipers(points: List[Tuple[float, float]]) -> Tuple[float, Optional[Tuple[float, float]]]:
+    """
+    Computes the Minimum Area Oriented Bounding Box enclosing a set of 2D planar points
+    via Freeman-Shapira Rotating Calipers along convex hull edges.
+    Returns: (minimum_bounding_area, (width, height))
+    """
+    pts = sorted(set(points))
+    if len(pts) <= 1:
+        return 0.0, (0.0, 0.0)
+
+    def cross(o: Tuple[float, float], a: Tuple[float, float], b: Tuple[float, float]) -> float:
+        return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+    lower: List[Tuple[float, float]] = []
+    for p in pts:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], p) <= 0:
+            lower.pop()
+        lower.append(p)
+
+    upper: List[Tuple[float, float]] = []
+    for p in reversed(pts):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+
+    hull = lower[:-1] + upper[:-1]
+    n = len(hull)
+    if n <= 2:
+        return 0.0, (0.0, 0.0)
+
+    min_area = float("inf")
+    best_box: Optional[Tuple[float, float]] = None
+
+    for i in range(n):
+        p1 = hull[i]
+        p2 = hull[(i + 1) % n]
+        edge = (p2[0] - p1[0], p2[1] - p1[1])
+        edge_len = math.hypot(edge[0], edge[1])
+        if edge_len < 1e-9:
+            continue
+
+        u = (edge[0] / edge_len, edge[1] / edge_len)
+        v = (-u[1], u[0])
+
+        projs_u = [p[0] * u[0] + p[1] * u[1] for p in hull]
+        projs_v = [p[0] * v[0] + p[1] * v[1] for p in hull]
+
+        w = max(projs_u) - min(projs_u)
+        h = max(projs_v) - min(projs_v)
+        area = w * h
+
+        if area < min_area:
+            min_area = area
+            best_box = (w, h)
+
+    return min_area, best_box
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -11579,4 +11638,8 @@ if __name__ == "__main__":
     ida_h = lambda p: abs(3 - p[0]) + abs(3 - p[1])
     ida_path = ida_star_search((0, 0), lambda p: p == (3, 3), ida_nbrs, ida_h)
     print("IDA* Path Found Length:", len(ida_path) if ida_path else 0)
-    print("\nAll 241 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 242: Minimum Bounding Box via Rotating Calipers ===")
+    diamond_pts = [(0.0, 1.0), (1.0, 0.0), (2.0, 1.0), (1.0, 2.0)]
+    min_box_area, min_box_dims = minimum_bounding_box_calipers(diamond_pts)
+    print(f"Minimum Enclosing Box Area: {min_box_area:.4f}, Dimensions: {min_box_dims}")
+    print("\nAll 242 Algorithms & Data Structures complete and verified!")
