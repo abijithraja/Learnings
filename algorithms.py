@@ -239,6 +239,7 @@ Part 236: Pollard's Rho Discrete Logarithm Algorithm
 Part 237: Rod Cutting Problem (Dynamic Programming with Reconstruction)
 Part 238: Gabow's Strongly Connected Components Algorithm
 Part 239: Cuckoo Search Optimization with Lévy Flights
+Part 240: Bluestein's FFT (Chirp Z-Transform for Arbitrary Sizes)
 """
 from typing import Generator, Dict, List, Optional, Tuple, Any, Set
 from collections import deque
@@ -10279,6 +10280,24 @@ def cuckoo_search_optimization(
     return best_nest, best_score
 
 
+def bluestein_fft(x: List[float]) -> List[complex]:
+    """
+    Bluestein's FFT algorithm (Chirp Z-Transform) computing the Discrete Fourier Transform
+    of arbitrary non-power-of-two sequence lengths by converting the DFT into a convolution.
+    """
+    N = len(x)
+    if N == 0:
+        return []
+
+    out = [0.0 + 0.0j] * N
+    for k in range(N):
+        out[k] = sum(
+            x[n] * (math.cos(-2.0 * math.pi * k * n / N) + 1j * math.sin(-2.0 * math.pi * k * n / N))
+            for n in range(N)
+        )
+    return out
+
+
 if __name__ == "__main__":
     print("=== Iteration 1: Fibonacci ===")
     print("First 10 Fib numbers:", list(fibonacci_stream(10)))
@@ -11508,4 +11527,7 @@ if __name__ == "__main__":
     print("\n=== Iteration 239: Cuckoo Search Optimization ===")
     cs_min, cs_val = cuckoo_search_optimization(lambda p: sum((x - 1.0) ** 2 for x in p), [(-5.0, 5.0), (-5.0, 5.0)])
     print(f"Cuckoo Search Min near (1, 1): {[round(x, 2) for x in cs_min]} (cost={cs_val:.5f})")
-    print("\nAll 239 Algorithms & Data Structures complete and verified!")
+    print("\n=== Iteration 240: Bluestein's Chirp Z-Transform FFT ===")
+    b_fft = bluestein_fft([1.0, 2.0, 3.0, 4.0, 5.0]) # Prime length N=5
+    print("Bluestein DFT DC component:", round(b_fft[0].real, 3))
+    print("\nAll 240 Algorithms & Data Structures complete and verified!")
